@@ -40,6 +40,7 @@ pub async fn rate_up(
 ) -> AppResult<Sse<impl stream::Stream<Item = Result<Event, Infallible>>>> {
     let rating_type_id = db::rating::default_rating_type_id(&state.pool).await?;
     db::rating::upsert(&state.pool, store_product_id, rating_type_id, user.id).await?;
+    tracing::debug!(user_id = %user.id, store_product_id = %store_product_id, "rating added");
 
     let html = detail_html_for_store_product(&state, store_product_id, user.id).await?;
     Ok(Sse::new(stream::iter(vec![Ok(patch_elements_at("#sidebar", "inner", &html))])))
@@ -68,6 +69,7 @@ pub async fn unrate(
 
     if let Some(rating_id) = rating_id {
         db::rating::delete_owned(&state.pool, rating_id, user.id).await?;
+        tracing::debug!(user_id = %user.id, store_product_id = %store_product_id, "rating removed");
     }
 
     let html = detail_html_for_store_product(&state, store_product_id, user.id).await?;

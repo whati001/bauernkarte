@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ title }}</title>
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
   <link rel="stylesheet" href="/static/leaflet/leaflet.css">
   <link rel="stylesheet" href="/static/app.css">
   <script type="module" src="/static/datastar.js"></script>
@@ -19,6 +20,18 @@
 
   <div id="layout">
     <div id="sidebar">{{ sidebar_html|safe }}</div>
+    <!-- Lives outside #sidebar on purpose — see map_data.html's own doc
+         comment (handlers::search::MapDataTemplate) for why: nested
+         inside the swappable sidebar content, the map's pins and
+         click-triggers used to vanish the moment #sidebar showed
+         anything other than the search panel. -->
+    {{ map_data_html|safe }}
+    <!-- Persists across every #sidebar swap (search/detail/forms) since
+         it lives outside that element entirely — wired once in map.js
+         rather than re-wired per panel like the distance slider/location
+         picker. Icon and aria-label both flip between collapse/expand
+         state client-side (see map.js's setSidebarCollapsed). -->
+    <button id="sidebar-toggle" type="button" aria-label="{{ "map-sidebar-collapse"|t }}" title="{{ "map-sidebar-collapse"|t }}" data-expand-label="{{ "map-sidebar-expand"|t }}">{% include "icons/chevron-left.svg" %}</button>
     <div id="map"></div>
   </div>
 

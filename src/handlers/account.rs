@@ -131,6 +131,7 @@ pub async fn register(
     let pwd_hash = password::hash_password(&body.password).map_err(AppError::from)?;
     let user = db::user::insert(&state.pool, name, &email, &pwd_hash).await?;
     auth::log_in(&session, user.id).await.map_err(AppError::from)?;
+    tracing::info!(user_id = %user.id, "user registered");
 
     let navbar_html = crate::templates::render_navbar(Some(user.name.clone()));
     // Previously this only patched #navbar, leaving the now-stale
@@ -161,13 +162,21 @@ pub async fn login(
     let email = body.email.trim().to_lowercase();
     let user = db::user::find_by_email(&state.pool, &email).await?;
     let Some(user) = user else {
+        // The identifier attempted (never the password) — worth WARN, not
+        // just a 200-with-form-error: a run of these against one address
+        // is exactly what a brute-force/credential-stuffing attempt looks
+        // like, and login is otherwise the one route with no other audit
+        // trail (unlike catalog mutations, which also land in edit_log).
+        tracing::warn!(email = %email, "login failed: unknown email");
         return Err(AppError::Validation("E-Mail oder Passwort ist falsch.".into()));
     };
     if !password::verify_password(&body.password, &user.pwd_hash) {
+        tracing::warn!(user_id = %user.id, "login failed: wrong password");
         return Err(AppError::Validation("E-Mail oder Passwort ist falsch.".into()));
     }
 
     auth::log_in(&session, user.id).await.map_err(AppError::from)?;
+    tracing::info!(user_id = %user.id, "user logged in");
 
     let navbar_html = crate::templates::render_navbar(Some(user.name.clone()));
     let sidebar_html = crate::templates::render_confirmation(&t_arg("auth-welcome-back", &user.name));
@@ -241,6 +250,7 @@ pub async fn update_profile(
     }
 
     let updated = db::user::update_profile(&state.pool, user.id, name, &email).await?;
+    tracing::info!(user_id = %user.id, "profile updated");
     let pending = db::pending::for_user(&state.pool, user.id).await?;
     let html = render(AccountTemplate {
         name: updated.name.clone(),
@@ -273,6 +283,7 @@ pub async fn change_password(
     // own `#form-error` right above this one — a plain `Validation`
     // would morph *that* slot instead of this form's `#password-form-error`.
     if !password::verify_password(&body.current_password, &user.pwd_hash) {
+        tracing::warn!(user_id = %user.id, "password change rejected: wrong current password");
         return Err(AppError::ValidationAt("Aktuelles Passwort ist falsch.".into(), "password-form-error"));
     }
     if body.new_password.len() < 8 {
@@ -283,6 +294,7 @@ pub async fn change_password(
     }
     let new_hash = password::hash_password(&body.new_password).map_err(AppError::from)?;
     db::user::update_password(&state.pool, user.id, &new_hash).await?;
+    tracing::info!(user_id = %user.id, "password changed");
 
     let pending = db::pending::for_user(&state.pool, user.id).await?;
     let html = render(AccountTemplate {

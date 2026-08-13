@@ -15,15 +15,19 @@ mod templates;
 use std::{net::SocketAddr, time::Duration as StdDuration};
 
 use axum::{
-    routing::{get, patch, post},
+    routing::{delete, get, patch, post},
     Router,
 };
 use sqlx::postgres::PgPoolOptions;
 use state::AppState;
 use tower_governor::{governor::GovernorConfigBuilder, GovernorLayer};
-use tower_http::services::ServeDir;
+use tower_http::{
+    services::ServeDir,
+    trace::{DefaultMakeSpan, DefaultOnFailure, DefaultOnResponse, TraceLayer},
+};
 use tower_sessions::{cookie::SameSite, session_store::ExpiredDeletion, Expiry, SessionManagerLayer};
 use tower_sessions_sqlx_store::PostgresStore;
+use tracing::Level;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -35,12 +39,14 @@ async fn main() -> anyhow::Result<()> {
         .max_connections(10)
         .connect(&config.database_url)
         .await?;
+    tracing::info!("database pool connected");
 
     // tower-sessions-sqlx-store manages its own schema (a `tower_sessions`
     // Postgres schema + `session` table) — no hand-written migration for
     // it (task 2.9's decision).
     let session_store = PostgresStore::new(pool.clone());
     session_store.migrate().await?;
+    tracing::debug!("session store schema migrated");
 
     // sqlx-store-backed sessions don't expire rows on their own; run the
     // crate's own cleanup sweep as a background task (task 3.2/design.md's
@@ -95,10 +101,7 @@ async fn main() -> anyhow::Result<()> {
             "/product/{id}",
             patch(handlers::product::update_product).delete(handlers::product::delete_product),
         )
-        .route(
-            "/store-product/{id}",
-            patch(handlers::product::update).delete(handlers::product::delete),
-        )
+        .route("/store-product/{id}", delete(handlers::product::delete))
         .route(
             "/store-product/{id}/rating",
             post(handlers::rating::rate_up).delete(handlers::rating::unrate),
@@ -128,7 +131,6 @@ async fn main() -> anyhow::Result<()> {
         .route("/store/{id}/edit", get(handlers::store::edit_form))
         .route("/company/{id}/edit", get(handlers::company::edit_form))
         .route("/store/{id}/product/new", get(handlers::product::new_form))
-        .route("/store-product/{id}/edit", get(handlers::product::edit_form))
         .route("/product/{id}/edit", get(handlers::product::edit_product_form))
         .route("/store-product/{id}/image/new", get(handlers::image::new_form))
         .route("/image/{id}", get(handlers::image::show))
@@ -137,6 +139,28 @@ async fn main() -> anyhow::Result<()> {
         .nest_service("/static", ServeDir::new("static"))
         .layer(axum::middleware::from_fn(i18n::locale_middleware))
         .layer(session_layer)
+        // Outermost layer (applied last = wraps everything else, so it
+        // sees every request/response, static assets included) — one
+        // `tower_http::trace::TraceLayer` instrumenting *every* route
+        // generically beats hand-adding a log line to each of the ~30
+        // handlers individually: consistent fields (method, path, status,
+        // latency) on every request, and new routes get it for free.
+        // Defaults would already do this at DEBUG; bumped to INFO here so
+        // `RUST_LOG=product_finder=info` alone (a plausible prod setting)
+        // still shows per-request activity, not just this crate's own
+        // explicit business-event logs below. Response classification
+        // (`ServerErrorsAsFailures`, tower-http's default) treats only
+        // 5xx as a failure — this app's 4xx-class rejections (including
+        // `AppError::Validation`'s 200-with-form-error, see error.rs's
+        // comment on why that's 200) are expected client-driven outcomes,
+        // not failures, and are still visible via the INFO-level
+        // on_response's `status` field.
+        .layer(
+            TraceLayer::new_for_http()
+                .make_span_with(DefaultMakeSpan::new().level(Level::INFO))
+                .on_response(DefaultOnResponse::new().level(Level::INFO))
+                .on_failure(DefaultOnFailure::new().level(Level::ERROR)),
+        )
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind(&config.bind_addr).await?;

@@ -39,8 +39,8 @@ const GEOLOCATED_DEFAULT_RADIUS_KM = 5;
 // Marker sizing (total rendered diameter, including the white border —
 // see .map-pin-dot/.map-pin-dot.selected in app.css, kept in sync here
 // since Leaflet needs the pixel size up front for iconSize/iconAnchor).
-const PIN_SIZE = 26;
-const PIN_SIZE_SELECTED = 34;
+const PIN_SIZE = 32;
+const PIN_SIZE_SELECTED = 42;
 // Screen-space (not geographic) clustering radius: stores whose current
 // on-screen pixel positions fall in the same PIXEL_RADIUS-sized grid
 // cell render as one count badge instead of individual pins. Fixed
@@ -51,7 +51,15 @@ const CLUSTER_PIXEL_RADIUS = 45;
 
 // basemap.at — verified live against the public WMTS endpoint at
 // implementation time (design.md §8.3): {z}/{y}/{x} order (row before
-// col in the REST URL), EPSG:3857, 256px tiles, zoom 0-20.
+// col in the REST URL), EPSG:3857, 256px tiles. The layer advertises
+// zoom up to 20, but that resolution only actually exists for a handful
+// of dense city centers (checked: Vienna and Villach) — every other
+// tested location in Austria, including ordinary towns, 404s at zoom 20
+// and only has real tiles through zoom 19. Capping at 19 (re-verified
+// live, not just per city center — see the check above) is what keeps
+// the map from going blank/white the moment someone zooms all the way
+// in anywhere outside those few spots.
+const TILE_MAX_ZOOM = 19;
 const TILE_URL = "https://mapsneu.wien.gv.at/basemap/geolandbasemap/normal/google3857/{z}/{y}/{x}.png";
 const TILE_ATTRIBUTION =
   'Datenquelle: <a href="https://basemap.at" target="_blank" rel="noopener">basemap.at</a>';
@@ -60,7 +68,7 @@ const map = L.map("map", { zoomControl: true }).setView(
   [AUSTRIA_CENTER.lat, AUSTRIA_CENTER.lon],
   AUSTRIA_ZOOM,
 );
-L.tileLayer(TILE_URL, { attribution: TILE_ATTRIBUTION, maxZoom: 20 }).addTo(map);
+L.tileLayer(TILE_URL, { attribution: TILE_ATTRIBUTION, maxZoom: TILE_MAX_ZOOM }).addTo(map);
 
 // ---- geolocation + the search-radius circle ----
 
@@ -295,6 +303,51 @@ function wireLocationPicker() {
   }
 }
 
+// ---- sidebar collapse/expand ("see only the map") ----
+//
+// Lives in `#layout` (layout.html), outside `#sidebar` itself, so it
+// survives every panel swap untouched — wired once here rather than
+// re-wired per panel like the distance slider/location picker above.
+
+function setSidebarCollapsed(collapsed) {
+  const layout = document.getElementById("layout");
+  const sidebar = document.getElementById("sidebar");
+  const btn = document.getElementById("sidebar-toggle");
+  if (!layout || !sidebar) return;
+  if (layout.classList.contains("sidebar-collapsed") === collapsed) return;
+  layout.classList.toggle("sidebar-collapsed", collapsed);
+  if (btn) {
+    const labelKey = collapsed ? "expand" : "collapse";
+    btn.setAttribute("aria-label", sidebarToggleLabels[labelKey]);
+    btn.setAttribute("title", sidebarToggleLabels[labelKey]);
+  }
+  // Leaflet doesn't see a CSS-only container resize (no native window
+  // "resize" event fires just because #sidebar's width changed) — nudge
+  // it once #sidebar's own width transition has actually finished, so it
+  // redraws tiles at the map's real, final size instead of a
+  // mid-transition one.
+  sidebar.addEventListener("transitionend", () => map.invalidateSize(), { once: true });
+}
+
+// The two translated labels, read off the button's own initial
+// server-rendered `aria-label`/`title` (always the "collapse" wording —
+// see layout.html) plus a hardcoded fallback set here for the "expand"
+// state, which the server never renders directly. Read once at wire time
+// rather than duplicating i18n lookups into map.js.
+let sidebarToggleLabels = { collapse: "", expand: "" };
+
+function wireSidebarToggle() {
+  const btn = document.getElementById("sidebar-toggle");
+  const layout = document.getElementById("layout");
+  if (!btn || !layout || btn.dataset.pfWired) return;
+  btn.dataset.pfWired = "1";
+  sidebarToggleLabels.collapse = btn.getAttribute("aria-label") || "";
+  sidebarToggleLabels.expand = btn.dataset.expandLabel || sidebarToggleLabels.collapse;
+  btn.addEventListener("click", () => {
+    setSidebarCollapsed(!layout.classList.contains("sidebar-collapsed"));
+  });
+}
+
 // ---- markers ----
 
 let markers = [];
@@ -313,25 +366,45 @@ function escapeHtml(s) {
   return div.innerHTML;
 }
 
-function pinIcon(selected) {
+// Generic glyph for a store that carries more than one matching product —
+// picking one of several products' icons to stand in for the whole store
+// would be arbitrary, so a plain shop glyph is used instead.
+const GENERIC_SHOP_GLYPH = "🏬";
+
+// `store` is the plain JSON blob from `#map-stores-json` (see
+// `MapStorePin` / `models.rs`), or absent for the location-picker's own
+// marker (`placePickerMarker`), which stays a plain, glyph-less dot.
+function pinGlyph(store) {
+  if (!store) return "";
+  if (store.product_total === 1) return store.products[0]?.icon || "📦";
+  if (store.product_total > 1) return GENERIC_SHOP_GLYPH;
+  return "";
+}
+
+function pinIcon(selected, store) {
   const size = selected ? PIN_SIZE_SELECTED : PIN_SIZE;
+  const glyph = pinGlyph(store);
   return L.divIcon({
     className: "map-pin",
-    html: `<div class="map-pin-dot${selected ? " selected" : ""}"></div>`,
+    html: `<div class="map-pin-dot${selected ? " selected" : ""}">${glyph}</div>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
   });
 }
 
+// Up to 5 products (`store.products`, already ranked by rating desc /
+// name asc server-side — see `db::store::search_all_for_map`), one per
+// line, plus a "+N more" line when the store carries more than that
+// (`store.product_total` is the true count, not capped at 5).
 function tooltipHtml(store) {
-  const productLine = store.top_product_name
-    ? `${store.top_product_name}${
-        store.top_product_rating_count != null ? ` · ${store.top_product_rating_count} ❤️` : ""
-      }`
-    : "";
+  const productLines = (store.products || [])
+    .map((p) => escapeHtml(`${p.icon || "📦"} ${p.name}${p.rating_count > 0 ? ` · ${p.rating_count} ❤️` : ""}`))
+    .join("<br>");
+  const more = store.product_total > store.products.length ? store.product_total - store.products.length : 0;
+  const moreLine = more > 0 ? `<br><span class="map-tooltip-more">+${more}</span>` : "";
   return `<div class="map-tooltip-inner"><strong>${escapeHtml(store.name)}</strong>${
-    productLine ? `<br>${escapeHtml(productLine)}` : ""
-  }</div>`;
+    productLines ? `<br>${productLines}` : ""
+  }${moreLine}</div>`;
 }
 
 function bindStoreTooltip(marker, store, selected) {
@@ -368,7 +441,7 @@ function addStoreMarker(store) {
   // always calls `updateSelection()` right after `redrawMarkers()`,
   // which is the single place selected-vs-not styling is decided, so
   // there's no need to duplicate that check here too.
-  const marker = L.marker([store.lat, store.lon], { icon: pinIcon(false) });
+  const marker = L.marker([store.lat, store.lon], { icon: pinIcon(false, store) });
   marker.pfStore = store;
   bindStoreTooltip(marker, store, false);
   marker.on("click", () => {
@@ -387,6 +460,10 @@ function addStoreMarker(store) {
       placePickerMarker(store.lat, store.lon);
       return;
     }
+    // Surface the sidebar again if it's currently collapsed — otherwise
+    // the detail panel loads invisibly and the click looks like it did
+    // nothing.
+    setSidebarCollapsed(false);
     // Every marker is drawn from the exact same `stores` array that
     // rendered the results list, so a matching `<li data-store-id>`
     // always exists — proxy the click onto it rather than duplicating
@@ -474,7 +551,7 @@ function updateSelection() {
   for (const marker of markers) {
     if (marker.pfCluster) continue;
     const isSelected = selectedStoreId != null && String(marker.pfStore.id) === String(selectedStoreId);
-    marker.setIcon(pinIcon(isSelected));
+    marker.setIcon(pinIcon(isSelected, marker.pfStore));
     marker.setZIndexOffset(isSelected ? 1000 : 0);
     bindStoreTooltip(marker, marker.pfStore, isSelected);
   }
@@ -528,3 +605,4 @@ window.addEventListener("resize", redrawAndReselect);
 
 observeResults();
 initGeolocation();
+wireSidebarToggle();

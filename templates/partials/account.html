@@ -1,4 +1,7 @@
 <div class="sidebar-panel">
+  <div class="detail-header">
+    <button class="back-link" data-on:click="@get('/api/store/back')">{% include "icons/chevron-left.svg" %} {{ "action-back-to-search"|t }}</button>
+  </div>
   <h2>{% include "icons/user.svg" %} {{ "account-heading"|t }}</h2>
   {% if let Some(msg) = success_message %}
   <div class="form-success">{% include "icons/circle-check.svg" %} {{ msg }}</div>

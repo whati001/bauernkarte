@@ -1,0 +1,1 @@
+ALTER TABLE store_product ADD COLUMN price NUMERIC(10, 2) NOT NULL DEFAULT 0 CHECK (price >= 0);

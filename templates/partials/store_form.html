@@ -1,4 +1,7 @@
 <div class="sidebar-panel">
+  <div class="detail-header">
+    <button class="back-link" data-on:click="@get('/api/store/back')">{% include "icons/chevron-left.svg" %} {{ "action-back-to-search"|t }}</button>
+  </div>
   <h2>{% include "icons/store.svg" %} {% if is_edit %}{{ "store-form-edit-heading"|t }}{% else %}{{ "store-form-new-heading"|t }}{% endif %}</h2>
   <form data-on:submit__prevent="@{% if is_edit %}patch{% else %}post{% endif %}('{{ action }}')">
     <div class="field">
@@ -54,6 +57,46 @@
     <div class="field" data-show="$isCompany">
       <label for="company-homepage">{{ "store-form-company-homepage"|t }}</label>
       <input id="company-homepage" type="url" name="company_homepage" data-bind:company-homepage>
+    </div>
+
+    <!-- A store SHALL carry at least one product on creation — one
+         never showing up is otherwise indistinguishable from a bug (the
+         entire search/map path requires at least one approved
+         store_product to find a store at all, see
+         handlers::product::resolve_product's doc comment). Mirrors
+         product_form.html's existing-vs-new fields/signal names exactly
+         (same `resolve_product` on the server reads either shape), so
+         this stays a single source of truth for how that choice renders. -->
+    <h3>{% include "icons/package.svg" %} {{ "store-form-product-heading"|t }}</h3>
+    <div class="field checkbox-field">
+      <input id="is-new-product-checkbox" type="checkbox" data-bind:is-new-product>
+      <label for="is-new-product-checkbox" style="margin: 0;">{{ "product-form-new-checkbox"|t }}</label>
+    </div>
+    <div class="field" data-show="!$isNewProduct">
+      <label for="existing-product">{% include "icons/package.svg" %} {{ "product-form-product"|t }}</label>
+      <select id="existing-product" name="product_id" data-bind:product-id>
+        <option value="">{{ "product-form-choose"|t }}</option>
+        {% for p in products %}
+        <option value="{{ p.id }}">{% if let Some(icon) = p.icon %}{{ icon }}{% else %}📦{% endif %} {{ p.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field" data-show="$isNewProduct">
+      <label for="new-product-name">{% include "icons/package.svg" %} {{ "product-form-name"|t }}</label>
+      <input id="new-product-name" type="text" name="new_product_name" data-bind:new-product-name>
+    </div>
+    <div class="field" data-show="$isNewProduct">
+      <label for="new-product-category">{% include "icons/tag.svg" %} {{ "product-form-category"|t }}</label>
+      <select id="new-product-category" name="new_product_category_id" data-bind:new-product-category-id>
+        <option value="">{{ "product-form-choose"|t }}</option>
+        {% for c in categories %}
+        <option value="{{ c.id }}">{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field" data-show="$isNewProduct">
+      <label for="new-product-desc">{{ "product-form-description-optional"|t }}</label>
+      <textarea id="new-product-desc" name="new_product_description" data-bind:new-product-description></textarea>
     </div>
     {% endif %}
 

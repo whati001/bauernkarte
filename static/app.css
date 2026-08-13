@@ -267,6 +267,7 @@ a:hover { text-decoration: underline; }
 .lang-link.active:hover { background: var(--accent); }
 
 #layout {
+  position: relative;
   flex: 1;
   display: flex;
   min-height: 0;
@@ -277,10 +278,41 @@ a:hover { text-decoration: underline; }
   overflow-y: auto;
   border-right: 1px solid var(--border);
   background: var(--surface);
+  transition: width 0.15s var(--ease);
 }
 .sidebar-panel { padding: var(--space-4); }
 
 #map { flex: 1; min-height: 0; background: var(--surface-2); }
+
+/* Collapse-to-map toggle (map.js's setSidebarCollapsed) — pinned to the
+   sidebar/map boundary, vertically centered, so it stays reachable
+   whichever panel currently occupies #sidebar. The chevron itself is
+   just chevron-left.svg mirrored via CSS rather than a second vendored
+   icon asset — "<" collapses (points toward where the sidebar goes),
+   ">" (rotated) expands it back. */
+#sidebar-toggle {
+  position: absolute;
+  top: 50%;
+  left: var(--sidebar-width);
+  transform: translate(-50%, -50%);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: left 0.15s var(--ease);
+}
+#sidebar-toggle svg { width: 16px; height: 16px; transition: transform 0.15s var(--ease); }
+#layout.sidebar-collapsed #sidebar { width: 0; overflow: hidden; border-right: none; }
+#layout.sidebar-collapsed #sidebar-toggle { left: 0; }
+#layout.sidebar-collapsed #sidebar-toggle svg { transform: rotate(180deg); }
 
 @media (max-width: 900px) {
   #layout { flex-direction: column; }
@@ -290,8 +322,16 @@ a:hover { text-decoration: underline; }
     order: 2;
     border-right: none;
     border-top: 1px solid var(--border);
+    transition: max-height 0.15s var(--ease);
   }
   #map { order: 1; min-height: 38vh; }
+  /* The horizontal boundary the desktop rule pins to doesn't exist here
+     (sidebar/map stack vertically instead) — a fixed corner button is
+     simpler and more reliable than chasing the actual flex boundary,
+     which shifts with content height. */
+  #sidebar-toggle { position: fixed; top: auto; left: auto; right: var(--space-3); bottom: var(--space-3); transform: none; }
+  #layout.sidebar-collapsed #sidebar-toggle { left: auto; }
+  #layout.sidebar-collapsed #sidebar { max-height: 0; border-top: none; }
 }
 
 /* ============================================================
@@ -441,6 +481,19 @@ a.icon-btn.danger:hover, button.icon-btn.danger:hover { background: var(--critic
 }
 
 /* ============================================================
+   Filter card (sidebar_search.html's category/product/distance fields)
+   ============================================================ */
+.filter-card {
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+.filter-card .field:last-child { margin-bottom: 0; }
+
+/* ============================================================
    Results list
    ============================================================ */
 .result-count {
@@ -449,32 +502,57 @@ a.icon-btn.danger:hover, button.icon-btn.danger:hover { background: var(--critic
   margin: var(--space-3) 0 var(--space-2);
 }
 
-.results-list { list-style: none; margin: 0; padding: 0; }
-.results-list li {
+.results-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+.result-card {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--space-2);
   padding: var(--space-3);
-  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
   cursor: pointer;
-  border: 1px solid transparent;
+  transition: box-shadow 0.15s var(--ease), border-color 0.15s var(--ease);
 }
-.results-list li:hover { background: var(--surface-2); }
-.results-list li:focus-visible { border-color: var(--accent); }
-.results-list li.no-results {
+.result-card:hover { box-shadow: var(--shadow-md); border-color: var(--text-muted); }
+.result-card:focus-visible { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-wash); }
+.result-card-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.result-card-header strong { font-size: var(--font-size-md); }
+.result-distance {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 400;
+}
+.result-distance .icon { color: var(--text-muted); }
+.no-results {
   cursor: default;
   color: var(--text-muted);
   font-style: italic;
+  padding: var(--space-3);
 }
-.results-list li.no-results:hover { background: none; }
-.result-meta {
-  display: flex;
+
+/* Product chips — shared by results_list.html's cards and, in spirit,
+   the map's hover tooltip (map.js's tooltipHtml, styled separately
+   below since Leaflet tooltips escape this stacking context). */
+.result-products { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); }
+.product-chip {
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: 2px;
+  padding: 2px var(--space-2);
+  background: var(--surface-2);
+  border-radius: var(--radius-full);
   font-size: var(--font-size-sm);
   color: var(--text-secondary);
 }
-.result-meta .icon { color: var(--text-muted); }
+.product-chip-more { color: var(--text-muted); font-style: italic; }
 
 /* ============================================================
    Detail view
@@ -534,15 +612,6 @@ a.icon-btn.danger:hover, button.icon-btn.danger:hover { background: var(--critic
   background: var(--surface);
 }
 .product.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
-
-.price-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-.price-tag .icon { color: var(--text-muted); width: 0.9em; height: 0.9em; }
 
 .rating-row { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; margin: var(--space-2) 0; }
 .rating-badge {
@@ -614,13 +683,18 @@ button.rated:hover { filter: brightness(0.97); }
    Leaflet's iconSize/iconAnchor so the click/hover hit-area lines up
    exactly with what's drawn. */
 .map-pin-dot {
-  width: 26px;
-  height: 26px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: var(--accent);
   border: 3px solid #fff;
   box-shadow: var(--shadow-sm);
-  transition: width 0.15s var(--ease), height 0.15s var(--ease);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  line-height: 1;
+  transition: width 0.15s var(--ease), height 0.15s var(--ease), font-size 0.15s var(--ease);
 }
 /* The selected pin (map.js's `updateSelection`) grows and gets an
    accent halo rather than changing hue — same "selected" convention as
@@ -628,15 +702,16 @@ button.rated:hover { filter: brightness(0.97); }
    stays reserved for destructive actions. Other pins are left alone so
    nearby stores stay visible, Booking.com-map style. */
 .map-pin-dot.selected {
-  width: 34px;
-  height: 34px;
+  width: 42px;
+  height: 42px;
+  font-size: 22px;
   box-shadow: 0 0 0 5px var(--accent-wash), var(--shadow-md);
 }
 
 /* Hover tooltip (bound per-marker, opens on mouseover — Leaflet's
-   default tooltip trigger, no extra wiring needed) showing the same
-   name/top-product summary the old always-on "card mode" used to show
-   at high zoom; now shown on demand instead of permanently. */
+   default tooltip trigger, no extra wiring needed) showing the store's
+   name and up to 5 top-rated products (map.js's tooltipHtml); now shown
+   on demand instead of the old always-on "card mode" at high zoom. */
 .map-tooltip.leaflet-tooltip {
   background: var(--surface);
   color: var(--text-primary);
@@ -646,9 +721,11 @@ button.rated:hover { filter: brightness(0.97); }
   padding: var(--space-1) var(--space-2);
   font-size: var(--font-size-sm);
   white-space: nowrap;
+  line-height: 1.6;
 }
 .map-tooltip.leaflet-tooltip::before { border-top-color: var(--border); }
 .map-tooltip-inner .icon { color: var(--critical); }
+.map-tooltip-more { color: var(--text-muted); font-style: italic; }
 
 /* Cluster badge — stores grouped by on-screen proximity (map.js's
    grid-based screen-space clustering) render as a count instead of

@@ -8,7 +8,6 @@ use axum::{
     response::sse::{Event, Sse},
 };
 use futures_util::stream;
-use rust_decimal::Decimal;
 use std::convert::Infallible;
 
 use crate::{
@@ -16,10 +15,10 @@ use crate::{
     db,
     dstar::DatastarSignals,
     error::{AppError, AppResult},
-    handlers::search::{render_search_panel, run_search, SearchQuery},
+    handlers::search::{render_map_data, render_search_panel, run_search, SearchQuery},
     i18n as filters, // see templates.rs's comment on this alias
     models::{RatingCount, StoreDetail},
-    sse::patch_elements_at,
+    sse::{patch_elements, patch_elements_at},
     state::AppState,
     templates::render,
 };
@@ -34,15 +33,11 @@ struct StoreProductView {
     product_id: i64,
     product_name: String,
     product_description: Option<String>,
-    price_display: String,
+    product_icon: Option<String>,
     ratings: Vec<RatingCount>,
     viewer_has_rated_up: bool,
     images: Vec<ImageView>,
     selected: bool,
-}
-
-fn format_price(price: Decimal) -> String {
-    format!("{:.2}", price)
 }
 
 #[derive(Template)]
@@ -78,7 +73,7 @@ pub fn render_detail_panel_with_selection(
             product_id: p.product_id,
             product_name: p.product_name.clone(),
             product_description: p.product_description.clone(),
-            price_display: format_price(p.price),
+            product_icon: p.product_icon.clone(),
             ratings: p.ratings.clone(),
             viewer_has_rated_up: p.viewer_has_rated_up,
             images: p
@@ -120,6 +115,7 @@ pub async fn show(
 ) -> AppResult<Sse<impl stream::Stream<Item = Result<Event, Infallible>>>> {
     let viewer_id = user.as_ref().map(|u| u.id);
     let detail = load_detail_or_404(&state, store_id, viewer_id).await?;
+    tracing::debug!(store_id = %store_id, viewer_id = ?viewer_id, "store detail viewed");
     let html = render_detail_panel(&detail, user.is_some());
     Ok(Sse::new(stream::iter(vec![Ok(patch_elements_at("#sidebar", "inner", &html))])))
 }
@@ -134,6 +130,10 @@ pub async fn back(
     DatastarSignals(q): DatastarSignals<SearchQuery>,
 ) -> AppResult<Sse<impl stream::Stream<Item = Result<Event, Infallible>>>> {
     let results = run_search(&state, &q).await?;
-    let html = render_search_panel(&state, q.category_id, q.product_id, &results).await?;
-    Ok(Sse::new(stream::iter(vec![Ok(patch_elements_at("#sidebar", "inner", &html))])))
+    let panel = render_search_panel(&state, q.category_id, q.product_id, &results).await?;
+    let map_data_html = render_map_data(&panel.map_stores);
+    Ok(Sse::new(stream::iter(vec![
+        Ok(patch_elements_at("#sidebar", "inner", &panel.sidebar_html)),
+        Ok(patch_elements(&map_data_html)),
+    ])))
 }

@@ -2,7 +2,6 @@
 //! table plus the handful of query-specific DTOs that don't map 1:1 onto a
 //! table (search results, detail views).
 
-use rust_decimal::Decimal;
 use serde::Serialize;
 // `time::OffsetDateTime`, not `chrono` — `tower-sessions-sqlx-store`
 // already forces sqlx's `time` feature on for its own session-expiry
@@ -54,6 +53,10 @@ pub struct Product {
     pub category: i64,
     pub name: String,
     pub description: Option<String>,
+    /// A plain-text emoji, same treatment (and same rationale — native
+    /// `<option>` elements can't render markup) as `Category::icon` (see
+    /// the `product_icon` migration).
+    pub icon: Option<String>,
     pub approved: bool,
     pub deleted: bool,
     pub created_by: Option<i64>,
@@ -87,7 +90,6 @@ pub struct StoreProduct {
     pub id: i64,
     pub store: i64,
     pub product: i64,
-    pub price: Decimal,
     pub approved: bool,
     pub deleted: bool,
     pub created_by: Option<i64>,
@@ -112,18 +114,37 @@ pub struct Image {
     pub modified: OffsetDateTime,
 }
 
+/// One product a store carries, as summarized for search/map results —
+/// name + icon (for display) and its `UP`-rating count (for ranking).
+/// Never fetched standalone; always one entry of the top-5 list
+/// `db::store::search`/`search_all_for_map` compute in SQL (`json_agg`
+/// over a ranked, `limit 5` subquery) and attach to `StoreSearchResult`/
+/// `MapStorePin`, ranked by `rating_count` descending, ties broken
+/// alphabetically by `name` — one query per search, no per-store
+/// follow-up request (store-search capability's "single search request"
+/// requirement).
+#[derive(Debug, Clone, Serialize, serde::Deserialize)]
+pub struct ProductSummary {
+    pub name: String,
+    pub icon: Option<String>,
+    pub rating_count: i64,
+}
+
 /// One row of a store-search result — the "Umkreis" (radius) filtered
 /// list (store-search capability — kept minimal per design.md: id, name,
-/// coordinates, distance, best product, its rating count).
-#[derive(Debug, Clone, sqlx::FromRow, Serialize)]
+/// coordinates, distance, top products).
+#[derive(Debug, Clone, Serialize)]
 pub struct StoreSearchResult {
     pub id: i64,
     pub name: String,
     pub lat: f64,
     pub lon: f64,
     pub distance_m: f64,
-    pub top_product_name: Option<String>,
-    pub top_product_rating_count: Option<i64>,
+    /// Top 5 by rating, see `ProductSummary`. The store may carry more —
+    /// `product_total` says how many, so the UI can show a "+N more"
+    /// indicator instead of silently truncating.
+    pub products: Vec<ProductSummary>,
+    pub product_total: i64,
 }
 
 /// One map pin — every approved store matching the category/product
@@ -132,14 +153,21 @@ pub struct StoreSearchResult {
 /// is radius-filtered, per the follow-up that split this from
 /// `StoreSearchResult`); no `distance_m` since it isn't measured against
 /// any particular origin.
-#[derive(Debug, Clone, sqlx::FromRow, Serialize)]
+///
+/// `product_total` drives the pin's glyph (map.js): a store carrying
+/// exactly one matching product shows that product's own icon (the first
+/// and only entry of `products`), a store carrying several shows a
+/// generic shop glyph instead — picking one of several products' icons
+/// to stand in for the whole store would be arbitrary.
+#[derive(Debug, Clone, Serialize)]
 pub struct MapStorePin {
     pub id: i64,
     pub name: String,
     pub lat: f64,
     pub lon: f64,
-    pub top_product_name: Option<String>,
-    pub top_product_rating_count: Option<i64>,
+    /// Top 5 by rating, see `ProductSummary` — shown in the hover tooltip.
+    pub products: Vec<ProductSummary>,
+    pub product_total: i64,
 }
 
 /// A count of ratings of one `rating_type` on a `store_product`, generic
@@ -161,7 +189,7 @@ pub struct StoreProductDetail {
     pub product_id: i64,
     pub product_name: String,
     pub product_description: Option<String>,
-    pub price: Decimal,
+    pub product_icon: Option<String>,
     pub ratings: Vec<RatingCount>,
     pub viewer_has_rated_up: bool,
     pub images: Vec<ImageSummary>,

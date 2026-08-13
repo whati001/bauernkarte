@@ -17,7 +17,7 @@ use crate::{
     error::AppResult,
     i18n,
     i18n as filters, // see templates.rs's comment on this alias
-    models::{Category, MapStorePin, Product, StoreSearchResult},
+    models::{Category, MapStorePin, Product, ProductSummary, StoreSearchResult},
     sse::{patch_elements, patch_signals},
     state::AppState,
     templates::render,
@@ -67,8 +67,11 @@ where
 struct StoreResultView {
     id: i64,
     name: String,
-    top_product_name: Option<String>,
-    top_product_rating_count: Option<i64>,
+    /// Top 5 by rating (see `ProductSummary`); `products_more` is how
+    /// many beyond those 5 the store also carries, for a "+N more"
+    /// affordance instead of silently truncating the list.
+    products: Vec<ProductSummary>,
+    products_more: i64,
     distance_km_display: String,
 }
 
@@ -77,8 +80,8 @@ impl From<&StoreSearchResult> for StoreResultView {
         StoreResultView {
             id: r.id,
             name: r.name.clone(),
-            top_product_name: r.top_product_name.clone(),
-            top_product_rating_count: r.top_product_rating_count,
+            products: r.products.clone(),
+            products_more: (r.product_total - r.products.len() as i64).max(0),
             distance_km_display: format!("{:.1}", r.distance_m / 1000.0),
         }
     }
@@ -89,13 +92,15 @@ impl From<&StoreSearchResult> for StoreResultView {
 struct ResultsListTemplate {
     results: Vec<StoreResultView>,
     result_count_text: String,
-    /// Every approved store matching the category/product filter
-    /// *nationwide* — feeds the map's pins (`map.js` reads
-    /// `#map-stores-json`) and a parallel hidden click-trigger per store,
-    /// deliberately not narrowed by "Umkreis": that radius only limits
-    /// `results`/`result_count_text` above.
-    map_stores: Vec<MapStorePin>,
-    map_stores_json: String,
+    /// Pre-translated "no results in your radius, but N exist further
+    /// away" message — `Some` only when `results` is empty *and* at
+    /// least one nationwide match exists, so an empty "Umkreis" search
+    /// doesn't read as a dead end when the map still shows real pins
+    /// just outside it (e.g. a product only sold by stores >100 km out —
+    /// beyond even the radius slider's own max). `None` (including
+    /// whenever `results` isn't empty) falls back to the template's
+    /// plain `search-no-results`.
+    nationwide_empty_message: Option<String>,
 }
 
 #[derive(Template)]
@@ -106,40 +111,77 @@ struct SidebarSearchTemplate {
     results_html: String,
 }
 
-pub fn render_results(results: &[StoreSearchResult], map_stores: &[MapStorePin]) -> String {
+/// The map's pin data (`#map-stores-json` + one hidden click-trigger per
+/// store) — deliberately its own fragment, patched to a container that
+/// lives *outside* `#sidebar` (`layout.html`'s `#map-data`) rather than
+/// nested inside the search results. Nesting it there used to mean the
+/// map's entire pin set (and the triggers `map.js` proxy-clicks to open
+/// a store) vanished the instant the sidebar swapped to a detail panel
+/// or form — silently breaking "select a different store while one is
+/// already open" (no trigger to click) and "the pins survive a zoom"
+/// (redrawMarkers saw no `#map-stores-json` and wiped everything). A
+/// stable, always-present container fixes both: which store's detail
+/// panel `#sidebar` currently shows no longer has anything to do with
+/// whether the map's pins exist.
+#[derive(Template)]
+#[template(path = "partials/map_data.html")]
+struct MapDataTemplate {
+    map_stores: Vec<MapStorePin>,
+    map_stores_json: String,
+}
+
+pub fn render_map_data(map_stores: &[MapStorePin]) -> String {
     let map_stores_json = serde_json::to_string(map_stores).unwrap_or_else(|_| "[]".to_string());
+    render(MapDataTemplate { map_stores: map_stores.to_vec(), map_stores_json })
+}
+
+pub fn render_results(results: &[StoreSearchResult], nationwide_count: usize) -> String {
     let mut args = std::collections::HashMap::new();
     args.insert("count".to_string(), results.len().to_string());
     let result_count_text =
         i18n::translate_with_args(i18n::current_locale(), "search-results-count", &args);
+    let nationwide_empty_message = (results.is_empty() && nationwide_count > 0).then(|| {
+        let mut args = std::collections::HashMap::new();
+        args.insert("count".to_string(), nationwide_count.to_string());
+        i18n::translate_with_args(i18n::current_locale(), "search-no-results-nearby", &args)
+    });
     render(ResultsListTemplate {
         results: results.iter().map(StoreResultView::from).collect(),
         result_count_text,
-        map_stores: map_stores.to_vec(),
-        map_stores_json,
+        nationwide_empty_message,
     })
 }
 
-/// Builds the full search panel (filters + an initial results list) —
-/// used both by `GET /api/store/back` and by `pages::index` for the
-/// server-rendered first paint.
+/// Sidebar search panel (filters + an initial results list) plus the
+/// nationwide store set the caller needs for the *separate* `#map-data`
+/// patch — bundled together, not two independent queries, since both are
+/// derived from the same `search_all_for_map` call.
+pub struct SearchPanel {
+    pub sidebar_html: String,
+    pub map_stores: Vec<MapStorePin>,
+}
+
+/// Builds `SearchPanel` — used by `GET /api/store/back` and by
+/// `pages::index` for the server-rendered first paint, plus every
+/// catalog-editing route that returns to search after a delete.
 pub async fn render_search_panel(
     state: &AppState,
     category_id: Option<i64>,
     product_id: Option<i64>,
     results: &[StoreSearchResult],
-) -> AppResult<String> {
+) -> AppResult<SearchPanel> {
     let categories = db::category::list_all(&state.pool).await?;
     let products = match category_id {
         Some(cid) => db::product::list_approved_by_category(&state.pool, cid).await?,
-        None => Vec::new(),
+        None => db::product::list_all_approved(&state.pool).await?,
     };
     let map_stores = db::store::search_all_for_map(&state.pool, product_id, category_id).await?;
-    Ok(render(SidebarSearchTemplate {
+    let sidebar_html = render(SidebarSearchTemplate {
         categories,
         products,
-        results_html: render_results(results, &map_stores),
-    }))
+        results_html: render_results(results, map_stores.len()),
+    });
+    Ok(SearchPanel { sidebar_html, map_stores })
 }
 
 pub async fn run_search(state: &AppState, q: &SearchQuery) -> AppResult<Vec<StoreSearchResult>> {
@@ -159,10 +201,17 @@ pub async fn stores(
     let results = run_search(&state, &q).await?;
     let count = results.len();
     let map_stores = db::store::search_all_for_map(&state.pool, q.product_id, q.category_id).await?;
-    let html = render_results(&results, &map_stores);
+    let results_html = render_results(&results, map_stores.len());
+    let map_data_html = render_map_data(&map_stores);
+    tracing::debug!(
+        category_id = ?q.category_id, product_id = ?q.product_id, distance_km = ?q.distance_km,
+        result_count = count, nationwide_count = map_stores.len(),
+        "search executed"
+    );
 
     let events = vec![
-        patch_elements(&html),
+        patch_elements(&results_html),
+        patch_elements(&map_data_html),
         patch_signals(&serde_json::json!({ "resultCount": count })),
     ];
     Ok(Sse::new(stream::iter(events.into_iter().map(Ok))))
@@ -208,7 +257,7 @@ pub async fn filter_products(
 ) -> AppResult<Sse<impl stream::Stream<Item = Result<Event, Infallible>>>> {
     let products = match q.category_id {
         Some(cid) => db::product::list_approved_by_category(&state.pool, cid).await?,
-        None => Vec::new(),
+        None => db::product::list_all_approved(&state.pool).await?,
     };
     let html = render(ProductOptionsTemplate { products });
     Ok(Sse::new(stream::iter(vec![Ok(patch_elements(&html))])))

@@ -99,15 +99,14 @@ pub async fn upload(
     };
 
     let processed = process_upload(&file_bytes)?;
-    db::image::insert(
-        &state.pool,
-        store_product_id,
-        &processed.bytes,
-        processed.mime_type,
-        description.as_deref(),
-        user.id,
-    )
-    .await?;
+    let size_bytes = processed.bytes.len();
+    let mime_type = processed.mime_type;
+    db::image::insert(&state.pool, store_product_id, &processed.bytes, mime_type, description.as_deref(), user.id)
+        .await?;
+    tracing::info!(
+        user_id = %user.id, store_product_id = %store_product_id, %mime_type, size_bytes,
+        "image uploaded"
+    );
 
     // A new image is `approved=false` (community-submissions — moderation
     // matters more for arbitrary uploaded files than for a text edit), so
@@ -181,6 +180,7 @@ pub async fn update(
         user.id,
     )
     .await?;
+    tracing::info!(user_id = %user.id, image_id = %image_id, "image updated");
 
     let html = detail_html_for_store_product(&state, before.store_product, user.id).await?;
     Ok(Sse::new(stream::iter(vec![Ok(patch_elements_at("#sidebar", "inner", &html))])))
@@ -208,6 +208,7 @@ pub async fn delete(
         user.id,
     )
     .await?;
+    tracing::info!(user_id = %user.id, image_id = %image_id, "image deleted");
 
     let html = detail_html_for_store_product(&state, before.store_product, user.id).await?;
     Ok(Sse::new(stream::iter(vec![Ok(patch_elements_at("#sidebar", "inner", &html))])))

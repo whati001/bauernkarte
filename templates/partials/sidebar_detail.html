@@ -39,20 +39,17 @@
     {% for p in products %}
     <article class="product{% if p.selected %} selected{% endif %}">
       <div class="block-heading">
-        <h4>{% include "icons/package.svg" %} {{ p.product_name }}</h4>
+        <h4>{% if let Some(icon) = p.product_icon %}{{ icon }}{% else %}{% include "icons/package.svg" %}{% endif %} {{ p.product_name }}</h4>
         {% if logged_in %}
         <span class="action-row">
           <a href="#" class="icon-btn" aria-label="{{ "detail-edit-product"|t }}" title="{{ "detail-edit-product-title"|t }}"
              data-on:click__prevent="@get('/product/{{ p.product_id }}/edit')">{% include "icons/edit-3.svg" %}</a>
-          <a href="#" class="icon-btn" aria-label="{{ "detail-edit-price"|t }}" title="{{ "detail-edit-price"|t }}"
-             data-on:click__prevent="@get('/store-product/{{ p.store_product_id }}/edit')">{% include "icons/euro.svg" %}</a>
           <a href="#" class="icon-btn danger" aria-label="{{ "detail-remove-offer"|t }}" title="{{ "detail-remove-offer-title"|t }}"
              data-on:click__prevent="@delete('/store-product/{{ p.store_product_id }}')">{% include "icons/trash-2.svg" %}</a>
         </span>
         {% endif %}
       </div>
       {% if let Some(desc) = p.product_description %}<p>{{ desc }}</p>{% endif %}
-      <span class="price-tag">{% include "icons/euro.svg" %} {{ p.price_display }}</span>
 
       <div class="rating-row">
         {% for r in p.ratings %}

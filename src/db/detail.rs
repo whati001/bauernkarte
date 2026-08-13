@@ -1,5 +1,5 @@
 //! Store-detail capability: assembles the full detail view (company +
-//! store + product list with prices/ratings/images) from the smaller
+//! store + product list with ratings/images) from the smaller
 //! per-table queries in `db::{store,company,rating,image}`. Kept as its
 //! own module since it's a read-side composition, not owned by any single
 //! table.
@@ -25,7 +25,7 @@ struct StoreProductRow {
     product_id: i64,
     product_name: String,
     product_description: Option<String>,
-    price: rust_decimal::Decimal,
+    product_icon: Option<String>,
 }
 
 pub async fn get_store_detail(
@@ -54,7 +54,7 @@ pub async fn get_store_detail(
     let store_products = sqlx::query_as!(
         StoreProductRow,
         r#"select sp.id as "store_product_id!", p.id as "product_id!", p.name as "product_name!",
-                  p.description as product_description, sp.price
+                  p.description as product_description, p.icon as product_icon
            from store_product sp
            join product p on p.id = sp.product and p.approved and not p.deleted
            where sp.store = $1 and sp.approved and not sp.deleted
@@ -77,7 +77,7 @@ pub async fn get_store_detail(
             product_id: row.product_id,
             product_name: row.product_name,
             product_description: row.product_description,
-            price: row.price,
+            product_icon: row.product_icon,
             ratings,
             viewer_has_rated_up,
             images,

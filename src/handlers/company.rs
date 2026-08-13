@@ -121,6 +121,7 @@ pub async fn update(
         user.id,
     )
     .await?;
+    tracing::info!(user_id = %user.id, company_id = %company_id, "company updated");
 
     render_return(&state, body.return_store_id, user.id).await
 }
@@ -147,6 +148,7 @@ pub async fn delete(
         user.id,
     )
     .await?;
+    tracing::info!(user_id = %user.id, company_id = %company_id, "company deleted");
 
     render_return(&state, None, user.id).await
 }
@@ -156,20 +158,31 @@ async fn render_return(
     return_store_id: Option<i64>,
     viewer_id: i64,
 ) -> AppResult<Sse<impl stream::Stream<Item = Result<Event, Infallible>> + use<>>> {
-    let html = match return_store_id {
-        Some(store_id) => {
-            match load_detail_or_404(state, store_id, Some(viewer_id)).await {
-                Ok(detail) => crate::handlers::store_detail::render_detail_panel(&detail, true),
-                Err(_) => search_panel(state).await?,
+    let events = match return_store_id {
+        Some(store_id) => match load_detail_or_404(state, store_id, Some(viewer_id)).await {
+            Ok(detail) => {
+                let html = crate::handlers::store_detail::render_detail_panel(&detail, true);
+                vec![patch_elements_at("#sidebar", "inner", &html)]
             }
-        }
-        None => search_panel(state).await?,
+            Err(_) => search_panel_events(state).await?,
+        },
+        None => search_panel_events(state).await?,
     };
-    Ok(Sse::new(stream::iter(vec![Ok(patch_elements_at("#sidebar", "inner", &html))])))
+    Ok(Sse::new(stream::iter(events.into_iter().map(Ok))))
 }
 
-async fn search_panel(state: &AppState) -> AppResult<String> {
+/// The search panel *and* its separate `#map-data` patch (see
+/// `handlers::search::MapDataTemplate`'s doc comment) — every "no
+/// specific store to return to" outcome above lands back on search, and
+/// the map's pins need refreshing right along with it (the company just
+/// edited/deleted may be why a pin should appear/disappear/rename).
+async fn search_panel_events(state: &AppState) -> AppResult<Vec<Event>> {
     let q = crate::handlers::search::SearchQuery::default();
     let results = crate::handlers::search::run_search(state, &q).await?;
-    crate::handlers::search::render_search_panel(state, None, None, &results).await
+    let panel = crate::handlers::search::render_search_panel(state, None, None, &results).await?;
+    let map_data_html = crate::handlers::search::render_map_data(&panel.map_stores);
+    Ok(vec![
+        patch_elements_at("#sidebar", "inner", &panel.sidebar_html),
+        crate::sse::patch_elements(&map_data_html),
+    ])
 }

@@ -19,6 +19,11 @@ search-results-count = { $count ->
    *[other] { $count } Ergebnisse
 }
 search-no-results = Keine Ergebnisse in diesem Umkreis.
+search-no-results-nearby = { $count ->
+    [one] Keine Ergebnisse in diesem Umkreis — { $count } Angebot weiter entfernt gefunden.
+   *[other] Keine Ergebnisse in diesem Umkreis — { $count } Angebote weiter entfernt gefunden.
+}
+search-more = mehr
 search-location-unavailable = Standort nicht verfügbar
 search-pick-on-map = 👆 Auf der Karte klicken, um den Standort zu wählen
 search-location-picked = 📍 Position gewählt
@@ -73,6 +78,7 @@ store-form-company = Firma
 store-form-company-choose = — wählen —
 store-form-company-description = Firmenbeschreibung (optional)
 store-form-company-homepage = Firmen-Homepage (optional)
+store-form-product-heading = Erstes Produkt (mindestens eines erforderlich)
 
 ## Company form
 company-form-heading = Firma bearbeiten
@@ -88,17 +94,12 @@ product-form-choose = — wählen —
 product-form-name = Produktname
 product-form-category = Kategorie
 product-form-description-optional = Beschreibung (optional)
-product-form-price = Preis
 
 ## Edit product form
 edit-product-form-heading = Produkt bearbeiten
 edit-product-form-name = Name
 edit-product-form-category = Kategorie
 edit-product-form-description = Beschreibung
-
-## Store-product (price) form
-store-product-form-heading = Preis bearbeiten: { $name }
-store-product-form-price = Preis
 
 ## Image form
 image-form-heading = Bild hinzufügen
@@ -113,7 +114,6 @@ detail-edit-store = Geschäft bearbeiten
 detail-delete-store = Geschäft löschen
 detail-edit-product = Produkt bearbeiten (Name, Kategorie, Beschreibung)
 detail-edit-product-title = Produkt bearbeiten
-detail-edit-price = Preis bearbeiten
 detail-remove-offer = Angebot bei diesem Geschäft entfernen
 detail-remove-offer-title = Angebot entfernen
 
@@ -121,6 +121,10 @@ detail-remove-offer-title = Angebot entfernen
 confirmation-pending = Danke! Dein Eintrag ("{ $name }") wird geprüft.
 confirmation-updated = "{ $name }" wurde aktualisiert.
 confirmation-image-pending = Danke! Dein Bild wird geprüft.
+
+## Map
+map-sidebar-collapse = Seitenleiste ausblenden
+map-sidebar-expand = Seitenleiste einblenden
 
 ## Language
 language-de = Deutsch

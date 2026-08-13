@@ -34,8 +34,15 @@ where
 
         match params.get("datastar") {
             Some(raw) => {
-                let value = serde_json::from_str(raw)
-                    .map_err(|_| AppError::Validation("invalid datastar payload".into()))?;
+                let value = serde_json::from_str(raw).map_err(|err| {
+                    // A malformed `datastar` blob only happens from a
+                    // hand-crafted or tampered request — the vendored
+                    // client always sends valid JSON here — so it's worth
+                    // a WARN rather than passing through silently as a
+                    // routine validation failure.
+                    tracing::warn!(error = %err, "malformed datastar signals payload");
+                    AppError::Validation("invalid datastar payload".into())
+                })?;
                 Ok(DatastarSignals(value))
             }
             None => Ok(DatastarSignals(T::default())),

@@ -19,6 +19,11 @@ search-results-count = { $count ->
    *[other] { $count } results
 }
 search-no-results = No results in this radius.
+search-no-results-nearby = { $count ->
+    [one] No results in this radius — { $count } offer found further away.
+   *[other] No results in this radius — { $count } offers found further away.
+}
+search-more = more
 search-location-unavailable = Location unavailable
 search-pick-on-map = 👆 Click the map to choose a location
 search-location-picked = 📍 Location picked
@@ -73,6 +78,7 @@ store-form-company = Company
 store-form-company-choose = — choose —
 store-form-company-description = Company description (optional)
 store-form-company-homepage = Company homepage (optional)
+store-form-product-heading = First product (at least one required)
 
 ## Company form
 company-form-heading = Edit company
@@ -88,17 +94,12 @@ product-form-choose = — choose —
 product-form-name = Product name
 product-form-category = Category
 product-form-description-optional = Description (optional)
-product-form-price = Price
 
 ## Edit product form
 edit-product-form-heading = Edit product
 edit-product-form-name = Name
 edit-product-form-category = Category
 edit-product-form-description = Description
-
-## Store-product (price) form
-store-product-form-heading = Edit price: { $name }
-store-product-form-price = Price
 
 ## Image form
 image-form-heading = Add image
@@ -113,7 +114,6 @@ detail-edit-store = Edit store
 detail-delete-store = Delete store
 detail-edit-product = Edit product (name, category, description)
 detail-edit-product-title = Edit product
-detail-edit-price = Edit price
 detail-remove-offer = Remove this offer from this store
 detail-remove-offer-title = Remove offer
 
@@ -121,6 +121,10 @@ detail-remove-offer-title = Remove offer
 confirmation-pending = Thanks! Your submission ("{ $name }") is being reviewed.
 confirmation-updated = "{ $name }" was updated.
 confirmation-image-pending = Thanks! Your image is being reviewed.
+
+## Map
+map-sidebar-collapse = Hide sidebar
+map-sidebar-expand = Show sidebar
 
 ## Language
 language-de = German

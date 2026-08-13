@@ -8,7 +8,6 @@ use axum::{
     Json,
 };
 use futures_util::stream;
-use rust_decimal::Decimal;
 use serde::Deserialize;
 use std::convert::Infallible;
 
@@ -60,10 +59,7 @@ pub async fn new_form(
     // All approved products across every category — a farm-shop catalog
     // is small enough in v1 that a single flat select is fine (no
     // category-cascade needed here, unlike the search filter).
-    let mut products = Vec::new();
-    for c in &categories {
-        products.extend(db::product::list_approved_by_category(&state.pool, c.id).await?);
-    }
+    let products = db::product::list_all_approved(&state.pool).await?;
     let heading = i18n::translate_with_name(i18n::current_locale(), "product-form-add-heading", &store.name);
     let html = render(ProductFormTemplate {
         store_id,
@@ -74,9 +70,14 @@ pub async fn new_form(
     Ok(Sse::new(stream::iter(vec![Ok(patch_elements_at("#sidebar", "inner", &html))])))
 }
 
+/// The product-form's "existing vs. new" choice — the shared shape both
+/// the "add product to store" form below and the new-store form
+/// (`handlers::store::create`) send, since a new store requires at least
+/// one product up front (see `resolve_product`'s doc comment). `#[serde(flatten)]`
+/// picks these fields out of whichever larger body embeds them.
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct NewStoreProductBody {
+pub struct NewProductSelection {
     #[serde(default)]
     is_new_product: bool,
     #[serde(default)]
@@ -87,7 +88,52 @@ pub struct NewStoreProductBody {
     new_product_category_id: Option<String>,
     #[serde(default)]
     new_product_description: Option<String>,
-    price: Decimal,
+}
+
+/// Resolves a `NewProductSelection` to a concrete `Product` row —
+/// inserting a new one (`approved=false`) if `is_new_product` is set,
+/// otherwise looking up the chosen existing one. Shared by the "add
+/// product to store" flow below and the new-store form: a store with no
+/// products is invisible to search regardless of moderation state
+/// (search's `exists (select 1 from store_product ...)` filter), so a
+/// store created without one would silently never appear — the new-store
+/// form requires resolving one of these up front rather than leaving
+/// product-adding as a separate, skippable step.
+pub async fn resolve_product(
+    pool: &sqlx::PgPool,
+    sel: &NewProductSelection,
+    created_by: i64,
+) -> AppResult<Product> {
+    if sel.is_new_product {
+        let name = non_empty(sel.new_product_name.clone())
+            .ok_or_else(|| AppError::Validation("Bitte einen Produktnamen angeben.".into()))?;
+        let category_id: i64 = non_empty(sel.new_product_category_id.clone())
+            .and_then(|s| s.parse().ok())
+            .ok_or_else(|| AppError::Validation("Bitte eine Kategorie wählen.".into()))?;
+        if !db::category::exists(pool, category_id).await? {
+            return Err(AppError::Validation("Unbekannte Kategorie.".into()));
+        }
+        Ok(db::product::insert(
+            pool,
+            category_id,
+            &name,
+            non_empty(sel.new_product_description.clone()).as_deref(),
+            created_by,
+        )
+        .await?)
+    } else {
+        let product_id: i64 = non_empty(sel.product_id.clone())
+            .and_then(|s| s.parse().ok())
+            .ok_or_else(|| AppError::Validation("Bitte ein Produkt wählen.".into()))?;
+        db::product::find(pool, product_id).await?.ok_or(AppError::NotFound)
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NewStoreProductBody {
+    #[serde(flatten)]
+    product: NewProductSelection,
 }
 
 /// `POST /store/{id}/product/new` — creates `product` (maybe,
@@ -102,37 +148,15 @@ pub async fn create(
     if db::store::find_public(&state.pool, store_id).await?.is_none() {
         return Err(AppError::NotFound);
     }
-    if body.price < Decimal::ZERO {
-        return Err(AppError::Validation("Der Preis darf nicht negativ sein.".into()));
-    }
 
-    let product = if body.is_new_product {
-        let name = non_empty(body.new_product_name).ok_or_else(|| {
-            AppError::Validation("Bitte einen Produktnamen angeben.".into())
-        })?;
-        let category_id: i64 = non_empty(body.new_product_category_id)
-            .and_then(|s| s.parse().ok())
-            .ok_or_else(|| AppError::Validation("Bitte eine Kategorie wählen.".into()))?;
-        if !db::category::exists(&state.pool, category_id).await? {
-            return Err(AppError::Validation("Unbekannte Kategorie.".into()));
-        }
-        db::product::insert(
-            &state.pool,
-            category_id,
-            &name,
-            non_empty(body.new_product_description).as_deref(),
-            user.id,
-        )
-        .await?
-    } else {
-        let product_id: i64 = non_empty(body.product_id)
-            .and_then(|s| s.parse().ok())
-            .ok_or_else(|| AppError::Validation("Bitte ein Produkt wählen.".into()))?;
-        db::product::find(&state.pool, product_id).await?.ok_or(AppError::NotFound)?
-    };
+    let product = resolve_product(&state.pool, &body.product, user.id).await?;
 
-    let store_product = db::store_product::insert(&state.pool, store_id, product.id, body.price, user.id).await?;
+    let store_product = db::store_product::insert(&state.pool, store_id, product.id, user.id).await?;
     let _ = store_product; // id not needed beyond confirming creation succeeded
+    tracing::info!(
+        user_id = %user.id, store_id = %store_id, product_id = %product.id,
+        "product submitted for review"
+    );
 
     let html = render_confirmation(&i18n::translate_with_name(
         i18n::current_locale(),
@@ -142,78 +166,12 @@ pub async fn create(
     Ok(Sse::new(stream::iter(vec![Ok(patch_elements_at("#sidebar", "inner", &html))])))
 }
 
-// ---- store_product edit/delete (price) ----
+// ---- store_product delete (remove a product from a store) ----
 
-#[derive(Template)]
-#[template(path = "partials/store_product_form.html")]
-struct StoreProductFormTemplate {
-    store_product_id: i64,
-    /// Pre-translated "Edit price: {product}" heading — see
-    /// `ProductFormTemplate::heading`'s comment for why this isn't built
-    /// in the template.
-    heading: String,
-    price: String,
-}
-
-/// `GET /store-product/{id}/edit` (catalog-editing).
-pub async fn edit_form(
-    State(state): State<AppState>,
-    Path(store_product_id): Path<i64>,
-    CurrentUser(_user): CurrentUser,
-) -> AppResult<Sse<impl stream::Stream<Item = Result<Event, Infallible>>>> {
-    let sp = db::store_product::find(&state.pool, store_product_id).await?.ok_or(AppError::NotFound)?;
-    if sp.deleted {
-        return Err(AppError::Conflict("listing is deleted".into()));
-    }
-    let product = db::product::find(&state.pool, sp.product).await?.ok_or(AppError::NotFound)?;
-    let heading = i18n::translate_with_name(i18n::current_locale(), "store-product-form-heading", &product.name);
-    let html = render(StoreProductFormTemplate {
-        store_product_id,
-        heading,
-        price: format!("{:.2}", sp.price),
-    });
-    Ok(Sse::new(stream::iter(vec![Ok(patch_elements_at("#sidebar", "inner", &html))])))
-}
-
-#[derive(Deserialize)]
-pub struct EditStoreProductBody {
-    price: Decimal,
-}
-
-/// `PATCH /store-product/{id}` (catalog-editing).
-pub async fn update(
-    State(state): State<AppState>,
-    Path(store_product_id): Path<i64>,
-    CurrentUser(user): CurrentUser,
-    Json(body): Json<EditStoreProductBody>,
-) -> AppResult<Sse<impl stream::Stream<Item = Result<Event, Infallible>>>> {
-    let before = db::store_product::find(&state.pool, store_product_id).await?.ok_or(AppError::NotFound)?;
-    if before.deleted {
-        return Err(AppError::Conflict("listing is deleted".into()));
-    }
-    if body.price < Decimal::ZERO {
-        return Err(AppError::Validation("Der Preis darf nicht negativ sein.".into()));
-    }
-
-    let old_snapshot = db::store_product::snapshot(&before);
-    let after = db::store_product::update(&state.pool, store_product_id, body.price, user.id).await?;
-    let new_snapshot = db::store_product::snapshot(&after);
-    db::edit_log::write(
-        &state.pool,
-        "store_product",
-        store_product_id,
-        db::edit_log::EditAction::Update,
-        &old_snapshot,
-        Some(&new_snapshot),
-        user.id,
-    )
-    .await?;
-
-    let html = detail_html(&state, before.store, user.id).await?;
-    Ok(Sse::new(stream::iter(vec![Ok(patch_elements_at("#sidebar", "inner", &html))])))
-}
-
-/// `DELETE /store-product/{id}` (catalog-editing, soft delete).
+/// `DELETE /store-product/{id}` (catalog-editing, soft delete). Price
+/// used to be editable here too (`PATCH /store-product/{id}`) — removed
+/// along with the `price` column itself; a store_product with no price
+/// has nothing left to edit, only remove.
 pub async fn delete(
     State(state): State<AppState>,
     Path(store_product_id): Path<i64>,
@@ -235,6 +193,7 @@ pub async fn delete(
         user.id,
     )
     .await?;
+    tracing::info!(user_id = %user.id, store_product_id = %store_product_id, "product removed from store");
 
     let html = detail_html(&state, before.store, user.id).await?;
     Ok(Sse::new(stream::iter(vec![Ok(patch_elements_at("#sidebar", "inner", &html))])))
@@ -323,6 +282,7 @@ pub async fn update_product(
         user.id,
     )
     .await?;
+    tracing::info!(user_id = %user.id, product_id = %product_id, "product updated");
 
     // Unlike the creation confirmation above, this is catalog-editing, not
     // community-submissions — the edit is already live (no moderation
@@ -360,9 +320,14 @@ pub async fn delete_product(
         user.id,
     )
     .await?;
+    tracing::info!(user_id = %user.id, product_id = %product_id, "product deleted");
 
     let q = crate::handlers::search::SearchQuery::default();
     let results = crate::handlers::search::run_search(&state, &q).await?;
-    let html = crate::handlers::search::render_search_panel(&state, None, None, &results).await?;
-    Ok(Sse::new(stream::iter(vec![Ok(patch_elements_at("#sidebar", "inner", &html))])))
+    let panel = crate::handlers::search::render_search_panel(&state, None, None, &results).await?;
+    let map_data_html = crate::handlers::search::render_map_data(&panel.map_stores);
+    Ok(Sse::new(stream::iter(vec![
+        Ok(patch_elements_at("#sidebar", "inner", &panel.sidebar_html)),
+        Ok(crate::sse::patch_elements(&map_data_html)),
+    ])))
 }

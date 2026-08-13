@@ -15,10 +15,11 @@ use crate::{
     auth::CurrentUser,
     db,
     error::{AppError, AppResult},
+    handlers::product::{resolve_product, NewProductSelection},
     handlers::store_detail::load_detail_or_404,
     i18n,
     i18n as filters, // see templates.rs's comment on this alias
-    models::Company,
+    models::{Category, Company, Product},
     sse::patch_elements_at,
     state::AppState,
     templates::render,
@@ -38,6 +39,13 @@ struct StoreFormTemplate {
     lon: Option<f64>,
     openinghours: Option<String>,
     companies: Vec<Company>,
+    /// Only populated (and only rendered, per the template's `!is_edit`
+    /// guard) for the new-store form — a store SHALL carry at least one
+    /// product on creation, see `handlers::product::resolve_product`'s
+    /// doc comment for why. Editing an existing store doesn't touch its
+    /// product list, so these stay empty there.
+    products: Vec<Product>,
+    categories: Vec<Category>,
     /// Pre-built `data-text` JS ternary for the picker status line —
     /// built here (not in the template) so the two translated fragments
     /// go through `serde_json::to_string` for correct JS-string escaping
@@ -60,6 +68,10 @@ pub async fn new_form(
     CurrentUser(_user): CurrentUser,
 ) -> AppResult<Sse<impl stream::Stream<Item = Result<Event, Infallible>>>> {
     let companies = db::company::list_approved(&state.pool).await?;
+    // All approved products across every category — same flat-select
+    // rationale as `product::new_form`.
+    let products = db::product::list_all_approved(&state.pool).await?;
+    let categories = db::category::list_all(&state.pool).await?;
     let html = render(StoreFormTemplate {
         is_edit: false,
         action: "/store/new".to_string(),
@@ -68,6 +80,8 @@ pub async fn new_form(
         lon: None,
         openinghours: None,
         companies,
+        products,
+        categories,
         location_status_expr: location_status_expr(),
     });
     Ok(Sse::new(stream::iter(vec![Ok(patch_elements_at("#sidebar", "inner", &html))])))
@@ -92,6 +106,8 @@ pub async fn edit_form(
         lon: Some(store.lon),
         openinghours: store.openinghours,
         companies,
+        products: Vec::new(),
+        categories: Vec::new(),
         location_status_expr: location_status_expr(),
     });
     Ok(Sse::new(stream::iter(vec![Ok(patch_elements_at("#sidebar", "inner", &html))])))
@@ -115,6 +131,8 @@ pub struct NewStoreBody {
     company_description: Option<String>,
     #[serde(default)]
     company_homepage: Option<String>,
+    #[serde(flatten)]
+    product: NewProductSelection,
 }
 
 fn non_empty(s: Option<String>) -> Option<String> {
@@ -142,6 +160,12 @@ pub async fn create(
         ));
     }
 
+    // Resolved (and, for a brand-new product, inserted) before the
+    // company/store themselves — a store must carry at least one product
+    // (see `resolve_product`'s doc comment), so failing this validation
+    // must not leave an orphaned company/store behind.
+    let product = resolve_product(&state.pool, &body.product, user.id).await?;
+
     let company_id = if body.is_company {
         let company = db::company::insert(
             &state.pool,
@@ -166,6 +190,12 @@ pub async fn create(
         user.id,
     )
     .await?;
+
+    db::store_product::insert(&state.pool, store.id, product.id, user.id).await?;
+    tracing::info!(
+        user_id = %user.id, store_id = %store.id, company_id = %company_id, product_id = %product.id,
+        "store submitted for review"
+    );
 
     let html = crate::templates::render_confirmation(&i18n::translate_with_name(
         i18n::current_locale(),
@@ -227,6 +257,7 @@ pub async fn update(
         user.id,
     )
     .await?;
+    tracing::info!(user_id = %user.id, store_id = %store_id, "store updated");
 
     let detail = load_detail_or_404(&state, store_id, Some(user.id)).await?;
     let html = crate::handlers::store_detail::render_detail_panel(&detail, true);
@@ -256,11 +287,16 @@ pub async fn delete(
         user.id,
     )
     .await?;
+    tracing::info!(user_id = %user.id, store_id = %store_id, "store deleted");
 
     // The store the visitor was looking at is gone — send them back to
     // search rather than a now-404ing detail view.
     let q = crate::handlers::search::SearchQuery::default();
     let results = crate::handlers::search::run_search(&state, &q).await?;
-    let html = crate::handlers::search::render_search_panel(&state, None, None, &results).await?;
-    Ok(Sse::new(stream::iter(vec![Ok(patch_elements_at("#sidebar", "inner", &html))])))
+    let panel = crate::handlers::search::render_search_panel(&state, None, None, &results).await?;
+    let map_data_html = crate::handlers::search::render_map_data(&panel.map_stores);
+    Ok(Sse::new(stream::iter(vec![
+        Ok(patch_elements_at("#sidebar", "inner", &panel.sidebar_html)),
+        Ok(crate::sse::patch_elements(&map_data_html)),
+    ])))
 }

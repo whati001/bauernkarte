@@ -84,6 +84,7 @@ struct LayoutTemplate {
     signals_json: String,
     navbar_html: String,
     sidebar_html: String,
+    map_data_html: String,
 }
 
 /// Every full-page GET (`/`, `/store/{id}`, and the anon-only auth pages)
@@ -91,13 +92,24 @@ struct LayoutTemplate {
 /// into the shared shell. The same sidebar-fragment `String` this takes is
 /// exactly what the matching `/api/...` SSE route sends as a
 /// `patch-elements` body — one render path, two delivery mechanisms.
-pub fn full_page(title: &str, user_name: Option<String>, signals: &Value, sidebar_html: String) -> Html<String> {
+/// `map_data_html` is the same deal, one level down (`#map-data`, see
+/// `handlers::search::render_map_data`) — every full-page GET populates
+/// the map's pins up front too, deep links (`/store/{id}`) included, not
+/// just the search landing page.
+pub fn full_page(
+    title: &str,
+    user_name: Option<String>,
+    signals: &Value,
+    sidebar_html: String,
+    map_data_html: String,
+) -> Html<String> {
     let navbar_html = render_navbar(user_name);
     let page = LayoutTemplate {
         title: title.to_string(),
         signals_json: signals.to_string(),
         navbar_html,
         sidebar_html,
+        map_data_html,
     };
     Html(render(page))
 }
