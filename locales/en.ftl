@@ -66,6 +66,7 @@ detail-add-image = Add image
 detail-rate = Rate
 detail-unrate = Remove rating
 detail-no-products = No products for this store yet.
+detail-seasonal-availability = Seasonal availability
 opening-hours-closed = Closed
 
 ## Weekdays (opening-hours grid — store_form.html, sidebar_detail.html)

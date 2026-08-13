@@ -66,6 +66,10 @@
       </div>
       {% if let Some(desc) = p.product_description %}<p>{{ desc }}</p>{% endif %}
 
+      <!-- A caption ahead of the bar itself — unlike the opening-hours
+           grid above (self-explanatory: day names + times), a bare row
+           of dots has no meaning at a glance without this. -->
+      <p class="icon-label season-caption">{% include "icons/leaf.svg" %} {{ "detail-seasonal-availability"|t }}</p>
       <!-- Green dot = available that month, muted = not — always all 12
            columns (seasonality::month_rows), not just the "on" ones, so
            it reads left-to-right as a literal January..December

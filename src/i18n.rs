@@ -174,7 +174,7 @@ mod tests {
         "account-new-password", "account-pending-heading", "account-pending-empty",
         "account-profile-saved", "account-password-changed",
         "detail-open-in-maps", "detail-add-product", "detail-add-image", "detail-rate",
-        "detail-unrate", "detail-no-products", "opening-hours-closed",
+        "detail-unrate", "detail-no-products", "detail-seasonal-availability", "opening-hours-closed",
         "weekday-mon", "weekday-tue", "weekday-wed", "weekday-thu", "weekday-fri",
         "weekday-sat", "weekday-sun",
         "month-jan", "month-feb", "month-mar", "month-apr", "month-may", "month-jun",
