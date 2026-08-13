@@ -32,8 +32,18 @@
     </div>
 
     <div class="field">
-      <label for="store-hours">{{ "store-form-opening-hours"|t }}</label>
-      <input id="store-hours" type="text" name="openinghours" data-bind:store-openinghours value="{% if let Some(oh) = openinghours %}{{ oh }}{% endif %}">
+      <label>{{ "store-form-opening-hours"|t }}</label>
+      <p class="field-hint">{{ "store-form-opening-hours-hint"|t }}</p>
+      <div class="opening-hours-grid">
+        {% for d in opening_hours %}
+        <div class="opening-hours-row">
+          <span class="opening-hours-day">{{ d.label }}</span>
+          <input type="time" data-bind:oh-{{ d.key }}-open value="{% if let Some(v) = d.open %}{{ v }}{% endif %}">
+          <span class="opening-hours-sep">–</span>
+          <input type="time" data-bind:oh-{{ d.key }}-close value="{% if let Some(v) = d.close %}{{ v }}{% endif %}">
+        </div>
+        {% endfor %}
+      </div>
     </div>
 
     {% if !is_edit %}
@@ -98,6 +108,7 @@
       <label for="new-product-desc">{{ "product-form-description-optional"|t }}</label>
       <textarea id="new-product-desc" name="new_product_description" data-bind:new-product-description></textarea>
     </div>
+    {% include "partials/seasonality_fields.html" %}
     {% endif %}
 
     <div id="form-error" class="form-error"></div>

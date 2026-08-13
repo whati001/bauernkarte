@@ -20,6 +20,8 @@ use crate::{
     i18n,
     i18n as filters, // see templates.rs's comment on this alias
     models::{Category, Company, Product},
+    opening_hours::{self, OpeningHoursFields},
+    seasonality::{self, SeasonalityFields},
     sse::patch_elements_at,
     state::AppState,
     templates::render,
@@ -37,7 +39,7 @@ struct StoreFormTemplate {
     /// editing, so adjusting it is a drag rather than starting blank.
     lat: Option<f64>,
     lon: Option<f64>,
-    openinghours: Option<String>,
+    opening_hours: Vec<opening_hours::WeekdayRow>,
     companies: Vec<Company>,
     /// Only populated (and only rendered, per the template's `!is_edit`
     /// guard) for the new-store form — a store SHALL carry at least one
@@ -46,6 +48,11 @@ struct StoreFormTemplate {
     /// product list, so these stay empty there.
     products: Vec<Product>,
     categories: Vec<Category>,
+    /// Same `!is_edit`-only scope as `products` above — the new-store
+    /// form's embedded "first product" section, all months available by
+    /// default (a brand-new listing has no prior seasonality to prefill).
+    is_seasonal: bool,
+    seasonal_months: Vec<seasonality::MonthRow>,
     /// Pre-built `data-text` JS ternary for the picker status line —
     /// built here (not in the template) so the two translated fragments
     /// go through `serde_json::to_string` for correct JS-string escaping
@@ -78,10 +85,12 @@ pub async fn new_form(
         name: String::new(),
         lat: None,
         lon: None,
-        openinghours: None,
+        opening_hours: opening_hours::week_rows(&[]),
         companies,
         products,
         categories,
+        is_seasonal: false,
+        seasonal_months: seasonality::month_rows(None),
         location_status_expr: location_status_expr(),
     });
     Ok(Sse::new(stream::iter(vec![Ok(patch_elements_at("#sidebar", "inner", &html))])))
@@ -98,16 +107,19 @@ pub async fn edit_form(
         return Err(AppError::Conflict("store is deleted".into()));
     }
     let companies = db::company::list_approved(&state.pool).await?;
+    let hours = store.openinghours.map(|j| j.0).unwrap_or_default();
     let html = render(StoreFormTemplate {
         is_edit: true,
         action: format!("/store/{store_id}"),
         name: store.name,
         lat: Some(store.lat),
         lon: Some(store.lon),
-        openinghours: store.openinghours,
+        opening_hours: opening_hours::week_rows(&hours),
         companies,
         products: Vec::new(),
         categories: Vec::new(),
+        is_seasonal: false,
+        seasonal_months: Vec::new(),
         location_status_expr: location_status_expr(),
     });
     Ok(Sse::new(stream::iter(vec![Ok(patch_elements_at("#sidebar", "inner", &html))])))
@@ -122,8 +134,6 @@ pub struct NewStoreBody {
     #[serde(deserialize_with = "crate::de::flexible_f64")]
     store_lon: f64,
     #[serde(default)]
-    store_openinghours: Option<String>,
-    #[serde(default)]
     company_id: Option<String>,
     #[serde(default)]
     is_company: bool,
@@ -133,6 +143,10 @@ pub struct NewStoreBody {
     company_homepage: Option<String>,
     #[serde(flatten)]
     product: NewProductSelection,
+    #[serde(flatten)]
+    opening_hours: OpeningHoursFields,
+    #[serde(flatten)]
+    seasonality: SeasonalityFields,
 }
 
 fn non_empty(s: Option<String>) -> Option<String> {
@@ -160,6 +174,10 @@ pub async fn create(
         ));
     }
 
+    // All parsed/validated before any mutation (company/store/product) —
+    // same "fail before committing" reasoning as `resolve_product` below.
+    let hours = opening_hours::parse(&body.opening_hours)?;
+    let seasonal_months = seasonality::parse(&body.seasonality)?;
     // Resolved (and, for a brand-new product, inserted) before the
     // company/store themselves — a store must carry at least one product
     // (see `resolve_product`'s doc comment), so failing this validation
@@ -186,12 +204,12 @@ pub async fn create(
         name,
         body.store_lat,
         body.store_lon,
-        non_empty(body.store_openinghours).as_deref(),
+        (!hours.is_empty()).then_some(hours),
         user.id,
     )
     .await?;
 
-    db::store_product::insert(&state.pool, store.id, product.id, user.id).await?;
+    db::store_product::insert(&state.pool, store.id, product.id, seasonal_months, user.id).await?;
     tracing::info!(
         user_id = %user.id, store_id = %store.id, company_id = %company_id, product_id = %product.id,
         "store submitted for review"
@@ -213,8 +231,8 @@ pub struct EditStoreBody {
     store_lat: f64,
     #[serde(deserialize_with = "crate::de::flexible_f64")]
     store_lon: f64,
-    #[serde(default)]
-    store_openinghours: Option<String>,
+    #[serde(flatten)]
+    opening_hours: OpeningHoursFields,
 }
 
 /// `PATCH /store/{id}` — catalog-editing: any logged-in user, live
@@ -234,6 +252,7 @@ pub async fn update(
         return Err(AppError::Validation("Bitte einen Namen angeben.".into()));
     }
 
+    let hours = opening_hours::parse(&body.opening_hours)?;
     let old_snapshot = db::store::snapshot(&before);
     let after = db::store::update(
         &state.pool,
@@ -242,7 +261,7 @@ pub async fn update(
         name,
         body.store_lat,
         body.store_lon,
-        non_empty(body.store_openinghours).as_deref(),
+        (!hours.is_empty()).then_some(hours),
         user.id,
     )
     .await?;

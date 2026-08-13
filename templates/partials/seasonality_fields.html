@@ -1,0 +1,20 @@
+<!-- Shared by product_form.html, store_form.html's embedded "first
+     product" section, and store_product_seasonality_form.html — one
+     source of truth for how the seasonality shortcut/grid renders (same
+     reasoning as category_options.html/product_options.html being
+     included rather than duplicated). Expects is_seasonal (bool) and
+     seasonal_months (Vec<MonthRow>, see seasonality::month_rows) in
+     scope. -->
+<div class="field checkbox-field">
+  <input id="is-seasonal-checkbox" type="checkbox" data-bind:is-seasonal {% if is_seasonal %}checked{% endif %}>
+  <label for="is-seasonal-checkbox" style="margin: 0;">{{ "product-form-seasonal-checkbox"|t }}</label>
+</div>
+<p class="field-hint" data-show="!$isSeasonal">{{ "product-form-seasonal-hint"|t }}</p>
+<div class="month-grid" data-show="$isSeasonal">
+  {% for m in seasonal_months %}
+  <label class="month-chip">
+    <input type="checkbox" data-bind:month-{{ m.key }} {% if m.available %}checked{% endif %}>
+    <span>{{ m.label }}</span>
+  </label>
+  {% endfor %}
+</div>

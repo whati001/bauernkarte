@@ -1,0 +1,10 @@
+<div class="sidebar-panel">
+  <h2>📅 {{ heading }}</h2>
+  <form data-on:submit__prevent="@patch('/store-product/{{ store_product_id }}')">
+    {% include "partials/seasonality_fields.html" %}
+    <div id="form-error" class="form-error"></div>
+    <div class="action-row">
+      <button type="submit" class="primary">{% include "icons/circle-check.svg" %} {{ "action-save"|t }}</button>
+    </div>
+  </form>
+</div>

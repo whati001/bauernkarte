@@ -18,6 +18,8 @@ use crate::{
     handlers::search::{render_map_data, render_search_panel, run_search, SearchQuery},
     i18n as filters, // see templates.rs's comment on this alias
     models::{RatingCount, StoreDetail},
+    opening_hours,
+    seasonality,
     sse::{patch_elements, patch_elements_at},
     state::AppState,
     templates::render,
@@ -34,6 +36,10 @@ struct StoreProductView {
     product_name: String,
     product_description: Option<String>,
     product_icon: Option<String>,
+    /// Always 12 rows (`seasonality::month_rows`) — the store-detail
+    /// month bar shows every month regardless of whether the listing
+    /// restricts any of them.
+    seasonal_months: Vec<seasonality::MonthRow>,
     ratings: Vec<RatingCount>,
     viewer_has_rated_up: bool,
     images: Vec<ImageView>,
@@ -45,7 +51,10 @@ struct StoreProductView {
 struct SidebarDetailTemplate {
     store_id: i64,
     store_name: String,
-    openinghours: Option<String>,
+    /// `Some` only when at least one day has hours specified — the
+    /// section is hidden entirely otherwise, same as before this was
+    /// structured (see `models::StoreDetail::openinghours`'s comment).
+    opening_hours: Option<Vec<opening_hours::WeekdayRow>>,
     lat: f64,
     lon: f64,
     company_id: i64,
@@ -74,6 +83,7 @@ pub fn render_detail_panel_with_selection(
             product_name: p.product_name.clone(),
             product_description: p.product_description.clone(),
             product_icon: p.product_icon.clone(),
+            seasonal_months: seasonality::month_rows(p.seasonal_months.as_deref()),
             ratings: p.ratings.clone(),
             viewer_has_rated_up: p.viewer_has_rated_up,
             images: p
@@ -88,7 +98,7 @@ pub fn render_detail_panel_with_selection(
     render(SidebarDetailTemplate {
         store_id: detail.store_id,
         store_name: detail.store_name.clone(),
-        openinghours: detail.openinghours.clone(),
+        opening_hours: (!detail.openinghours.is_empty()).then(|| opening_hours::week_rows(&detail.openinghours)),
         lat: detail.lat,
         lon: detail.lon,
         company_id: detail.company_id,

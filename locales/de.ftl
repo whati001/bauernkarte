@@ -66,6 +66,30 @@ detail-add-image = Bild hinzufügen
 detail-rate = Bewerten
 detail-unrate = Bewertung entfernen
 detail-no-products = Noch keine Produkte für dieses Geschäft.
+opening-hours-closed = Geschlossen
+
+## Weekdays (opening-hours grid — store_form.html, sidebar_detail.html)
+weekday-mon = Mo
+weekday-tue = Di
+weekday-wed = Mi
+weekday-thu = Do
+weekday-fri = Fr
+weekday-sat = Sa
+weekday-sun = So
+
+## Months (seasonality grid — product_form.html, sidebar_detail.html)
+month-jan = Jän
+month-feb = Feb
+month-mar = Mär
+month-apr = Apr
+month-may = Mai
+month-jun = Jun
+month-jul = Jul
+month-aug = Aug
+month-sep = Sep
+month-oct = Okt
+month-nov = Nov
+month-dec = Dez
 
 ## Store form
 store-form-new-heading = Neues Geschäft
@@ -73,6 +97,7 @@ store-form-edit-heading = Geschäft bearbeiten
 store-form-name = Name
 store-form-location = Standort
 store-form-opening-hours = Öffnungszeiten
+store-form-opening-hours-hint = Leer lassen, wenn an diesem Tag geschlossen.
 store-form-is-company = Dieses Geschäft ist die Firma
 store-form-company = Firma
 store-form-company-choose = — wählen —
@@ -94,6 +119,11 @@ product-form-choose = — wählen —
 product-form-name = Produktname
 product-form-category = Kategorie
 product-form-description-optional = Beschreibung (optional)
+product-form-seasonal-checkbox = Nur saisonal verfügbar
+product-form-seasonal-hint = Standardmäßig das ganze Jahr über verfügbar — nur aktivieren, um bestimmte Monate auszuwählen.
+
+## Store-product (seasonality) form
+store-product-seasonality-form-heading = Saisonalität bearbeiten: { $name }
 
 ## Edit product form
 edit-product-form-heading = Produkt bearbeiten
@@ -114,6 +144,8 @@ detail-edit-store = Geschäft bearbeiten
 detail-delete-store = Geschäft löschen
 detail-edit-product = Produkt bearbeiten (Name, Kategorie, Beschreibung)
 detail-edit-product-title = Produkt bearbeiten
+detail-edit-seasonality = Saisonalität bearbeiten
+detail-edit-seasonality-title = Saisonalität bearbeiten
 detail-remove-offer = Angebot bei diesem Geschäft entfernen
 detail-remove-offer-title = Angebot entfernen
 

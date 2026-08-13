@@ -3,6 +3,7 @@
 //! table (search results, detail views).
 
 use serde::Serialize;
+use sqlx::types::Json;
 // `time::OffsetDateTime`, not `chrono` — `tower-sessions-sqlx-store`
 // already forces sqlx's `time` feature on for its own session-expiry
 // columns; enabling `chrono` too on the same unified sqlx build made
@@ -65,16 +66,30 @@ pub struct Product {
     pub modified: OffsetDateTime,
 }
 
+/// One weekday's opening hours (`store.openinghours`, stored as a sparse
+/// JSONB array — a day with no entry is closed). `day` is ISO 8601
+/// weekday numbering (1 = Monday .. 7 = Sunday). Expanded into a fixed
+/// 7-row week for display/editing by `opening_hours::week_rows`.
+#[derive(Debug, Clone, Serialize, serde::Deserialize)]
+pub struct DayHours {
+    pub day: i16,
+    pub open: String,
+    pub close: String,
+}
+
 /// `store.position` (a PostGIS `geography(Point,4326)`) has no sqlx
 /// scalar mapping, so every store query projects it as `lat`/`lon` via
 /// `ST_Y`/`ST_X` in SQL rather than selecting the geography column
-/// directly (see db/store.rs).
+/// directly (see db/store.rs). `openinghours` stays `sqlx::types::Json`
+/// here (not unwrapped to a plain `Vec`) since `Store` is never handed
+/// to an Askama template directly — only the assembled `StoreDetail`/
+/// form-view structs are, and those carry the unwrapped `Vec<DayHours>`.
 #[derive(Debug, Clone, sqlx::FromRow, Serialize)]
 pub struct Store {
     pub id: i64,
     pub company: i64,
     pub name: String,
-    pub openinghours: Option<String>,
+    pub openinghours: Option<Json<Vec<DayHours>>>,
     pub lat: f64,
     pub lon: f64,
     pub approved: bool,
@@ -85,11 +100,16 @@ pub struct Store {
     pub modified: OffsetDateTime,
 }
 
+/// `seasonal_months`: `None` = available all year (the default/common
+/// case), `Some(months)` = only those months (1 = January .. 12 =
+/// December) — see `seasonality::parse`. Same "stays `Json` here, only
+/// the assembled detail struct unwraps it" reasoning as `Store::openinghours`.
 #[derive(Debug, Clone, sqlx::FromRow, Serialize)]
 pub struct StoreProduct {
     pub id: i64,
     pub store: i64,
     pub product: i64,
+    pub seasonal_months: Option<Json<Vec<i16>>>,
     pub approved: bool,
     pub deleted: bool,
     pub created_by: Option<i64>,
@@ -190,6 +210,8 @@ pub struct StoreProductDetail {
     pub product_name: String,
     pub product_description: Option<String>,
     pub product_icon: Option<String>,
+    /// `None` = available all year, see `StoreProduct::seasonal_months`.
+    pub seasonal_months: Option<Vec<i16>>,
     pub ratings: Vec<RatingCount>,
     pub viewer_has_rated_up: bool,
     pub images: Vec<ImageSummary>,
@@ -206,7 +228,11 @@ pub struct ImageSummary {
 pub struct StoreDetail {
     pub store_id: i64,
     pub store_name: String,
-    pub openinghours: Option<String>,
+    /// Sparse — a day absent from the list is closed. Empty means "not
+    /// specified at all" (the detail view hides the section entirely
+    /// then, same as before this was structured — see
+    /// `opening_hours::week_rows`).
+    pub openinghours: Vec<DayHours>,
     pub lat: f64,
     pub lon: f64,
     pub company_id: i64,

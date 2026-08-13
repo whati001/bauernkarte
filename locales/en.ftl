@@ -66,6 +66,30 @@ detail-add-image = Add image
 detail-rate = Rate
 detail-unrate = Remove rating
 detail-no-products = No products for this store yet.
+opening-hours-closed = Closed
+
+## Weekdays (opening-hours grid — store_form.html, sidebar_detail.html)
+weekday-mon = Mon
+weekday-tue = Tue
+weekday-wed = Wed
+weekday-thu = Thu
+weekday-fri = Fri
+weekday-sat = Sat
+weekday-sun = Sun
+
+## Months (seasonality grid — product_form.html, sidebar_detail.html)
+month-jan = Jan
+month-feb = Feb
+month-mar = Mar
+month-apr = Apr
+month-may = May
+month-jun = Jun
+month-jul = Jul
+month-aug = Aug
+month-sep = Sep
+month-oct = Oct
+month-nov = Nov
+month-dec = Dec
 
 ## Store form
 store-form-new-heading = New Store
@@ -73,6 +97,7 @@ store-form-edit-heading = Edit Store
 store-form-name = Name
 store-form-location = Location
 store-form-opening-hours = Opening hours
+store-form-opening-hours-hint = Leave blank if closed that day.
 store-form-is-company = This store is the company
 store-form-company = Company
 store-form-company-choose = — choose —
@@ -94,6 +119,11 @@ product-form-choose = — choose —
 product-form-name = Product name
 product-form-category = Category
 product-form-description-optional = Description (optional)
+product-form-seasonal-checkbox = Only available seasonally
+product-form-seasonal-hint = Available all year by default — turn this on to pick specific months.
+
+## Store-product (seasonality) form
+store-product-seasonality-form-heading = Edit seasonality: { $name }
 
 ## Edit product form
 edit-product-form-heading = Edit product
@@ -114,6 +144,8 @@ detail-edit-store = Edit store
 detail-delete-store = Delete store
 detail-edit-product = Edit product (name, category, description)
 detail-edit-product-title = Edit product
+detail-edit-seasonality = Edit seasonality
+detail-edit-seasonality-title = Edit seasonality
 detail-remove-offer = Remove this offer from this store
 detail-remove-offer-title = Remove offer
 

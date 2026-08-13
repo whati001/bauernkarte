@@ -31,6 +31,7 @@
       <label for="new-product-desc">{{ "product-form-description-optional"|t }}</label>
       <textarea id="new-product-desc" name="new_product_description" data-bind:new-product-description></textarea>
     </div>
+    {% include "partials/seasonality_fields.html" %}
     <div id="form-error" class="form-error"></div>
     <button type="submit" class="primary">{% include "icons/circle-check.svg" %} {{ "action-save"|t }}</button>
   </form>

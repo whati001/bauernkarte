@@ -1,0 +1,1 @@
+ALTER TABLE store ALTER COLUMN openinghours TYPE TEXT USING NULL::text;

@@ -4,14 +4,14 @@
 //! own module since it's a read-side composition, not owned by any single
 //! table.
 
-use sqlx::PgPool;
+use sqlx::{types::Json, PgPool};
 
-use crate::models::{StoreDetail, StoreProductDetail};
+use crate::models::{DayHours, StoreDetail, StoreProductDetail};
 
 struct StoreCompanyRow {
     store_id: i64,
     store_name: String,
-    openinghours: Option<String>,
+    openinghours: Option<Json<Vec<DayHours>>>,
     lat: f64,
     lon: f64,
     company_id: i64,
@@ -26,6 +26,7 @@ struct StoreProductRow {
     product_name: String,
     product_description: Option<String>,
     product_icon: Option<String>,
+    seasonal_months: Option<Json<Vec<i16>>>,
 }
 
 pub async fn get_store_detail(
@@ -35,7 +36,8 @@ pub async fn get_store_detail(
 ) -> sqlx::Result<Option<StoreDetail>> {
     let header = sqlx::query_as!(
         StoreCompanyRow,
-        r#"select s.id as "store_id!", s.name as "store_name!", s.openinghours,
+        r#"select s.id as "store_id!", s.name as "store_name!",
+                  s.openinghours as "openinghours: Json<Vec<DayHours>>",
                   ST_Y(s.position::geometry) as "lat!", ST_X(s.position::geometry) as "lon!",
                   c.id as "company_id!", c.name as "company_name!", c.description as company_description,
                   c.homepage as company_homepage
@@ -54,7 +56,8 @@ pub async fn get_store_detail(
     let store_products = sqlx::query_as!(
         StoreProductRow,
         r#"select sp.id as "store_product_id!", p.id as "product_id!", p.name as "product_name!",
-                  p.description as product_description, p.icon as product_icon
+                  p.description as product_description, p.icon as product_icon,
+                  sp.seasonal_months as "seasonal_months: Json<Vec<i16>>"
            from store_product sp
            join product p on p.id = sp.product and p.approved and not p.deleted
            where sp.store = $1 and sp.approved and not sp.deleted
@@ -78,6 +81,7 @@ pub async fn get_store_detail(
             product_name: row.product_name,
             product_description: row.product_description,
             product_icon: row.product_icon,
+            seasonal_months: row.seasonal_months.map(|j| j.0),
             ratings,
             viewer_has_rated_up,
             images,
@@ -87,7 +91,7 @@ pub async fn get_store_detail(
     Ok(Some(StoreDetail {
         store_id: header.store_id,
         store_name: header.store_name,
-        openinghours: header.openinghours,
+        openinghours: header.openinghours.map(|j| j.0).unwrap_or_default(),
         lat: header.lat,
         lon: header.lon,
         company_id: header.company_id,

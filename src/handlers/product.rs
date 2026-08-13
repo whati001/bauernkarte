@@ -19,6 +19,7 @@ use crate::{
     i18n,
     i18n as filters, // see templates.rs's comment on this alias
     models::{Category, Product},
+    seasonality::{self, SeasonalityFields},
     sse::patch_elements_at,
     state::AppState,
     templates::{render, render_confirmation},
@@ -46,6 +47,10 @@ struct ProductFormTemplate {
     heading: String,
     products: Vec<Product>,
     categories: Vec<Category>,
+    /// Always `false` here — a brand-new listing starts as "available
+    /// all year" (see seasonality_fields.html), never pre-checked.
+    is_seasonal: bool,
+    seasonal_months: Vec<seasonality::MonthRow>,
 }
 
 /// `GET /store/{id}/product/new` (community-submissions).
@@ -66,6 +71,8 @@ pub async fn new_form(
         heading,
         products,
         categories,
+        is_seasonal: false,
+        seasonal_months: seasonality::month_rows(None),
     });
     Ok(Sse::new(stream::iter(vec![Ok(patch_elements_at("#sidebar", "inner", &html))])))
 }
@@ -134,6 +141,8 @@ pub async fn resolve_product(
 pub struct NewStoreProductBody {
     #[serde(flatten)]
     product: NewProductSelection,
+    #[serde(flatten)]
+    seasonality: SeasonalityFields,
 }
 
 /// `POST /store/{id}/product/new` — creates `product` (maybe,
@@ -148,10 +157,12 @@ pub async fn create(
     if db::store::find_public(&state.pool, store_id).await?.is_none() {
         return Err(AppError::NotFound);
     }
+    let seasonal_months = seasonality::parse(&body.seasonality)?;
 
     let product = resolve_product(&state.pool, &body.product, user.id).await?;
 
-    let store_product = db::store_product::insert(&state.pool, store_id, product.id, user.id).await?;
+    let store_product =
+        db::store_product::insert(&state.pool, store_id, product.id, seasonal_months, user.id).await?;
     let _ = store_product; // id not needed beyond confirming creation succeeded
     tracing::info!(
         user_id = %user.id, store_id = %store_id, product_id = %product.id,
@@ -166,12 +177,86 @@ pub async fn create(
     Ok(Sse::new(stream::iter(vec![Ok(patch_elements_at("#sidebar", "inner", &html))])))
 }
 
-// ---- store_product delete (remove a product from a store) ----
+// ---- store_product edit (seasonality) / delete ----
 
-/// `DELETE /store-product/{id}` (catalog-editing, soft delete). Price
-/// used to be editable here too (`PATCH /store-product/{id}`) — removed
-/// along with the `price` column itself; a store_product with no price
-/// has nothing left to edit, only remove.
+#[derive(Template)]
+#[template(path = "partials/store_product_seasonality_form.html")]
+struct StoreProductSeasonalityFormTemplate {
+    store_product_id: i64,
+    /// Pre-translated "Edit seasonality: {product}" heading — see
+    /// `ProductFormTemplate::heading`'s comment for why this isn't built
+    /// in the template.
+    heading: String,
+    is_seasonal: bool,
+    seasonal_months: Vec<seasonality::MonthRow>,
+}
+
+/// `GET /store-product/{id}/edit` (catalog-editing). Price used to be
+/// editable here too — removed along with the `price` column itself;
+/// seasonality is what's editable now instead.
+pub async fn edit_seasonality_form(
+    State(state): State<AppState>,
+    Path(store_product_id): Path<i64>,
+    CurrentUser(_user): CurrentUser,
+) -> AppResult<Sse<impl stream::Stream<Item = Result<Event, Infallible>>>> {
+    let sp = db::store_product::find(&state.pool, store_product_id).await?.ok_or(AppError::NotFound)?;
+    if sp.deleted {
+        return Err(AppError::Conflict("listing is deleted".into()));
+    }
+    let product = db::product::find(&state.pool, sp.product).await?.ok_or(AppError::NotFound)?;
+    let months = sp.seasonal_months.as_ref().map(|j| j.0.as_slice());
+    let heading =
+        i18n::translate_with_name(i18n::current_locale(), "store-product-seasonality-form-heading", &product.name);
+    let html = render(StoreProductSeasonalityFormTemplate {
+        store_product_id,
+        heading,
+        is_seasonal: months.is_some(),
+        seasonal_months: seasonality::month_rows(months),
+    });
+    Ok(Sse::new(stream::iter(vec![Ok(patch_elements_at("#sidebar", "inner", &html))])))
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EditSeasonalityBody {
+    #[serde(flatten)]
+    seasonality: SeasonalityFields,
+}
+
+/// `PATCH /store-product/{id}` (catalog-editing).
+pub async fn update_seasonality(
+    State(state): State<AppState>,
+    Path(store_product_id): Path<i64>,
+    CurrentUser(user): CurrentUser,
+    Json(body): Json<EditSeasonalityBody>,
+) -> AppResult<Sse<impl stream::Stream<Item = Result<Event, Infallible>>>> {
+    let before = db::store_product::find(&state.pool, store_product_id).await?.ok_or(AppError::NotFound)?;
+    if before.deleted {
+        return Err(AppError::Conflict("listing is deleted".into()));
+    }
+    let seasonal_months = seasonality::parse(&body.seasonality)?;
+
+    let old_snapshot = db::store_product::snapshot(&before);
+    let after =
+        db::store_product::update_seasonality(&state.pool, store_product_id, seasonal_months, user.id).await?;
+    let new_snapshot = db::store_product::snapshot(&after);
+    db::edit_log::write(
+        &state.pool,
+        "store_product",
+        store_product_id,
+        db::edit_log::EditAction::Update,
+        &old_snapshot,
+        Some(&new_snapshot),
+        user.id,
+    )
+    .await?;
+    tracing::info!(user_id = %user.id, store_product_id = %store_product_id, "seasonality updated");
+
+    let html = detail_html(&state, before.store, user.id).await?;
+    Ok(Sse::new(stream::iter(vec![Ok(patch_elements_at("#sidebar", "inner", &html))])))
+}
+
+/// `DELETE /store-product/{id}` (catalog-editing, soft delete).
 pub async fn delete(
     State(state): State<AppState>,
     Path(store_product_id): Path<i64>,

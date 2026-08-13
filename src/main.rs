@@ -8,6 +8,8 @@ mod handlers;
 mod i18n;
 mod image_processing;
 mod models;
+mod opening_hours;
+mod seasonality;
 mod sse;
 mod state;
 mod templates;
@@ -15,7 +17,7 @@ mod templates;
 use std::{net::SocketAddr, time::Duration as StdDuration};
 
 use axum::{
-    routing::{delete, get, patch, post},
+    routing::{get, patch, post},
     Router,
 };
 use sqlx::postgres::PgPoolOptions;
@@ -101,7 +103,10 @@ async fn main() -> anyhow::Result<()> {
             "/product/{id}",
             patch(handlers::product::update_product).delete(handlers::product::delete_product),
         )
-        .route("/store-product/{id}", delete(handlers::product::delete))
+        .route(
+            "/store-product/{id}",
+            patch(handlers::product::update_seasonality).delete(handlers::product::delete),
+        )
         .route(
             "/store-product/{id}/rating",
             post(handlers::rating::rate_up).delete(handlers::rating::unrate),
@@ -131,6 +136,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/store/{id}/edit", get(handlers::store::edit_form))
         .route("/company/{id}/edit", get(handlers::company::edit_form))
         .route("/store/{id}/product/new", get(handlers::product::new_form))
+        .route("/store-product/{id}/edit", get(handlers::product::edit_seasonality_form))
         .route("/product/{id}/edit", get(handlers::product::edit_product_form))
         .route("/store-product/{id}/image/new", get(handlers::image::new_form))
         .route("/image/{id}", get(handlers::image::show))

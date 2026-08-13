@@ -209,7 +209,8 @@ pub async fn search_all_for_map(
 pub async fn find(pool: &PgPool, id: i64) -> sqlx::Result<Option<Store>> {
     sqlx::query_as!(
         Store,
-        r#"select id, company, name, openinghours,
+        r#"select id, company, name,
+                  openinghours as "openinghours: Json<Vec<crate::models::DayHours>>",
                   ST_Y(position::geometry) as "lat!", ST_X(position::geometry) as "lon!",
                   approved, deleted, created_by, modified_by, created, modified
            from store where id = $1"#,
@@ -226,7 +227,8 @@ pub async fn find(pool: &PgPool, id: i64) -> sqlx::Result<Option<Store>> {
 pub async fn find_public(pool: &PgPool, id: i64) -> sqlx::Result<Option<Store>> {
     sqlx::query_as!(
         Store,
-        r#"select id, company, name, openinghours,
+        r#"select id, company, name,
+                  openinghours as "openinghours: Json<Vec<crate::models::DayHours>>",
                   ST_Y(position::geometry) as "lat!", ST_X(position::geometry) as "lon!",
                   approved, deleted, created_by, modified_by, created, modified
            from store where id = $1 and approved and not deleted"#,
@@ -242,21 +244,22 @@ pub async fn insert(
     name: &str,
     lat: f64,
     lon: f64,
-    openinghours: Option<&str>,
+    openinghours: Option<Vec<crate::models::DayHours>>,
     created_by: i64,
 ) -> sqlx::Result<Store> {
     sqlx::query_as!(
         Store,
         r#"insert into store (company, name, position, openinghours, approved, created_by, modified_by)
            values ($1, $2, ST_SetSRID(ST_MakePoint($4, $3), 4326)::geography, $5, false, $6, $6)
-           returning id, company, name, openinghours,
+           returning id, company, name,
+                     openinghours as "openinghours: Json<Vec<crate::models::DayHours>>",
                      ST_Y(position::geometry) as "lat!", ST_X(position::geometry) as "lon!",
                      approved, deleted, created_by, modified_by, created, modified"#,
         company,
         name,
         lat,
         lon,
-        openinghours,
+        openinghours.map(Json) as _,
         created_by
     )
     .fetch_one(pool)
@@ -270,7 +273,7 @@ pub async fn update(
     name: &str,
     lat: f64,
     lon: f64,
-    openinghours: Option<&str>,
+    openinghours: Option<Vec<crate::models::DayHours>>,
     changed_by: i64,
 ) -> sqlx::Result<Store> {
     sqlx::query_as!(
@@ -280,7 +283,8 @@ pub async fn update(
                position = ST_SetSRID(ST_MakePoint($5, $4), 4326)::geography,
                openinghours = $6, modified_by = $7, modified = now()
            where id = $1
-           returning id, company, name, openinghours,
+           returning id, company, name,
+                     openinghours as "openinghours: Json<Vec<crate::models::DayHours>>",
                      ST_Y(position::geometry) as "lat!", ST_X(position::geometry) as "lon!",
                      approved, deleted, created_by, modified_by, created, modified"#,
         id,
@@ -288,7 +292,7 @@ pub async fn update(
         name,
         lat,
         lon,
-        openinghours,
+        openinghours.map(Json) as _,
         changed_by
     )
     .fetch_one(pool)
@@ -300,7 +304,8 @@ pub async fn soft_delete(pool: &PgPool, id: i64, changed_by: i64) -> sqlx::Resul
         Store,
         r#"update store set deleted = true, modified_by = $2, modified = now()
            where id = $1
-           returning id, company, name, openinghours,
+           returning id, company, name,
+                     openinghours as "openinghours: Json<Vec<crate::models::DayHours>>",
                      ST_Y(position::geometry) as "lat!", ST_X(position::geometry) as "lon!",
                      approved, deleted, created_by, modified_by, created, modified"#,
         id,
