@@ -1,0 +1,6 @@
+<select id="category-select" data-bind:category-id data-on:change="$productId = ''; @get('/api/filters/products'); @get('/api/stores')">
+  <option value="">🏷️ {{ "search-all"|t }}</option>
+  {% for c in categories %}
+  <option value="{{ c.id }}">{% if let Some(icon) = c.icon %}{{ icon }}{% else %}🏷️{% endif %} {{ c.name }}</option>
+  {% endfor %}
+</select>

@@ -1,0 +1,19 @@
+<nav id="navbar">
+  <a class="brand" href="/">{% include "icons/sprout.svg" %} {{ "nav-brand"|t }}</a>
+  <div class="nav-actions">
+    {% if let Some(name) = user_name %}
+      <span class="nav-user-name">{{ name }}</span>
+      <a class="nav-link" href="/account" data-on:click__prevent="@get('/account')">{% include "icons/user.svg" %} {{ "nav-account"|t }}</a>
+      <a class="nav-link" href="/store/new" data-on:click__prevent="@get('/store/new')">{% include "icons/store.svg" %} {{ "nav-new-store"|t }}</a>
+      <button class="nav-link" data-on:click="@post('/logout')">{% include "icons/log-out.svg" %} {{ "nav-logout"|t }}</button>
+    {% else %}
+      <a class="nav-link" href="/login" data-on:click__prevent="@get('/login')">{% include "icons/log-in.svg" %} {{ "nav-login"|t }}</a>
+    {% endif %}
+    <!-- Plain server navigation (no data-on:click__prevent) — switching
+         language reloads the page on purpose, see handlers/locale.rs. -->
+    <span class="lang-switch" role="group" aria-label="Sprache / Language">
+      <a href="/locale/de" class="lang-link{% if current_locale == "de" %} active{% endif %}" aria-current="{% if current_locale == "de" %}true{% else %}false{% endif %}">DE</a>
+      <a href="/locale/en" class="lang-link{% if current_locale == "en" %} active{% endif %}" aria-current="{% if current_locale == "en" %}true{% else %}false{% endif %}">EN</a>
+    </span>
+  </div>
+</nav>

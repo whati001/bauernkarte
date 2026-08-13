@@ -1,0 +1,38 @@
+<div id="sidebar-results">
+  <script type="application/json" id="map-stores-json">{{ map_stores_json|safe }}</script>
+  <!-- One invisible, clickable trigger per nationwide (category/product-
+       filtered, NOT "Umkreis"-filtered) store — map.js proxy-clicks
+       these for a map pin outside the current radius, since such a
+       store has no corresponding <li> below to click instead (a plain
+       fetch() wouldn't feed Datastar's SSE runtime, see map.js). Stores
+       that also appear in the list below get one of each; querySelector
+       just matches whichever comes first in document order, and both do
+       the exact same @get, so the duplicate is harmless. -->
+  <div id="map-store-triggers" style="display:none" aria-hidden="true">
+    {% for s in map_stores %}
+    <button type="button" tabindex="-1" data-store-id="{{ s.id }}" data-on:click="@get('/api/store/{{ s.id }}')"></button>
+    {% endfor %}
+  </div>
+  <p class="result-count">{{ result_count_text }}</p>
+  <ul class="results-list">
+    {% for s in results %}
+    <li data-store-id="{{ s.id }}" role="button" tabindex="0"
+        data-on:click="@get('/api/store/{{ s.id }}')"
+        data-on:keydown="(evt.key === 'Enter' || evt.key === ' ') && @get('/api/store/{{ s.id }}')">
+      <strong>{{ s.name }}</strong>
+      <span class="result-meta">
+        {% if let Some(p) = s.top_product_name %}
+        <span class="icon-label">{% include "icons/package.svg" %} {{ p }}</span>
+        {% endif %}
+        {% if let Some(c) = s.top_product_rating_count %}
+        <span class="icon-label">{% include "icons/heart.svg" %} {{ c }}</span>
+        {% endif %}
+        <span class="icon-label">{% include "icons/map-pin.svg" %} {{ s.distance_km_display }} km</span>
+      </span>
+    </li>
+    {% endfor %}
+    {% if results.is_empty() %}
+    <li class="no-results">{{ "search-no-results"|t }}</li>
+    {% endif %}
+  </ul>
+</div>

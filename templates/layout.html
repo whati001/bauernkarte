@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }}</title>
+  <link rel="stylesheet" href="/static/leaflet/leaflet.css">
+  <link rel="stylesheet" href="/static/app.css">
+  <script type="module" src="/static/datastar.js"></script>
+</head>
+<body data-signals='{{ signals_json|safe }}'>
+  <!-- Hidden data-bind targets map.js writes into (via .value + dispatchEvent("input"))
+       after resolving geolocation — the only bridge from imperative JS into the
+       Datastar signal store this app needs; everything else is declarative. -->
+  <input type="hidden" id="lat-input" data-bind:lat>
+  <input type="hidden" id="lon-input" data-bind:lon>
+
+  {{ navbar_html|safe }}
+
+  <div id="layout">
+    <div id="sidebar">{{ sidebar_html|safe }}</div>
+    <div id="map"></div>
+  </div>
+
+  <script src="/static/leaflet/leaflet.js"></script>
+  <script type="module" src="/static/map.js"></script>
+</body>
+</html>

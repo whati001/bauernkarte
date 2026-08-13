@@ -1,0 +1,88 @@
+<div class="sidebar-panel" id="detail-panel" data-selected-store-id="{{ store_id }}"
+     data-on:keydown__window="evt.key === 'Escape' && @get('/api/store/back')">
+  <div class="detail-header">
+    <button class="back-link" data-on:click="@get('/api/store/back')">{% include "icons/chevron-left.svg" %} {{ "action-back"|t }}</button>
+  </div>
+
+  <section class="company-block">
+    <div class="block-heading">
+      <h2>{% include "icons/building-2.svg" %} {{ company_name }}</h2>
+      {% if logged_in %}
+      <a href="#" class="icon-btn" aria-label="{{ "detail-edit-company"|t }}" title="{{ "detail-edit-company"|t }}"
+         data-on:click__prevent="@get('/company/{{ company_id }}/edit?store_id={{ store_id }}')">{% include "icons/edit-3.svg" %}</a>
+      {% endif %}
+    </div>
+    {% if let Some(desc) = company_description %}<p>{{ desc }}</p>{% endif %}
+    {% if let Some(hp) = company_homepage %}<p><a href="{{ hp }}" target="_blank" rel="noopener">{{ hp }}</a></p>{% endif %}
+  </section>
+
+  <section class="store-block">
+    <div class="block-heading">
+      <h3>{% include "icons/store.svg" %} {{ store_name }}</h3>
+      {% if logged_in %}
+      <span class="action-row">
+        <a href="#" class="icon-btn" aria-label="{{ "detail-edit-store"|t }}" title="{{ "detail-edit-store"|t }}"
+           data-on:click__prevent="@get('/store/{{ store_id }}/edit')">{% include "icons/edit-3.svg" %}</a>
+        <a href="#" class="icon-btn danger" aria-label="{{ "detail-delete-store"|t }}" title="{{ "detail-delete-store"|t }}"
+           data-on:click__prevent="@delete('/store/{{ store_id }}')">{% include "icons/trash-2.svg" %}</a>
+      </span>
+      {% endif %}
+    </div>
+    {% if let Some(oh) = openinghours %}<p>{{ oh }}</p>{% endif %}
+    <p><a class="maps-link" href="https://www.google.com/maps/search/?api=1&query={{ lat }},{{ lon }}" target="_blank" rel="noopener">{% include "icons/map-pin.svg" %} {{ "detail-open-in-maps"|t }}</a></p>
+    {% if logged_in %}
+    <a class="add-link" href="#" data-on:click__prevent="@get('/store/{{ store_id }}/product/new')">{% include "icons/circle-plus.svg" %} {{ "detail-add-product"|t }}</a>
+    {% endif %}
+  </section>
+
+  <section class="products">
+    {% for p in products %}
+    <article class="product{% if p.selected %} selected{% endif %}">
+      <div class="block-heading">
+        <h4>{% include "icons/package.svg" %} {{ p.product_name }}</h4>
+        {% if logged_in %}
+        <span class="action-row">
+          <a href="#" class="icon-btn" aria-label="{{ "detail-edit-product"|t }}" title="{{ "detail-edit-product-title"|t }}"
+             data-on:click__prevent="@get('/product/{{ p.product_id }}/edit')">{% include "icons/edit-3.svg" %}</a>
+          <a href="#" class="icon-btn" aria-label="{{ "detail-edit-price"|t }}" title="{{ "detail-edit-price"|t }}"
+             data-on:click__prevent="@get('/store-product/{{ p.store_product_id }}/edit')">{% include "icons/euro.svg" %}</a>
+          <a href="#" class="icon-btn danger" aria-label="{{ "detail-remove-offer"|t }}" title="{{ "detail-remove-offer-title"|t }}"
+             data-on:click__prevent="@delete('/store-product/{{ p.store_product_id }}')">{% include "icons/trash-2.svg" %}</a>
+        </span>
+        {% endif %}
+      </div>
+      {% if let Some(desc) = p.product_description %}<p>{{ desc }}</p>{% endif %}
+      <span class="price-tag">{% include "icons/euro.svg" %} {{ p.price_display }}</span>
+
+      <div class="rating-row">
+        {% for r in p.ratings %}
+        <span class="rating-badge">{% include "icons/heart.svg" %} {{ r.count }}</span>
+        {% endfor %}
+        {% if logged_in %}
+          {% if p.viewer_has_rated_up %}
+          <button class="rated" data-on:click="@delete('/store-product/{{ p.store_product_id }}/rating')">
+            {% include "icons/heart.svg" %} {{ "detail-unrate"|t }}
+          </button>
+          {% else %}
+          <button class="primary" data-on:click="@post('/store-product/{{ p.store_product_id }}/rating')">
+            {% include "icons/heart.svg" %} {{ "detail-rate"|t }}
+          </button>
+          {% endif %}
+        {% endif %}
+      </div>
+
+      {% if !p.images.is_empty() %}
+      <div class="gallery">
+        {% for img in p.images %}
+        <a href="/image/{{ img.id }}" target="_blank"><img src="/image/{{ img.id }}" alt="{% if let Some(d) = img.description %}{{ d }}{% else %}{{ "image-form-alt-fallback"|t }}{% endif %}" loading="lazy"></a>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if logged_in %}
+      <a class="add-link" href="#" data-on:click__prevent="@get('/store-product/{{ p.store_product_id }}/image/new')">{% include "icons/image.svg" %} {{ "detail-add-image"|t }}</a>
+      {% endif %}
+    </article>
+    {% endfor %}
+    {% if products.is_empty() %}<p>{{ "detail-no-products"|t }}</p>{% endif %}
+  </section>
+</div>

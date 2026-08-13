@@ -1,0 +1,127 @@
+# English translation. Keys must match locales/de.ftl exactly — see
+# src/i18n.rs's startup check, which fails loudly on drift instead of
+# silently falling back key-by-key.
+
+## Navbar
+nav-brand = Was hat der Bauer
+nav-login = Login
+nav-logout = Logout
+nav-account = Account
+nav-new-store = New Store
+
+## Search sidebar
+search-category = Category
+search-product = Product
+search-distance = Radius
+search-all = All
+search-results-count = { $count ->
+    [one] { $count } result
+   *[other] { $count } results
+}
+search-no-results = No results in this radius.
+search-location-unavailable = Location unavailable
+search-pick-on-map = 👆 Click the map to choose a location
+search-location-picked = 📍 Location picked
+search-use-my-location = Use my location
+
+## Common actions
+action-save = Save
+action-delete = Delete
+action-cancel = Cancel
+action-edit = Edit
+action-back = Back
+action-back-to-search = Back to search
+
+## Auth
+auth-login-heading = Login
+auth-register-heading = Register
+auth-email = Email
+auth-password = Password
+auth-password-hint = Password (min. 8 characters)
+auth-name = Name
+auth-no-account = No account yet?
+auth-have-account = Already registered?
+auth-welcome-back = Welcome back, { $name }!
+auth-register-success = Welcome, { $name }! Your registration was successful.
+
+## Account page
+account-heading = Account
+account-change-password = Change password
+account-current-password = Current password
+account-new-password = New password (min. 8 characters)
+account-pending-heading = My submissions (pending review)
+account-pending-empty = No pending submissions.
+account-profile-saved = Your account details were saved.
+account-password-changed = Your password was changed.
+
+## Store detail
+detail-open-in-maps = Open in Google Maps
+detail-add-product = Add product
+detail-add-image = Add image
+detail-rate = Rate
+detail-unrate = Remove rating
+detail-no-products = No products for this store yet.
+
+## Store form
+store-form-new-heading = New Store
+store-form-edit-heading = Edit Store
+store-form-name = Name
+store-form-location = Location
+store-form-opening-hours = Opening hours
+store-form-is-company = This store is the company
+store-form-company = Company
+store-form-company-choose = — choose —
+store-form-company-description = Company description (optional)
+store-form-company-homepage = Company homepage (optional)
+
+## Company form
+company-form-heading = Edit company
+company-form-name = Name
+company-form-description = Description
+company-form-homepage = Homepage
+
+## Product form (add to store)
+product-form-add-heading = Add product to "{ $name }"
+product-form-new-checkbox = Create new product
+product-form-product = Product
+product-form-choose = — choose —
+product-form-name = Product name
+product-form-category = Category
+product-form-description-optional = Description (optional)
+product-form-price = Price
+
+## Edit product form
+edit-product-form-heading = Edit product
+edit-product-form-name = Name
+edit-product-form-category = Category
+edit-product-form-description = Description
+
+## Store-product (price) form
+store-product-form-heading = Edit price: { $name }
+store-product-form-price = Price
+
+## Image form
+image-form-heading = Add image
+image-form-file-label = Image file (JPEG, PNG or WebP, max. 15 MB)
+image-form-description-optional = Description (optional)
+image-form-upload = Upload
+image-form-alt-fallback = Product image
+
+## Store detail — action labels
+detail-edit-company = Edit company
+detail-edit-store = Edit store
+detail-delete-store = Delete store
+detail-edit-product = Edit product (name, category, description)
+detail-edit-product-title = Edit product
+detail-edit-price = Edit price
+detail-remove-offer = Remove this offer from this store
+detail-remove-offer-title = Remove offer
+
+## Confirmation
+confirmation-pending = Thanks! Your submission ("{ $name }") is being reviewed.
+confirmation-updated = "{ $name }" was updated.
+confirmation-image-pending = Thanks! Your image is being reviewed.
+
+## Language
+language-de = German
+language-en = English

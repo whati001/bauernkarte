@@ -1,0 +1,7 @@
+<div class="sidebar-panel">
+  <div class="confirmation-panel">
+    {% include "icons/circle-check.svg" %}
+    <p style="margin: 0;">{{ message }}</p>
+    <a href="/" data-on:click__prevent="@get('/api/store/back')">{% include "icons/chevron-left.svg" %} Zurück zur Suche</a>
+  </div>
+</div>

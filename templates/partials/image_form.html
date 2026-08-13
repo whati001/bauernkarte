@@ -1,0 +1,16 @@
+<div class="sidebar-panel">
+  <h2>{% include "icons/image.svg" %} {{ "image-form-heading"|t }}</h2>
+  <form enctype="multipart/form-data"
+        data-on:submit__prevent="@post('/store-product/{{ store_product_id }}/image', {contentType: 'form'})">
+    <div class="field">
+      <label for="image-file">{% include "icons/upload.svg" %} {{ "image-form-file-label"|t }}</label>
+      <input id="image-file" type="file" name="file" accept="image/jpeg,image/png,image/webp" required>
+    </div>
+    <div class="field">
+      <label for="image-description">{{ "image-form-description-optional"|t }}</label>
+      <input id="image-description" type="text" name="description">
+    </div>
+    <div id="form-error" class="form-error"></div>
+    <button type="submit" class="primary">{% include "icons/upload.svg" %} {{ "image-form-upload"|t }}</button>
+  </form>
+</div>

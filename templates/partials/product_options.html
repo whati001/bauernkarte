@@ -1,0 +1,6 @@
+<select id="product-select" data-bind:product-id data-on:change="@get('/api/stores')">
+  <option value="">{{ "search-all"|t }}</option>
+  {% for p in products %}
+  <option value="{{ p.id }}">{{ p.name }}</option>
+  {% endfor %}
+</select>

@@ -1,0 +1,20 @@
+<div class="sidebar-panel">
+  <h2>{% include "icons/user.svg" %} {{ "auth-register-heading"|t }}</h2>
+  <form data-on:submit__prevent="@post('/register')">
+    <div class="field">
+      <label for="reg-name">{% include "icons/user.svg" %} {{ "auth-name"|t }}</label>
+      <input id="reg-name" type="text" name="name" autocomplete="name" data-bind:name required>
+    </div>
+    <div class="field">
+      <label for="reg-email">{% include "icons/mail.svg" %} {{ "auth-email"|t }}</label>
+      <input id="reg-email" type="email" name="email" autocomplete="email" data-bind:email required>
+    </div>
+    <div class="field">
+      <label for="reg-password">{% include "icons/lock.svg" %} {{ "auth-password-hint"|t }}</label>
+      <input id="reg-password" type="password" name="password" autocomplete="new-password" data-bind:password minlength="8" required>
+    </div>
+    <div id="form-error" class="form-error"></div>
+    <button type="submit" class="primary">{% include "icons/user.svg" %} {{ "auth-register-heading"|t }}</button>
+  </form>
+  <p>{{ "auth-have-account"|t }} <a href="/login" data-on:click__prevent="@get('/login')">{{ "auth-login-heading"|t }}</a></p>
+</div>

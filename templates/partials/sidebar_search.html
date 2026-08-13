@@ -1,0 +1,36 @@
+<div class="sidebar-panel">
+  <!-- Not visible, not replaced by the #sidebar-results patch below (it's
+       a sibling, not a descendant) — re-runs the search whenever $lat/$lon
+       change, which is how a search started against the Austria fallback
+       catches up once real geolocation resolves asynchronously in
+       map.js. Fires once on mount too (redundant with the server-rendered
+       initial results, harmless) but not on its own response, since
+       /api/stores never touches $lat/$lon — no feedback loop. -->
+  <div data-effect="$lat !== null && $lon !== null && @get('/api/stores')" style="display:none"></div>
+  <!-- Reuses the exact fragments the /api/filters/* routes serve
+       standalone, rather than duplicating the <option> markup here — one
+       source of truth for how a category/product option renders (this
+       is exactly the kind of duplication that drifted out of sync
+       before: the icon added below would otherwise need updating in
+       two places). -->
+  <div class="field">
+    <label for="category-select">{% include "icons/tag.svg" %} {{ "search-category"|t }}</label>
+    {% include "partials/category_options.html" %}
+  </div>
+  <div class="field">
+    <label for="product-select">{% include "icons/package.svg" %} {{ "search-product"|t }}</label>
+    {% include "partials/product_options.html" %}
+  </div>
+  <!-- The radius only means something relative to a real position — with
+       no GPS fix we're centered on the Austria fallback, and letting
+       someone dial in a "5 km radius" around a point that isn't actually
+       theirs is misleading. So this control (and the search-radius
+       circle drawn on the map, see map.js) only shows once geolocation
+       has actually resolved. Search itself still runs at full radius
+       (100 km, the spec's cap) while it's hidden — see pages.rs/search.rs. -->
+  <div class="field" data-show="$geoAvailable === true">
+    <label for="distance-range">{% include "icons/map-pin.svg" %} {{ "search-distance"|t }}: <span data-text="$distanceKm"></span> km</label>
+    <input id="distance-range" type="range" min="1" max="100" data-bind:distance-km data-on:change="@get('/api/stores')">
+  </div>
+  {{ results_html|safe }}
+</div>

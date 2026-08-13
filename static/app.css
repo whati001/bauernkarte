@@ -1,0 +1,668 @@
+/* ============================================================
+   Design tokens
+   Color values are the validated palette from this project's
+   dataviz skill reference (references/palette.md), reused here as
+   general UI tokens rather than chart colors — same accessibility
+   guarantees (contrast-checked against both surfaces), not a
+   separate ad hoc palette. Accent green (#008300) checked
+   separately: 4.95:1 white-on-green (buttons), 4.82:1 light-surface
+   / 3.52:1 dark-surface (icons/borders/links) — see project notes.
+   ============================================================ */
+:root {
+  color-scheme: light;
+  --page-bg: #f9f9f7;
+  --surface: #fcfcfb;
+  --surface-2: #f2f1ee; /* hover wash, input backgrounds */
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #898781;
+  --border: rgba(11, 11, 11, 0.12);
+  --border-strong: rgba(11, 11, 11, 0.22);
+
+  --accent: #008300;
+  --accent-contrast: #ffffff;
+  --accent-wash: rgba(0, 131, 0, 0.1);
+
+  --good: #0ca30c;
+  --warning: #b8790a; /* darkened from the reference #fab219 for AA text-on-light use */
+  --serious: #ec835a;
+  --critical: #d03b3b;
+  --critical-wash: rgba(208, 59, 59, 0.08);
+  --warning-wash: rgba(184, 121, 10, 0.1);
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-8: 3rem;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-full: 999px;
+
+  --shadow-sm: 0 1px 2px rgba(11, 11, 11, 0.06), 0 1px 1px rgba(11, 11, 11, 0.04);
+  --shadow-md: 0 4px 16px rgba(11, 11, 11, 0.1), 0 2px 6px rgba(11, 11, 11, 0.06);
+
+  --font-size-sm: 0.8125rem;
+  --font-size-base: 0.9375rem;
+  --font-size-md: 1.0625rem;
+  --font-size-lg: 1.25rem;
+  --font-size-xl: 1.5rem;
+
+  --sidebar-width: 360px;
+  --nav-height: 56px;
+  --touch-target: 44px;
+
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --page-bg: #0d0d0d;
+    --surface: #1a1a19;
+    --surface-2: #232322;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #898781;
+    --border: rgba(255, 255, 255, 0.12);
+    --border-strong: rgba(255, 255, 255, 0.22);
+
+    --accent: #1fae1f;
+    --accent-contrast: #05170a;
+    --accent-wash: rgba(31, 174, 31, 0.16);
+
+    --good: #0ca30c;
+    --warning: #e0a838;
+    --serious: #ec835a;
+    --critical: #e66767;
+    --critical-wash: rgba(230, 103, 103, 0.12);
+    --warning-wash: rgba(224, 168, 56, 0.14);
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.5);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page-bg: #0d0d0d;
+  --surface: #1a1a19;
+  --surface-2: #232322;
+  --text-primary: #ffffff;
+  --text-secondary: #c3c2b7;
+  --text-muted: #898781;
+  --border: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.22);
+  --accent: #1fae1f;
+  --accent-contrast: #05170a;
+  --accent-wash: rgba(31, 174, 31, 0.16);
+  --good: #0ca30c;
+  --warning: #e0a838;
+  --serious: #ec835a;
+  --critical: #e66767;
+  --critical-wash: rgba(230, 103, 103, 0.12);
+  --warning-wash: rgba(224, 168, 56, 0.14);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* ============================================================
+   Reset & base
+   ============================================================ */
+* { box-sizing: border-box; }
+
+html, body { height: 100%; margin: 0; }
+
+body {
+  display: flex;
+  flex-direction: column;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: var(--font-size-base);
+  line-height: 1.5;
+  color: var(--text-primary);
+  background: var(--page-bg);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a, button, input, select, textarea, .field [data-show] {
+    transition: background-color 120ms var(--ease), border-color 120ms var(--ease),
+      color 120ms var(--ease), opacity 120ms var(--ease), transform 120ms var(--ease);
+  }
+}
+
+/* A single, consistent focus treatment everywhere — visible for
+   keyboard users, silent for mouse clicks (accessibility best
+   practice: don't punish pointer users with a ring, never remove it
+   for keyboard users). */
+:focus { outline: none; }
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+h1, h2, h3, h4 { margin: 0 0 var(--space-2); line-height: 1.25; }
+h2 { font-size: var(--font-size-lg); }
+h3 { font-size: var(--font-size-md); }
+h4 { font-size: var(--font-size-base); font-weight: 600; }
+p { margin: 0 0 var(--space-2); color: var(--text-secondary); }
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover { text-decoration: underline; }
+
+/* ============================================================
+   Icons — sized relative to surrounding text (font-size-driven,
+   like an icon font) rather than a fixed pixel size, so the same
+   markup reads correctly in a nav link, a button, or a heading.
+   ============================================================ */
+.icon {
+  width: 1.1em;
+  height: 1.1em;
+  vertical-align: -0.2em;
+  flex-shrink: 0;
+  stroke-width: 2;
+}
+.icon-sm { width: 0.95em; height: 0.95em; }
+/* Toggled on the rated-heart button — fills the outline icon solid
+   rather than swapping to a second vendored asset. */
+.icon-filled { fill: currentColor; }
+
+/* Decorative icons (aria-hidden) sit inline with their label; icon
+   + label is the default everywhere per accessibility best practice
+   (icon-only controls are reserved for a few universally-recognized
+   cases below, each with an aria-label). */
+.icon-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* ============================================================
+   Layout shell
+   ============================================================ */
+#navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: var(--nav-height);
+  padding: 0 var(--space-4);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  z-index: 1000;
+}
+
+#navbar .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 700;
+  font-size: var(--font-size-md);
+  color: var(--text-primary);
+}
+#navbar .brand:hover { text-decoration: none; color: var(--accent); }
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+.nav-user-name {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  padding: 0 var(--space-2);
+  display: none;
+}
+@media (min-width: 480px) {
+  .nav-user-name { display: inline; }
+}
+
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--touch-target);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  /* Overrides the generic `button` chrome below so a <button
+     class="nav-link"> (Logout) reads identically to the <a
+     class="nav-link"> items beside it. */
+  background: none;
+  border: none;
+}
+.nav-link:hover { background: var(--surface-2); color: var(--text-primary); text-decoration: none; }
+
+.lang-switch {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin-left: var(--space-2);
+}
+.lang-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.5em;
+  min-height: calc(var(--touch-target) - 8px);
+  padding: 0 var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.lang-link:hover { background: var(--surface-2); text-decoration: none; }
+.lang-link.active { background: var(--accent); color: var(--accent-contrast); }
+.lang-link.active:hover { background: var(--accent); }
+
+#layout {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+#sidebar {
+  width: var(--sidebar-width);
+  overflow-y: auto;
+  border-right: 1px solid var(--border);
+  background: var(--surface);
+}
+.sidebar-panel { padding: var(--space-4); }
+
+#map { flex: 1; min-height: 0; background: var(--surface-2); }
+
+@media (max-width: 900px) {
+  #layout { flex-direction: column; }
+  #sidebar {
+    width: 100%;
+    max-height: 50vh;
+    order: 2;
+    border-right: none;
+    border-top: 1px solid var(--border);
+  }
+  #map { order: 1; min-height: 38vh; }
+}
+
+/* ============================================================
+   Forms
+   ============================================================ */
+.field { margin-bottom: var(--space-4); }
+.field > label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-1);
+}
+.field > label .icon { color: var(--text-muted); }
+
+.field select,
+.field input:not([type="checkbox"]):not([type="radio"]),
+.field textarea {
+  width: 100%;
+  min-height: var(--touch-target);
+  padding: var(--space-2) var(--space-3);
+  font: inherit;
+  color: var(--text-primary);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+}
+.field select:hover,
+.field input:hover,
+.field textarea:hover { border-color: var(--text-muted); }
+.field select:focus-visible,
+.field input:focus-visible,
+.field textarea:focus-visible { border-color: var(--accent); }
+.field textarea { min-height: 5.5em; resize: vertical; }
+.field input[type="range"] { min-height: auto; padding: 0; accent-color: var(--accent); }
+
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch-target);
+}
+.checkbox-field input[type="checkbox"] {
+  width: 1.2em;
+  height: 1.2em;
+  accent-color: var(--accent);
+}
+
+/* Map click-to-place location picker (store_form.html + map.js) */
+.location-picker-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-2);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin: 0 0 var(--space-2);
+}
+#map.picking-location { cursor: crosshair; }
+
+.form-error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--critical);
+  background: var(--critical-wash);
+  border: 1px solid var(--critical);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
+  margin: var(--space-3) 0;
+}
+.form-error:empty { display: none; border: none; padding: 0; margin: 0; }
+
+.form-success {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--good);
+  background: var(--accent-wash);
+  border: 1px solid var(--good);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
+  margin: var(--space-3) 0;
+}
+.form-success .icon { color: var(--good); }
+
+/* ============================================================
+   Buttons
+   ============================================================ */
+button, .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  min-height: var(--touch-target);
+  padding: 0 var(--space-4);
+  font: inherit;
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+button:hover { background: var(--surface-2); }
+button:active { transform: scale(0.98); }
+
+button.primary {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border-color: var(--accent);
+}
+button.primary:hover { filter: brightness(1.08); }
+
+button.danger { color: var(--critical); border-color: var(--critical); background: transparent; }
+button.danger:hover { background: var(--critical-wash); }
+
+/* Small icon-only actions (edit/delete on a compact list row) —
+   the one icon-only case in this app, always with aria-label per
+   accessibility guidance for controls with no visible text. */
+button.icon-btn, a.icon-btn {
+  min-width: var(--touch-target);
+  min-height: var(--touch-target);
+  padding: 0;
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+}
+button.icon-btn:hover, a.icon-btn:hover { background: var(--surface-2); color: var(--text-primary); }
+a.icon-btn.danger, button.icon-btn.danger { color: var(--critical); }
+a.icon-btn.danger:hover, button.icon-btn.danger:hover { background: var(--critical-wash); }
+
+.action-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+
+/* ============================================================
+   Results list
+   ============================================================ */
+.result-count {
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  margin: var(--space-3) 0 var(--space-2);
+}
+
+.results-list { list-style: none; margin: 0; padding: 0; }
+.results-list li {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+.results-list li:hover { background: var(--surface-2); }
+.results-list li:focus-visible { border-color: var(--accent); }
+.results-list li.no-results {
+  cursor: default;
+  color: var(--text-muted);
+  font-style: italic;
+}
+.results-list li.no-results:hover { background: none; }
+.result-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+.result-meta .icon { color: var(--text-muted); }
+
+/* ============================================================
+   Detail view
+   ============================================================ */
+.detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  background: none;
+  border: none;
+  min-height: var(--touch-target);
+  padding: 0 var(--space-2) 0 0;
+}
+.back-link:hover { color: var(--text-primary); background: none; }
+
+.block-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.block-heading h2, .block-heading h3, .block-heading h4 { display: flex; align-items: center; gap: var(--space-2); margin: 0; }
+.block-heading .icon { color: var(--accent); }
+
+.company-block, .store-block { margin-bottom: var(--space-5); }
+
+.maps-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: 600;
+}
+
+.add-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  margin-top: var(--space-2);
+}
+
+.products { display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-4); }
+.product {
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+.product.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+
+.price-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.price-tag .icon { color: var(--text-muted); width: 0.9em; height: 0.9em; }
+
+.rating-row { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; margin: var(--space-2) 0; }
+.rating-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: var(--font-size-sm);
+  color: var(--critical);
+  font-weight: 600;
+}
+.rating-badge .icon { color: var(--critical); fill: currentColor; }
+
+/* The "already rated" toggle shows a filled heart and a subdued critical
+   tint; the "not yet rated" toggle stays the plain primary button so the
+   two states are distinguishable without reading the label. */
+button.rated {
+  color: var(--critical);
+  border-color: var(--critical);
+  background: var(--critical-wash);
+}
+button.rated .icon { fill: currentColor; }
+button.rated:hover { filter: brightness(0.97); }
+
+.gallery { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: var(--space-2) 0; }
+.gallery a {
+  display: block;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.gallery img { width: 64px; height: 64px; object-fit: cover; display: block; }
+
+.pending-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  background: var(--warning-wash);
+  border: 1px solid var(--warning);
+  color: var(--text-primary);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--space-2);
+  list-style: none;
+}
+.pending-note-label { display: inline-flex; align-items: center; gap: var(--space-2); }
+.pending-note .icon { color: var(--warning); flex-shrink: 0; }
+
+.confirmation-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--accent-wash);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-md);
+}
+.confirmation-panel .icon { color: var(--accent); }
+
+/* ============================================================
+   Map markers (Leaflet divIcons — see map.js)
+   ============================================================ */
+/* Sizes here are total rendered box size (this file sets a global
+   `box-sizing: border-box`, so the border lives inside the stated
+   width/height, not added on top) — kept equal to map.js's
+   PIN_SIZE/PIN_SIZE_SELECTED constants, which pass the same numbers to
+   Leaflet's iconSize/iconAnchor so the click/hover hit-area lines up
+   exactly with what's drawn. */
+.map-pin-dot {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 3px solid #fff;
+  box-shadow: var(--shadow-sm);
+  transition: width 0.15s var(--ease), height 0.15s var(--ease);
+}
+/* The selected pin (map.js's `updateSelection`) grows and gets an
+   accent halo rather than changing hue — same "selected" convention as
+   `.product.selected` elsewhere, not a new ad hoc meaning; --critical
+   stays reserved for destructive actions. Other pins are left alone so
+   nearby stores stay visible, Booking.com-map style. */
+.map-pin-dot.selected {
+  width: 34px;
+  height: 34px;
+  box-shadow: 0 0 0 5px var(--accent-wash), var(--shadow-md);
+}
+
+/* Hover tooltip (bound per-marker, opens on mouseover — Leaflet's
+   default tooltip trigger, no extra wiring needed) showing the same
+   name/top-product summary the old always-on "card mode" used to show
+   at high zoom; now shown on demand instead of permanently. */
+.map-tooltip.leaflet-tooltip {
+  background: var(--surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+}
+.map-tooltip.leaflet-tooltip::before { border-top-color: var(--border); }
+.map-tooltip-inner .icon { color: var(--critical); }
+
+/* Cluster badge — stores grouped by on-screen proximity (map.js's
+   grid-based screen-space clustering) render as a count instead of
+   individual pins/tooltips, so a zoomed-out view never leaks one
+   store's info ahead of another's. */
+.map-cluster {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border: 3px solid #fff;
+  box-shadow: var(--shadow-md);
+  font-weight: 600;
+  line-height: 1;
+}

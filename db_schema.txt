@@ -1,0 +1,79 @@
+-- DB Schema --
+
+-- Base
+company:
+id: BIGINT
+name: VARCHAR/TEXT
+description: VARCHAR/TEXT
+homepage: URL
+created: DATETIME
+created_by: user.id
+modified: DATETIME
+modified_by: user.id
+
+store:
+id: BIGINT
+company: company.id
+name: VARCHAR/TEXT
+position: postgis.geography
+openinghours: VARCHAR/TEXT -- (or something better)
+created: DATETIME
+created_by: user.id
+modified: DATETIME
+modified_by: user.id
+
+category:
+id: BIGINT
+name: VARCHAR/TEXT
+created: DATETIME
+created_by: user.id
+modified: DATETIME
+modified_by: user.id
+
+product:
+id: BIGINT
+category: category.id
+name: VARCHAR/TEXT
+description: VARCHAR/TEXT
+created: DATETIME
+created_by: user.id
+modified: DATETIME
+modified_by: user.id
+
+store_product:
+id: BIGINT
+store: store.id
+product: product.id
+price: FLOAT(2 dezimal)
+created: DATETIME
+created_by: user.id
+modified: DATETIME
+modified_by: user.id
+
+rating:
+id: BIGINT
+store_product: store_product.id
+score: enum(UP) -- only UP is allowed
+created: DATETIME
+created_by: user.id
+
+images:
+id: BIGINT
+store_product: store_product.id
+image: BINARY
+description: VARCHAR/TEXT
+created: DATETIME
+created_by: user.id
+modified: DATETIME
+modified_by: user.id
+
+----
+-- User Management
+user:
+id: BIGINT
+name: VARCHAR/TEXT
+email: VARCHAR/TEXT
+pwd: CHAR(64) -- (sha256; some pwd type)
+verified: BOOLEAN
+created: DATETIME
+modified: DATETIME

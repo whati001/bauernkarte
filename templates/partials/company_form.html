@@ -1,0 +1,23 @@
+<div class="sidebar-panel">
+  <h2>{% include "icons/building-2.svg" %} {{ "company-form-heading"|t }}</h2>
+  <form data-on:submit__prevent="@patch('/company/{{ company_id }}')">
+    <input type="hidden" name="return_store_id" data-bind:return-store-id value="{% if let Some(id) = store_id %}{{ id }}{% endif %}">
+    <div class="field">
+      <label for="company-name">{% include "icons/building-2.svg" %} {{ "company-form-name"|t }}</label>
+      <input id="company-name" type="text" name="company_name" data-bind:company-name value="{{ name }}" required>
+    </div>
+    <div class="field">
+      <label for="company-desc">{{ "company-form-description"|t }}</label>
+      <textarea id="company-desc" name="company_description" data-bind:company-description>{% if let Some(d) = description %}{{ d }}{% endif %}</textarea>
+    </div>
+    <div class="field">
+      <label for="company-hp">{{ "company-form-homepage"|t }}</label>
+      <input id="company-hp" type="url" name="company_homepage" data-bind:company-homepage value="{% if let Some(h) = homepage %}{{ h }}{% endif %}">
+    </div>
+    <div id="form-error" class="form-error"></div>
+    <div class="action-row">
+      <button type="submit" class="primary">{% include "icons/circle-check.svg" %} {{ "action-save"|t }}</button>
+      <button type="button" class="danger" data-on:click="@delete('/company/{{ company_id }}')">{% include "icons/trash-2.svg" %} {{ "action-delete"|t }}</button>
+    </div>
+  </form>
+</div>

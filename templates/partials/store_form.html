@@ -1,0 +1,63 @@
+<div class="sidebar-panel">
+  <h2>{% include "icons/store.svg" %} {% if is_edit %}{{ "store-form-edit-heading"|t }}{% else %}{{ "store-form-new-heading"|t }}{% endif %}</h2>
+  <form data-on:submit__prevent="@{% if is_edit %}patch{% else %}post{% endif %}('{{ action }}')">
+    <div class="field">
+      <label for="store-name">{% include "icons/store.svg" %} {{ "store-form-name"|t }}</label>
+      <input id="store-name" type="text" name="name" data-bind:store-name value="{{ name }}" required>
+    </div>
+
+    <!-- Position is picked by clicking the map (map.js's location-picker
+         module), not typed — see design.md's follow-up decision on this.
+         The two hidden inputs are the same data-bind write target
+         map.js already uses for geolocation; #location-picker-status is
+         id'd specifically so map.js can find it and detect "picker
+         mode" is active, and its own id (store-lat-input) doubles as
+         that detection hook. -->
+    <div class="field" id="location-picker" data-store-lat="{% if let Some(v) = lat %}{{ v }}{% else %}{% endif %}" data-store-lon="{% if let Some(v) = lon %}{{ v }}{% else %}{% endif %}">
+      <label>{% include "icons/map-pin.svg" %} {{ "store-form-location"|t }}</label>
+      <p id="location-picker-status" class="location-picker-status" data-text="{{ location_status_expr }}"></p>
+      <!-- type="number", not type="hidden", on purpose: Datastar's
+           data-bind coerces a number input's value to a JSON number,
+           but a hidden input falls through to its generic string
+           handling — sending "48.2" instead of 48.2, which the
+           server's f64 deserialization then rejects outright. Only
+           visually hidden (style, not the hidden type) so that
+           coercion still applies. -->
+      <input type="number" step="any" style="display: none;" id="store-lat-input" name="lat" data-bind:store-lat value="{% if let Some(v) = lat %}{{ v }}{% endif %}">
+      <input type="number" step="any" style="display: none;" id="store-lon-input" name="lon" data-bind:store-lon value="{% if let Some(v) = lon %}{{ v }}{% endif %}">
+      <button type="button" class="btn" id="use-my-location-btn">{% include "icons/map-pin.svg" %} {{ "search-use-my-location"|t }}</button>
+    </div>
+
+    <div class="field">
+      <label for="store-hours">{{ "store-form-opening-hours"|t }}</label>
+      <input id="store-hours" type="text" name="openinghours" data-bind:store-openinghours value="{% if let Some(oh) = openinghours %}{{ oh }}{% endif %}">
+    </div>
+
+    {% if !is_edit %}
+    <div class="field checkbox-field">
+      <input id="is-company-checkbox" type="checkbox" data-bind:is-company>
+      <label for="is-company-checkbox" style="margin: 0;">{{ "store-form-is-company"|t }}</label>
+    </div>
+    <div class="field" data-show="!$isCompany">
+      <label for="store-company">{% include "icons/building-2.svg" %} {{ "store-form-company"|t }}</label>
+      <select id="store-company" data-bind:company-id>
+        <option value="">{{ "store-form-company-choose"|t }}</option>
+        {% for c in companies %}
+        <option value="{{ c.id }}">{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field" data-show="$isCompany">
+      <label for="company-description">{% include "icons/building-2.svg" %} {{ "store-form-company-description"|t }}</label>
+      <textarea id="company-description" name="company_description" data-bind:company-description></textarea>
+    </div>
+    <div class="field" data-show="$isCompany">
+      <label for="company-homepage">{{ "store-form-company-homepage"|t }}</label>
+      <input id="company-homepage" type="url" name="company_homepage" data-bind:company-homepage>
+    </div>
+    {% endif %}
+
+    <div id="form-error" class="form-error"></div>
+    <button type="submit" class="primary" data-attr:disabled="!$storeLat || !$storeLon">{% include "icons/circle-check.svg" %} {{ "action-save"|t }}</button>
+  </form>
+</div>

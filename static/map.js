@@ -1,0 +1,530 @@
+// Thin Leaflet adapter — the one piece of imperative JS in this app
+// (design.md: "Leaflet's imperative API doesn't map cleanly onto
+// declarative DOM patches"). Responsibilities:
+//   1. Resolve geolocation (or the Austria-centroid fallback) once on
+//      load and write it into the Datastar signal store.
+//   2. Watch the server-rendered #sidebar-results fragment for changes
+//      and redraw Leaflet markers from the JSON blob embedded in it.
+//   3. While geolocation is available, draw a circle showing the current
+//      search radius and keep it live as the slider moves.
+//
+// Signal writes use `mergePatch`, imported directly from the vendored
+// datastar.js ES module — confirmed by reading the shipped bundle's own
+// source (`k=(e,{ifMissing:t}={})=>{...}`, exported as `mergePatch`),
+// not guessed from docs. Marker/circle redraws deliberately do NOT use
+// Datastar's internal signal-*read* primitives (`signal`/`effect`) since
+// their calling convention isn't publicly documented; reading plain,
+// self-authored DOM/JSON (a `<script>` blob, the slider's own `.value`)
+// is robust regardless of Datastar internals.
+//
+// IMPORTANT if you're editing templates: multi-word `data-bind`/`data-*`
+// *attribute names* must be kebab-case (`data-bind:distance-km`), never
+// camelCase (`data-bind:distanceKm`) — HTML lowercases attribute names
+// during parsing, so the camelCase form silently binds to a *different*,
+// entirely-lowercase signal than the one the rest of the app reads.
+// Datastar itself converts a kebab-case key to camelCase internally
+// (confirmed in the bundle: `Ct.camel = e => e.replace(/-[a-z]/g, ...)`)
+// — that conversion is exactly what makes `distance-km` become the
+// `distanceKm` signal every other reference in this app expects.
+// Attribute *values* (e.g. `data-text="$distanceKm"`) are untouched by
+// HTML's lowercasing and are written in real camelCase as-is.
+
+import { mergePatch } from "/static/datastar.js";
+
+const AUSTRIA_CENTER = { lat: 47.5162, lon: 14.5501 };
+const DEFAULT_ZOOM = 13;
+const AUSTRIA_ZOOM = 7;
+const GEOLOCATED_DEFAULT_RADIUS_KM = 5;
+
+// Marker sizing (total rendered diameter, including the white border —
+// see .map-pin-dot/.map-pin-dot.selected in app.css, kept in sync here
+// since Leaflet needs the pixel size up front for iconSize/iconAnchor).
+const PIN_SIZE = 26;
+const PIN_SIZE_SELECTED = 34;
+// Screen-space (not geographic) clustering radius: stores whose current
+// on-screen pixel positions fall in the same PIXEL_RADIUS-sized grid
+// cell render as one count badge instead of individual pins. Fixed
+// pixel radius (not fixed km) is what makes this naturally cluster
+// more at low zoom and less at high zoom, without a zoom-dependent
+// lookup table.
+const CLUSTER_PIXEL_RADIUS = 45;
+
+// basemap.at — verified live against the public WMTS endpoint at
+// implementation time (design.md §8.3): {z}/{y}/{x} order (row before
+// col in the REST URL), EPSG:3857, 256px tiles, zoom 0-20.
+const TILE_URL = "https://mapsneu.wien.gv.at/basemap/geolandbasemap/normal/google3857/{z}/{y}/{x}.png";
+const TILE_ATTRIBUTION =
+  'Datenquelle: <a href="https://basemap.at" target="_blank" rel="noopener">basemap.at</a>';
+
+const map = L.map("map", { zoomControl: true }).setView(
+  [AUSTRIA_CENTER.lat, AUSTRIA_CENTER.lon],
+  AUSTRIA_ZOOM,
+);
+L.tileLayer(TILE_URL, { attribution: TILE_ATTRIBUTION, maxZoom: 20 }).addTo(map);
+
+// ---- geolocation + the search-radius circle ----
+
+let geoAvailable = false;
+let radiusCircle = null;
+
+function setLatLon(lat, lon) {
+  // Documented data-bind contract: setting .value + dispatching the
+  // bound event re-reads the element into the signal — no internal
+  // Datastar API needed for this direction.
+  const latInput = document.getElementById("lat-input");
+  const lonInput = document.getElementById("lon-input");
+  latInput.value = String(lat);
+  latInput.dispatchEvent(new Event("input", { bubbles: true }));
+  lonInput.value = String(lon);
+  lonInput.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function currentRadiusKm() {
+  const slider = document.getElementById("distance-range");
+  const val = slider ? Number(slider.value) : NaN;
+  return Number.isFinite(val) && val > 0 ? val : GEOLOCATED_DEFAULT_RADIUS_KM;
+}
+
+/// Only meaningful once we have a real fix — a circle around the
+/// Austria-centroid fallback would claim a precision the app doesn't
+/// have (matches the search-radius control itself being hidden via
+/// `data-show="$geoAvailable === true"` in sidebar_search.html).
+///
+/// Purely geometry — does NOT touch the map's view. `fitMapToRadius`
+/// (below) is the separate, deliberately-less-frequent step that
+/// re-centers/re-zooms; splitting them means dragging the slider redraws
+/// the circle live on every tick without the camera fighting the drag,
+/// while letting go (the `change` event) settles the view once.
+function updateRadiusCircle(lat, lon) {
+  if (!geoAvailable) {
+    if (radiusCircle) {
+      map.removeLayer(radiusCircle);
+      radiusCircle = null;
+    }
+    return;
+  }
+  const radiusM = currentRadiusKm() * 1000;
+  if (radiusCircle) {
+    radiusCircle.setLatLng([lat, lon]);
+    radiusCircle.setRadius(radiusM);
+  } else {
+    radiusCircle = L.circle([lat, lon], {
+      radius: radiusM,
+      color: "#2f6b3a",
+      weight: 1,
+      fillOpacity: 0.08,
+      interactive: false,
+    }).addTo(map);
+  }
+}
+
+// A circle's on-screen size is a straightforward function of zoom and
+// latitude (Web Mercator foreshortening) — a "5 km" circle at a fixed
+// street-level zoom can legitimately span most of the viewport, which
+// reads as "wrong" even though the geometry (radius in meters, per
+// Leaflet's L.circle contract) is correct. Re-fitting the view to the
+// circle's own bounds after every change is what keeps "5 km" and
+// "80 km" both looking like a sensible, consistent circle instead of
+// requiring the zoom level to already happen to match the radius.
+function fitMapToRadius() {
+  if (!radiusCircle) return;
+  map.fitBounds(radiusCircle.getBounds(), { padding: [40, 40] });
+}
+
+function wireDistanceSlider() {
+  const slider = document.getElementById("distance-range");
+  if (!slider || slider.dataset.pfWired) return;
+  slider.dataset.pfWired = "1";
+  // Fires once the drag settles (not on every tick, unlike the circle's
+  // own live resize below) — re-centers/zooms the view to match.
+  slider.addEventListener("change", fitMapToRadius);
+  // Datastar's own `data-bind:distance-km` listener already updates the
+  // signal on this same "input" event; this is a second, independent
+  // listener purely for the circle's live radius — no interference.
+  slider.addEventListener("input", () => {
+    const [lat, lon] = currentCenter();
+    updateRadiusCircle(lat, lon);
+  });
+}
+
+function currentCenter() {
+  const lat = Number(document.getElementById("lat-input").value);
+  const lon = Number(document.getElementById("lon-input").value);
+  return [Number.isFinite(lat) ? lat : AUSTRIA_CENTER.lat, Number.isFinite(lon) ? lon : AUSTRIA_CENTER.lon];
+}
+
+function initGeolocation() {
+  const onResolved = (lat, lon, available) => {
+    geoAvailable = available;
+    mergePatch({ geoAvailable: available });
+    setLatLon(lat, lon);
+    map.setView([lat, lon], available ? DEFAULT_ZOOM : AUSTRIA_ZOOM);
+
+    if (available) {
+      // A radius only defaults to something narrow once it's anchored
+      // to a real position — reset the slider (and the signal it binds
+      // to) from whatever the pre-fix 100 km default was.
+      const slider = document.getElementById("distance-range");
+      if (slider) {
+        slider.value = String(GEOLOCATED_DEFAULT_RADIUS_KM);
+        slider.dispatchEvent(new Event("input", { bubbles: true }));
+        slider.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    }
+    // Explicit, not left to the slider's dispatched "change" above: that
+    // event fires before the circle exists yet (`updateRadiusCircle`
+    // hasn't run at that point), so `fitMapToRadius`'s "no circle yet"
+    // early-return would otherwise make the very first fit silently a
+    // no-op — the initial view would then sit at plain `DEFAULT_ZOOM`
+    // instead of fit to the actual radius, until the user dragged the
+    // slider once themselves.
+    updateRadiusCircle(lat, lon);
+    if (available) fitMapToRadius();
+  };
+
+  if (!navigator.geolocation) {
+    onResolved(AUSTRIA_CENTER.lat, AUSTRIA_CENTER.lon, false);
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => onResolved(pos.coords.latitude, pos.coords.longitude, true),
+    () => onResolved(AUSTRIA_CENTER.lat, AUSTRIA_CENTER.lon, false),
+    { timeout: 8000 },
+  );
+}
+
+// ---- click-to-place location picker (store_form.html) ----
+//
+// Researched pattern (Google Maps/Mapbox convention — see the PR
+// discussion this replaced manual lat/lon fields with): a draggable pin
+// the user places by clicking the map, refined afterward by dragging it;
+// no separate "select on map" button, since the map is already
+// persistently visible next to the form in this app's layout (unlike a
+// picker that has to first reveal a hidden map). A "use my location"
+// button covers the common case of adding a store you're standing in.
+
+let pickerMarker = null;
+let pickerActive = false;
+
+function setPickerLatLon(lat, lon) {
+  const latInput = document.getElementById("store-lat-input");
+  const lonInput = document.getElementById("store-lon-input");
+  if (!latInput || !lonInput) return;
+  latInput.value = String(lat);
+  latInput.dispatchEvent(new Event("input", { bubbles: true }));
+  lonInput.value = String(lon);
+  lonInput.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function placePickerMarker(lat, lon) {
+  setPickerLatLon(lat, lon);
+  if (pickerMarker) {
+    pickerMarker.setLatLng([lat, lon]);
+    return;
+  }
+  pickerMarker = L.marker([lat, lon], {
+    draggable: true,
+    autoPan: true,
+    // `pinIcon` (declared further down, in the "markers" section) is a
+    // plain function declaration, hoisted — safe to call from up here.
+    icon: pinIcon(false),
+  }).addTo(map);
+  pickerMarker.on("dragend", () => {
+    const ll = pickerMarker.getLatLng();
+    setPickerLatLon(ll.lat, ll.lng);
+  });
+}
+
+function onMapClickForPicker(e) {
+  if (!pickerActive) return;
+  placePickerMarker(e.latlng.lat, e.latlng.lng);
+}
+
+function enableLocationPicker(container) {
+  pickerActive = true;
+  document.getElementById("map").classList.add("picking-location");
+  map.on("click", onMapClickForPicker);
+
+  // Pre-fill from the store's existing position in edit mode (read off
+  // the container's data attributes, set once at render time by
+  // store_form.html) — a new store starts with no marker at all.
+  const lat = parseFloat(container.dataset.storeLat);
+  const lon = parseFloat(container.dataset.storeLon);
+  if (Number.isFinite(lat) && Number.isFinite(lon)) {
+    placePickerMarker(lat, lon);
+    map.setView([lat, lon], DEFAULT_ZOOM);
+  }
+
+  const useMyLocationBtn = document.getElementById("use-my-location-btn");
+  if (useMyLocationBtn && !useMyLocationBtn.dataset.pfWired) {
+    useMyLocationBtn.dataset.pfWired = "1";
+    useMyLocationBtn.addEventListener("click", () => {
+      if (!navigator.geolocation) return;
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          placePickerMarker(pos.coords.latitude, pos.coords.longitude);
+          map.setView([pos.coords.latitude, pos.coords.longitude], DEFAULT_ZOOM);
+        },
+        () => {},
+        { timeout: 8000 },
+      );
+    });
+  }
+}
+
+function disableLocationPicker() {
+  pickerActive = false;
+  document.getElementById("map")?.classList.remove("picking-location");
+  map.off("click", onMapClickForPicker);
+  if (pickerMarker) {
+    map.removeLayer(pickerMarker);
+    pickerMarker = null;
+  }
+}
+
+// Called on every #sidebar mutation (same hook as the distance slider) —
+// enables picking when the store form's location-picker field is
+// mounted, disables it (and cleans up the marker) the moment it isn't.
+function wireLocationPicker() {
+  const container = document.getElementById("location-picker");
+  if (container) {
+    if (!pickerActive) enableLocationPicker(container);
+  } else if (pickerActive) {
+    disableLocationPicker();
+  }
+}
+
+// ---- markers ----
+
+let markers = [];
+// The currently-selected store (read off `#detail-panel`'s
+// `data-selected-store-id`, set server-side by sidebar_detail.html) —
+// kept as a module-level string so `updateSelection()` can restyle the
+// matching marker without needing the full `stores-json` blob to still
+// be in the DOM (it isn't, once the sidebar has swapped to the detail
+// panel — see the comment on `sidebarObserver` below for why markers
+// otherwise survive that swap untouched).
+let selectedStoreId = null;
+
+function escapeHtml(s) {
+  const div = document.createElement("div");
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+function pinIcon(selected) {
+  const size = selected ? PIN_SIZE_SELECTED : PIN_SIZE;
+  return L.divIcon({
+    className: "map-pin",
+    html: `<div class="map-pin-dot${selected ? " selected" : ""}"></div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
+}
+
+function tooltipHtml(store) {
+  const productLine = store.top_product_name
+    ? `${store.top_product_name}${
+        store.top_product_rating_count != null ? ` · ${store.top_product_rating_count} ❤️` : ""
+      }`
+    : "";
+  return `<div class="map-tooltip-inner"><strong>${escapeHtml(store.name)}</strong>${
+    productLine ? `<br>${escapeHtml(productLine)}` : ""
+  }</div>`;
+}
+
+function bindStoreTooltip(marker, store, selected) {
+  // Rebinding (not just updating content) is the simplest way to also
+  // update the offset when a pin's size changes between selected/not —
+  // Leaflet has no public "resize an existing tooltip" API.
+  marker.unbindTooltip();
+  marker.bindTooltip(tooltipHtml(store), {
+    direction: "top",
+    offset: [0, -(selected ? PIN_SIZE_SELECTED : PIN_SIZE) / 2],
+    className: "map-tooltip",
+    opacity: 1,
+  });
+}
+
+function clusterSize(count) {
+  if (count < 10) return 34;
+  if (count < 50) return 42;
+  return 50;
+}
+
+function clusterIcon(count) {
+  const size = clusterSize(count);
+  return L.divIcon({
+    className: "map-pin",
+    html: `<div class="map-cluster" style="width:${size}px;height:${size}px;">${count}</div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
+}
+
+function addStoreMarker(store) {
+  // Built unselected regardless of `selectedStoreId` — `observeResults()`
+  // always calls `updateSelection()` right after `redrawMarkers()`,
+  // which is the single place selected-vs-not styling is decided, so
+  // there's no need to duplicate that check here too.
+  const marker = L.marker([store.lat, store.lon], { icon: pinIcon(false) });
+  marker.pfStore = store;
+  bindStoreTooltip(marker, store, false);
+  marker.on("click", () => {
+    // Every store pin stays on screen regardless of which sidebar panel
+    // is open (search, detail, or a form — see `redrawMarkers`'s own
+    // comment), including while the store-form's location picker is
+    // active. A Leaflet marker's click doesn't bubble to the map's own
+    // click handler (`onMapClickForPicker`), so without this check a
+    // click that happens to land on an *existing* pin — increasingly
+    // likely now that every nationwide store is always shown — would
+    // silently open that store instead of placing the new one, with no
+    // way to tell why the picker didn't respond. Placing the pin at the
+    // existing store's exact position is also a reasonable outcome in
+    // its own right (e.g. two shops in the same building).
+    if (pickerActive) {
+      placePickerMarker(store.lat, store.lon);
+      return;
+    }
+    // Every marker is drawn from the exact same `stores` array that
+    // rendered the results list, so a matching `<li data-store-id>`
+    // always exists — proxy the click onto it rather than duplicating
+    // Datastar's `@get` action handling (a plain `fetch()` here
+    // wouldn't feed Datastar's SSE runtime at all).
+    const el = document.querySelector(`[data-store-id="${store.id}"]`);
+    if (el) el.click();
+  });
+  marker.addTo(map);
+  markers.push(marker);
+}
+
+function addClusterMarker(group) {
+  const lat = group.reduce((sum, s) => sum + s.lat, 0) / group.length;
+  const lon = group.reduce((sum, s) => sum + s.lon, 0) / group.length;
+  const marker = L.marker([lat, lon], { icon: clusterIcon(group.length) });
+  marker.pfCluster = true;
+  // No tooltip here on purpose — a cluster shows only the count, never
+  // any individual store's info (that's the whole point of grouping).
+  // Clicking zooms in to split it apart instead of selecting a store.
+  marker.on("click", () => {
+    // See addStoreMarker's comment on `pickerActive` — same reasoning,
+    // using the cluster's centroid as the placed point.
+    if (pickerActive) {
+      placePickerMarker(lat, lon);
+      return;
+    }
+    const bounds = L.latLngBounds(group.map((s) => [s.lat, s.lon]));
+    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
+  });
+  marker.addTo(map);
+  markers.push(marker);
+}
+
+function redrawMarkers() {
+  const script = document.getElementById("map-stores-json");
+  let stores = [];
+  if (script) {
+    try {
+      stores = JSON.parse(script.textContent);
+    } catch {
+      stores = [];
+    }
+  }
+
+  markers.forEach((m) => map.removeLayer(m));
+  markers = [];
+
+  // Grid-based screen-space clustering: bucket stores by their current
+  // pixel position into CLUSTER_PIXEL_RADIUS-sized cells. Hand-rolled
+  // rather than a vendored marker-cluster plugin — this app's map.js is
+  // deliberately a thin adapter (see file header) and the
+  // clustering need here is simple enough not to justify a new
+  // dependency.
+  const cells = new Map();
+  for (const store of stores) {
+    const pt = map.latLngToContainerPoint([store.lat, store.lon]);
+    const key = `${Math.floor(pt.x / CLUSTER_PIXEL_RADIUS)}:${Math.floor(pt.y / CLUSTER_PIXEL_RADIUS)}`;
+    let cell = cells.get(key);
+    if (!cell) {
+      cell = [];
+      cells.set(key, cell);
+    }
+    cell.push(store);
+  }
+
+  for (const group of cells.values()) {
+    if (group.length === 1) {
+      addStoreMarker(group[0]);
+    } else {
+      addClusterMarker(group);
+    }
+  }
+}
+
+// Restyles the selected pin (bigger + accent halo, see .map-pin-dot.selected
+// in app.css) without touching any other marker — deliberately decoupled
+// from `redrawMarkers()` so entering/leaving the detail view (which has
+// no `stores-json` blob to rebuild from) still leaves every other pin on
+// screen exactly as it was, Booking.com-map style, instead of only ever
+// showing the one selected store.
+function updateSelection() {
+  const detailPanel = document.getElementById("detail-panel");
+  selectedStoreId = detailPanel ? detailPanel.dataset.selectedStoreId : null;
+  for (const marker of markers) {
+    if (marker.pfCluster) continue;
+    const isSelected = selectedStoreId != null && String(marker.pfStore.id) === String(selectedStoreId);
+    marker.setIcon(pinIcon(isSelected));
+    marker.setZIndexOffset(isSelected ? 1000 : 0);
+    bindStoreTooltip(marker, marker.pfStore, isSelected);
+  }
+}
+
+// Re-render on every #sidebar-results patch (search results changing)
+// and on zoom/resize (cluster grouping is screen-space, so it shifts
+// with either).
+const resultsObserver = new MutationObserver(() => redrawMarkers());
+function observeResults() {
+  const el = document.getElementById("sidebar-results");
+  if (el) {
+    resultsObserver.disconnect();
+    resultsObserver.observe(el, { childList: true, subtree: true, characterData: true });
+    redrawMarkers();
+  }
+  // Independent of whether #sidebar-results exists — this is what picks
+  // up (or clears) the selection highlight when the sidebar swaps
+  // to/from the detail panel.
+  updateSelection();
+  // The distance slider and the store-form location picker both live
+  // outside #sidebar-results but are (re)created by the same full-panel
+  // swaps — hook them up (or tear the picker down) on every pass.
+  wireDistanceSlider();
+  wireLocationPicker();
+}
+
+// #sidebar's content gets swapped between search/detail/form states, so
+// #sidebar-results/#distance-range/#location-picker come and go — watch
+// the stable outer container for that and re-attach. `subtree: true` is
+// required here, not just `childList` on #sidebar itself: Datastar's
+// morph can reuse the outer wrapper node across a panel swap (e.g.
+// search -> store form both render a bare `.sidebar-panel` div with no
+// id, so the morph keeps that same node and only replaces *its*
+// children) — a direct-children-only observer on #sidebar then never
+// fires at all for that transition, which is exactly the bug that made
+// the location picker silently never activate.
+const sidebarObserver = new MutationObserver(() => observeResults());
+sidebarObserver.observe(document.getElementById("sidebar"), { childList: true, subtree: true });
+
+// Both rebuild the marker set from scratch (cluster grouping is
+// screen-space, so it shifts with either) — `updateSelection()` has to
+// run again right after, or the just-rebuilt markers would all revert
+// to their default unselected icon.
+function redrawAndReselect() {
+  redrawMarkers();
+  updateSelection();
+}
+map.on("zoomend", redrawAndReselect);
+window.addEventListener("resize", redrawAndReselect);
+
+observeResults();
+initGeolocation();

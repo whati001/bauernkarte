@@ -1,0 +1,41 @@
+<div class="sidebar-panel">
+  <h2>{% include "icons/package.svg" %} {{ heading }}</h2>
+  <form data-on:submit__prevent="@post('/store/{{ store_id }}/product/new')">
+    <div class="field checkbox-field">
+      <input id="is-new-product-checkbox" type="checkbox" data-bind:is-new-product>
+      <label for="is-new-product-checkbox" style="margin: 0;">{{ "product-form-new-checkbox"|t }}</label>
+    </div>
+    <div class="field" data-show="!$isNewProduct">
+      <label for="existing-product">{% include "icons/package.svg" %} {{ "product-form-product"|t }}</label>
+      <select id="existing-product" name="product_id" data-bind:product-id>
+        <option value="">{{ "product-form-choose"|t }}</option>
+        {% for p in products %}
+        <option value="{{ p.id }}">{{ p.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field" data-show="$isNewProduct">
+      <label for="new-product-name">{% include "icons/package.svg" %} {{ "product-form-name"|t }}</label>
+      <input id="new-product-name" type="text" name="new_product_name" data-bind:new-product-name>
+    </div>
+    <div class="field" data-show="$isNewProduct">
+      <label for="new-product-category">{% include "icons/tag.svg" %} {{ "product-form-category"|t }}</label>
+      <select id="new-product-category" name="new_product_category_id" data-bind:new-product-category-id>
+        <option value="">{{ "product-form-choose"|t }}</option>
+        {% for c in categories %}
+        <option value="{{ c.id }}">{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field" data-show="$isNewProduct">
+      <label for="new-product-desc">{{ "product-form-description-optional"|t }}</label>
+      <textarea id="new-product-desc" name="new_product_description" data-bind:new-product-description></textarea>
+    </div>
+    <div class="field">
+      <label for="product-price">{% include "icons/euro.svg" %} {{ "product-form-price"|t }}</label>
+      <input id="product-price" type="number" step="0.01" min="0" name="price" data-bind:price required>
+    </div>
+    <div id="form-error" class="form-error"></div>
+    <button type="submit" class="primary">{% include "icons/circle-check.svg" %} {{ "action-save"|t }}</button>
+  </form>
+</div>

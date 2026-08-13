@@ -1,0 +1,26 @@
+<div class="sidebar-panel">
+  <h2>{% include "icons/package.svg" %} {{ "edit-product-form-heading"|t }}</h2>
+  <form data-on:submit__prevent="@patch('/product/{{ product_id }}')">
+    <div class="field">
+      <label for="ep-name">{% include "icons/package.svg" %} {{ "edit-product-form-name"|t }}</label>
+      <input id="ep-name" type="text" name="name" data-bind:product-name value="{{ name }}" required>
+    </div>
+    <div class="field">
+      <label for="ep-category">{% include "icons/tag.svg" %} {{ "edit-product-form-category"|t }}</label>
+      <select id="ep-category" name="category_id" data-bind:product-category-id>
+        {% for c in categories %}
+        <option value="{{ c.id }}" {% if c.id == category_id %}selected{% endif %}>{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="ep-desc">{{ "edit-product-form-description"|t }}</label>
+      <textarea id="ep-desc" name="description" data-bind:product-description>{% if let Some(d) = description %}{{ d }}{% endif %}</textarea>
+    </div>
+    <div id="form-error" class="form-error"></div>
+    <div class="action-row">
+      <button type="submit" class="primary">{% include "icons/circle-check.svg" %} {{ "action-save"|t }}</button>
+      <button type="button" class="danger" data-on:click="@delete('/product/{{ product_id }}')">{% include "icons/trash-2.svg" %} {{ "action-delete"|t }}</button>
+    </div>
+  </form>
+</div>
