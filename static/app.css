@@ -509,19 +509,22 @@ a:hover { text-decoration: underline; }
    available) with a name printed only under the dot that opens/closes a
    run of available months (seasonality::MonthRow::boundary_label) — an
    unrestricted listing reads as "Jan..Dez", two separate runs as e.g.
-   "Jan..Jun" / "Sep..Dez", instead of every month being labeled. */
+   "Jan..Jun" / "Sep..Dez", instead of every month being labeled.
+   `display: flex`, not a `1fr`-column grid — a grid stretches the 12
+   columns across the sidebar's full width, so despite a small `gap` the
+   6px dots themselves end up far apart (each one centered in its own
+   ~25px+ column). Flex sizes each column to its own content instead, so
+   the `gap` is the *only* space between dots. */
 .season-bar {
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 2px;
+  display: flex;
+  gap: 3px;
   margin: var(--space-2) 0 var(--space-3);
 }
 .season-col {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  min-width: 0;
+  gap: 1px;
 }
 .season-dot {
   width: 6px;
