@@ -40,6 +40,9 @@ struct StoreProductView {
     /// month bar shows every month regardless of whether the listing
     /// restricts any of them.
     seasonal_months: Vec<seasonality::MonthRow>,
+    /// "Jan..Jun, Sep..Dez"-style plain text for the bar's `aria-label` —
+    /// see `seasonality::season_summary`'s doc comment.
+    season_summary: String,
     ratings: Vec<RatingCount>,
     viewer_has_rated_up: bool,
     images: Vec<ImageView>,
@@ -84,6 +87,7 @@ pub fn render_detail_panel_with_selection(
             product_description: p.product_description.clone(),
             product_icon: p.product_icon.clone(),
             seasonal_months: seasonality::month_rows(p.seasonal_months.as_deref()),
+            season_summary: seasonality::season_summary(p.seasonal_months.as_deref()),
             ratings: p.ratings.clone(),
             viewer_has_rated_up: p.viewer_has_rated_up,
             images: p

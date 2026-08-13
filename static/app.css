@@ -504,17 +504,39 @@ a:hover { text-decoration: underline; }
 .month-chip:has(input:checked) { background: var(--accent); border-color: var(--accent); color: var(--accent-contrast); }
 .month-chip:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* Seasonality month bar (sidebar_detail.html) — always 12 cells,
-   January first through December last, green = available that month. */
-.season-bar { display: flex; gap: 2px; margin: var(--space-2) 0; }
-.season-cell {
-  flex: 1;
-  height: 8px;
-  border-radius: 2px;
+/* Seasonality month bar (sidebar_detail.html) — always 12 columns,
+   January first through December last, a small dot per month (green =
+   available) with a name printed only under the dot that opens/closes a
+   run of available months (seasonality::MonthRow::boundary_label) — an
+   unrestricted listing reads as "Jan..Dez", two separate runs as e.g.
+   "Jan..Jun" / "Sep..Dez", instead of every month being labeled. */
+.season-bar {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 2px;
+  margin: var(--space-2) 0 var(--space-3);
+}
+.season-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+.season-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
   background: var(--surface-2);
   border: 1px solid var(--border);
 }
-.season-cell.available { background: var(--accent); border-color: var(--accent); }
+.season-dot.available { background: var(--accent); border-color: var(--accent); }
+.season-label {
+  font-size: 9px;
+  line-height: 1;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
 
 /* Map click-to-place location picker (store_form.html + map.js) */
 .location-picker-status {

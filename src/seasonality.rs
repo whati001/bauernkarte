@@ -11,11 +11,19 @@ use crate::i18n;
 /// One month of the fixed 12-month grid — `key` is the form's
 /// signal-name suffix (see `SeasonalityFields`), `available` drives both
 /// the edit form's checkbox state and the detail view's green/muted
-/// cell.
+/// dot.
 pub struct MonthRow {
     pub key: &'static str,
     pub label: String,
     pub available: bool,
+    /// `Some(label)` exactly when this month opens or closes a
+    /// consecutive run of available months (a single-month run gets it
+    /// once, since it's both) — the detail-view bar prints this under
+    /// the dot instead of labeling all 12 months, so "available all
+    /// year" reads as "Jan..Dez" and two separate runs read as e.g.
+    /// "Jan..Jun" / "Sep..Dez" rather than twelve individual labels.
+    /// `None` for every other month (interior to a run, or unavailable).
+    pub boundary_label: Option<String>,
 }
 
 /// (month number, form signal-name key, i18n label key). `key` is
@@ -40,23 +48,79 @@ const MONTHS: [(i16, &str, &str); 12] = [
     (12, "dec", "month-dec"),
 ];
 
+/// (start index, end index) of each consecutive run of `true` in a
+/// 12-slot Jan..Dec array — deliberately *not* circular (a run available
+/// Nov+Dec plus Jan+Feb is two runs, not one wrapping across New Year's):
+/// nothing in the request this implements asked for wraparound, and a
+/// non-wrapping reading is the less surprising one.
+fn available_blocks(available: &[bool; 12]) -> Vec<(usize, usize)> {
+    let mut blocks = Vec::new();
+    let mut start = None;
+    for (i, &is_available) in available.iter().enumerate() {
+        if is_available {
+            start.get_or_insert(i);
+        } else if let Some(s) = start.take() {
+            blocks.push((s, i - 1));
+        }
+    }
+    if let Some(s) = start {
+        blocks.push((s, 11));
+    }
+    blocks
+}
+
 /// `None` (available all year) expands to all 12 months marked
 /// available — correct for both call sites: the detail view's bar shows
-/// solid green for an unrestricted listing, and the edit form reveals a
+/// every dot green (one run, "Jan..Dez"), and the edit form reveals a
 /// fully-checked grid the first time "only available seasonally" is
 /// turned on (so unchecking the closed months is the whole interaction,
 /// not building the list from scratch).
 pub fn month_rows(seasonal_months: Option<&[i16]>) -> Vec<MonthRow> {
+    let labels: Vec<String> =
+        MONTHS.iter().map(|(_, _, label_key)| i18n::translate(i18n::current_locale(), label_key)).collect();
+    let available: [bool; 12] = std::array::from_fn(|i| match seasonal_months {
+        None => true,
+        Some(months) => months.contains(&MONTHS[i].0),
+    });
+
+    let mut boundary_label: [Option<String>; 12] = std::array::from_fn(|_| None);
+    for (start, end) in available_blocks(&available) {
+        boundary_label[start] = Some(labels[start].clone());
+        boundary_label[end] = Some(labels[end].clone());
+    }
+
     MONTHS
         .iter()
-        .map(|(number, key, label_key)| {
-            let available = match seasonal_months {
-                None => true,
-                Some(months) => months.contains(number),
-            };
-            MonthRow { key, label: i18n::translate(i18n::current_locale(), label_key), available }
+        .enumerate()
+        .map(|(i, (_, key, _))| MonthRow {
+            key,
+            label: labels[i].clone(),
+            available: available[i],
+            boundary_label: boundary_label[i].clone(),
         })
         .collect()
+}
+
+/// A plain-text "Jan..Jun, Sep..Dez" (or "Jan..Dez" for available-all-year)
+/// rendering of the same runs `month_rows` labels on the dot bar —
+/// accessibility only (the bar's own `aria-label`/`title`, read as one
+/// coherent phrase instead of the dot-by-dot labels a screen reader would
+/// otherwise announce one at a time), not rendered as visible text of its
+/// own.
+pub fn season_summary(seasonal_months: Option<&[i16]>) -> String {
+    let rows = month_rows(seasonal_months);
+    let available: [bool; 12] = std::array::from_fn(|i| rows[i].available);
+    available_blocks(&available)
+        .into_iter()
+        .map(|(start, end)| {
+            if start == end {
+                rows[start].label.clone()
+            } else {
+                format!("{}..{}", rows[start].label, rows[end].label)
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 /// The form's "only available seasonally" checkbox + 12 month

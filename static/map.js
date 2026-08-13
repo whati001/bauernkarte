@@ -32,8 +32,8 @@
 import { mergePatch } from "/static/datastar.js";
 
 const AUSTRIA_CENTER = { lat: 47.5162, lon: 14.5501 };
-const DEFAULT_ZOOM = 13;
-const AUSTRIA_ZOOM = 7;
+const DEFAULT_ZOOM = 14;
+const AUSTRIA_ZOOM = 8;
 const GEOLOCATED_DEFAULT_RADIUS_KM = 5;
 
 // Marker sizing (total rendered diameter, including the white border —

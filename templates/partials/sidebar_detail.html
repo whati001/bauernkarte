@@ -66,13 +66,21 @@
       </div>
       {% if let Some(desc) = p.product_description %}<p>{{ desc }}</p>{% endif %}
 
-      <!-- Green = available that month, muted = not — always all 12
-           cells (seasonality::month_rows), not just the "on" ones, so
-           the bar reads left-to-right as a literal January..December
-           timeline rather than a sparse, position-ambiguous list. -->
-      <div class="season-bar" role="img" aria-label="{{ "product-form-seasonal-checkbox"|t }}">
+      <!-- Green dot = available that month, muted = not — always all 12
+           columns (seasonality::month_rows), not just the "on" ones, so
+           it reads left-to-right as a literal January..December
+           timeline. A label only prints under a dot that opens or
+           closes a run (seasonality::MonthRow::boundary_label), so
+           "available all year" shows just "Jan" and "Dez" rather than
+           twelve stacked names — the `aria-label` carries the same
+           "Jan..Jun, Sep..Dez"-style summary as one phrase for screen
+           readers instead of the labels being read dot-by-dot. -->
+      <div class="season-bar" role="img" aria-label="{{ p.season_summary }}" title="{{ p.season_summary }}">
         {% for m in p.seasonal_months %}
-        <span class="season-cell{% if m.available %} available{% endif %}" title="{{ m.label }}"></span>
+        <div class="season-col">
+          <span class="season-dot{% if m.available %} available{% endif %}"></span>
+          {% if let Some(lbl) = m.boundary_label %}<span class="season-label">{{ lbl }}</span>{% endif %}
+        </div>
         {% endfor %}
       </div>
 
