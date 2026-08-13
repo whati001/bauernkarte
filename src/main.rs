@@ -33,9 +33,17 @@ use tracing::Level;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt::init();
-
+    // Must run before `tracing_subscriber::fmt::init()` below: that call
+    // reads `RUST_LOG` from the environment right away (via
+    // `EnvFilter`'s default-env lookup), and `Config::from_env()` is what
+    // actually loads `.env` into the process environment (`dotenvy::dotenv()`,
+    // see config.rs). In the previous order, `.env`'s `RUST_LOG` wasn't
+    // set yet when the subscriber read it, so it silently fell back to
+    // its built-in default filter (ERROR-only) — logs looked like they
+    // just weren't happening, even with `RUST_LOG` correctly set in `.env`.
     let config = config::Config::from_env()?;
+
+    tracing_subscriber::fmt::init();
 
     let pool = PgPoolOptions::new()
         .max_connections(10)
