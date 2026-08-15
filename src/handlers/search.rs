@@ -1,10 +1,12 @@
 //! store-search capability: `GET /api/stores`, `GET /api/filters/categories`,
-//! `GET /api/filters/products`. Also the shared fragment-building helpers
-//! `pages.rs` reuses for the initial full-page render (`GET /`).
+//! `GET /api/filters/products`, and the navbar's global search box
+//! (`GET /api/search/suggest`, `GET /api/search/select/{kind}/{id}`). Also
+//! the shared fragment-building helpers `pages.rs` reuses for the initial
+//! full-page render (`GET /`).
 
 use askama::Template;
 use axum::{
-    extract::State,
+    extract::{Path, State},
     response::sse::{Event, Sse},
 };
 use futures_util::stream;
@@ -14,11 +16,11 @@ use std::convert::Infallible;
 use crate::{
     db,
     dstar::DatastarSignals,
-    error::AppResult,
+    error::{AppError, AppResult},
     i18n,
     i18n as filters, // see templates.rs's comment on this alias
     models::{Category, MapStorePin, Product, ProductSummary, StoreSearchResult},
-    sse::{patch_elements, patch_signals},
+    sse::{patch_elements, patch_elements_at, patch_signals},
     state::AppState,
     templates::render,
 };
@@ -261,4 +263,161 @@ pub async fn filter_products(
     };
     let html = render(ProductOptionsTemplate { products });
     Ok(Sse::new(stream::iter(vec![Ok(patch_elements(&html))])))
+}
+
+/// How many of each kind the navbar dropdown offers. Deliberately small:
+/// the box exists to pick a known category/product, not to browse the
+/// whole catalog — that's what the sidebar's `<select>`s are for.
+const SUGGEST_LIMIT: i64 = 6;
+
+/// One row of the navbar's suggestion dropdown. Categories and products
+/// share one flat list (one dropdown, not two), so the kind has to travel
+/// with each row: `kind` doubles as the `/api/search/select/{kind}/{id}`
+/// path segment, `kind_label` is its translated badge.
+pub struct Suggestion {
+    pub kind: &'static str,
+    pub id: i64,
+    /// Already defaulted to the same 🏷️/📦 fallbacks the filter
+    /// `<option>`s use, so the template stays free of that branch.
+    pub icon: String,
+    pub name: String,
+    pub kind_label: String,
+}
+
+#[derive(Template)]
+#[template(path = "partials/nav_suggestions.html")]
+pub struct NavSuggestionsTemplate {
+    pub suggestions: Vec<Suggestion>,
+    /// Distinguishes "typed something, nothing matched" (show the
+    /// no-matches line) from "box is empty" (show nothing at all) —
+    /// `suggestions.is_empty()` alone can't tell those apart.
+    pub searched: bool,
+}
+
+/// The empty dropdown the navbar ships with on a full-page render — the
+/// `#nav-suggestions` element has to exist in the DOM before `suggest`
+/// can patch it by id.
+pub fn render_empty_suggestions() -> String {
+    render(NavSuggestionsTemplate { suggestions: Vec::new(), searched: false })
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SuggestQuery {
+    #[serde(default)]
+    pub nav_query: String,
+}
+
+/// `GET /api/search/suggest` — the navbar box is a *picker*, not a
+/// free-text search: this only ever returns existing categories/products,
+/// and nothing happens until one of them is clicked (`select` below). The
+/// `navOpen` signal is set here rather than client-side so an emptied box
+/// closes the dropdown without a second round trip.
+pub async fn suggest(
+    State(state): State<AppState>,
+    DatastarSignals(q): DatastarSignals<SuggestQuery>,
+) -> AppResult<Sse<impl stream::Stream<Item = Result<Event, Infallible>>>> {
+    let term = q.nav_query.trim();
+    let locale = i18n::current_locale();
+    let mut suggestions = Vec::new();
+
+    if !term.is_empty() {
+        let category_label = i18n::translate(locale, "search-category");
+        let product_label = i18n::translate(locale, "search-product");
+        for c in db::category::search_by_name(&state.pool, term, SUGGEST_LIMIT).await? {
+            suggestions.push(Suggestion {
+                kind: "category",
+                id: c.id,
+                icon: c.icon.unwrap_or_else(|| "🏷️".to_string()),
+                name: c.name,
+                kind_label: category_label.clone(),
+            });
+        }
+        for p in db::product::search_approved_by_name(&state.pool, term, SUGGEST_LIMIT).await? {
+            suggestions.push(Suggestion {
+                kind: "product",
+                id: p.id,
+                icon: p.icon.unwrap_or_else(|| "📦".to_string()),
+                name: p.name,
+                kind_label: product_label.clone(),
+            });
+        }
+    }
+
+    let open = !term.is_empty();
+    let html = render(NavSuggestionsTemplate { suggestions, searched: open });
+    Ok(Sse::new(stream::iter(vec![
+        Ok(patch_elements(&html)),
+        Ok(patch_signals(&serde_json::json!({ "navOpen": open }))),
+    ])))
+}
+
+/// `$categoryId`/`$productId` as the bound `<select>`s themselves write
+/// them: the option's string value, `""` for "Alle" (see
+/// `empty_string_as_none`, which reads both back).
+fn signal_id(id: Option<i64>) -> String {
+    id.map(|v| v.to_string()).unwrap_or_default()
+}
+
+/// `GET /api/search/select/{kind}/{id}` — commits one suggestion as the
+/// active filter. Server-side rather than a signal assignment inline in
+/// the dropdown's `data-on:click` because the box has to end up showing
+/// the picked *name*, and interpolating a database string into a
+/// JS expression attribute is a quoting bug waiting to happen — here the
+/// name only ever travels as JSON in a `patch-signals` payload.
+///
+/// The whole search panel is re-rendered (not just the results list) so
+/// this works identically from a store detail or a form, which is what
+/// makes the box "global": wherever you are, picking a suggestion lands
+/// you back on search with that filter applied.
+pub async fn select(
+    State(state): State<AppState>,
+    Path((kind, id)): Path<(String, i64)>,
+    DatastarSignals(q): DatastarSignals<SearchQuery>,
+) -> AppResult<Sse<impl stream::Stream<Item = Result<Event, Infallible>>>> {
+    // A product carries its category along, so the sidebar's cascading
+    // `<select>`s stay coherent (category "Obst" + product "Äpfel", not
+    // a product hanging under "Alle"). Filtering by both is redundant but
+    // harmless — the product already implies its category.
+    let (name, category_id, product_id) = match kind.as_str() {
+        "category" => {
+            let c = db::category::find(&state.pool, id).await?.ok_or(AppError::NotFound)?;
+            (c.name, Some(c.id), None)
+        }
+        "product" => {
+            let p = db::product::find_approved(&state.pool, id).await?.ok_or(AppError::NotFound)?;
+            (p.name, Some(p.category), Some(p.id))
+        }
+        _ => return Err(AppError::NotFound),
+    };
+
+    let q = SearchQuery { category_id, product_id, ..q };
+    let results = run_search(&state, &q).await?;
+    let panel = render_search_panel(&state, category_id, product_id, &results).await?;
+    let map_data_html = render_map_data(&panel.map_stores);
+    tracing::debug!(kind = %kind, id = %id, result_count = results.len(), "navbar suggestion selected");
+
+    // Elements *before* signals, and the order genuinely matters: the
+    // product `<select>`'s options are rebuilt by this patch (they cascade
+    // from the new category), and a `<select>` silently drops its value
+    // when the matching `<option>` is replaced. Patching the signals
+    // first would set the value on the old option list and then lose it
+    // to the morph; this way `data-bind:product-id` re-applies
+    // `$productId` against the options that are actually there.
+    //
+    // `categoryId`/`productId` go over as `<select>`-shaped strings
+    // (`""` for "Alle") — never JSON `null`, which in a `patch-signals`
+    // payload *removes* the signal rather than blanking it (see sse.rs).
+    Ok(Sse::new(stream::iter(vec![
+        Ok(patch_elements(&render_empty_suggestions())),
+        Ok(patch_elements_at("#sidebar", "inner", &panel.sidebar_html)),
+        Ok(patch_elements(&map_data_html)),
+        Ok(patch_signals(&serde_json::json!({
+            "categoryId": signal_id(category_id),
+            "productId": signal_id(product_id),
+            "navQuery": name,
+            "navOpen": false,
+            "resultCount": results.len(),
+        }))),
+    ])))
 }

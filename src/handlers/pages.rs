@@ -31,6 +31,11 @@ fn base_signals(lat: f64, lon: f64, geo_available: Option<bool>, logged_in: bool
         "categoryId": "", "productId": "", "distanceKm": distance_km,
         "lat": lat, "lon": lon, "geoAvailable": geo_available,
         "resultCount": 0, "selectedStoreId": null, "loggedIn": logged_in,
+        // Navbar global search: the picked category/product's name (shown
+        // in the box) and whether its suggestion dropdown is open. Both
+        // live in the page-wide signal set because the navbar outlives
+        // every #sidebar swap.
+        "navQuery": "", "navOpen": false,
     })
 }
 

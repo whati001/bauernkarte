@@ -68,12 +68,19 @@ pub fn render_confirmation(message: &str) -> String {
 struct NavbarTemplate {
     user_name: Option<String>,
     current_locale: &'static str,
+    /// Always the *empty* dropdown — `#nav-suggestions` only has to exist
+    /// in the DOM for `GET /api/search/suggest` to patch it by id.
+    /// Embedded as pre-rendered HTML (same deal as `full_page`'s
+    /// `sidebar_html`) so the container's markup lives in exactly one
+    /// template, shared with the patch path.
+    suggestions_html: String,
 }
 
 pub fn render_navbar(user_name: Option<String>) -> String {
     render(NavbarTemplate {
         user_name,
         current_locale: i18n::current_locale().code(),
+        suggestions_html: crate::handlers::search::render_empty_suggestions(),
     })
 }
 

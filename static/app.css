@@ -228,6 +228,131 @@ a:hover { text-decoration: underline; }
 }
 #navbar .brand:hover { text-decoration: none; color: var(--accent); }
 
+/* Global category/product picker — centered by `margin: 0 auto` inside
+   #navbar's space-between row, so it stays visually centered on the page
+   even though the brand and the actions cluster have very different
+   widths. `min-width: 0` lets it actually shrink when the actions
+   cluster grows (logged in = three more links) instead of pushing the
+   navbar to two lines. */
+.nav-search {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 26rem;
+  margin: 0 auto;
+}
+
+.nav-search-box {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-2) 0 var(--space-3);
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-full);
+}
+.nav-search-box:hover { border-color: var(--text-muted); }
+/* The ring belongs on the whole pill, not just the bare <input> inside
+   it — hence :focus-within here and the input's own outline suppressed
+   below. */
+.nav-search-box:focus-within {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.nav-search-box > .icon { color: var(--text-muted); }
+
+.nav-search-box input {
+  flex: 1;
+  min-width: 0;
+  min-height: calc(var(--touch-target) - 8px);
+  padding: 0;
+  font: inherit;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  background: none;
+  border: none;
+}
+.nav-search-box input:focus-visible { outline: none; }
+
+.nav-search-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-1);
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  border-radius: var(--radius-full);
+  min-height: auto;
+}
+.nav-search-clear:hover { background: var(--surface); color: var(--text-primary); }
+
+/* Above the map (Leaflet panes sit at z-index 400-700) and above
+   #navbar's own stacking context children. */
+.nav-suggestions {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  left: 0;
+  right: 0;
+  z-index: 1100;
+  max-height: min(60vh, 22rem);
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  padding: var(--space-1);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+
+.nav-suggestion {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: var(--touch-target);
+  padding: var(--space-2);
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+}
+.nav-suggestion:hover { background: var(--surface-2); }
+.nav-suggestion-icon { flex-shrink: 0; }
+/* The name is the part worth reading, so it takes the slack and the
+   truncation; the kind badge keeps its intrinsic width. */
+.nav-suggestion-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+}
+.nav-suggestion-kind {
+  flex-shrink: 0;
+  padding: 0 var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  background: var(--surface-2);
+  border-radius: var(--radius-full);
+}
+.nav-suggestion-empty {
+  margin: 0;
+  padding: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+/* Below this the brand + actions already fill the row; a third flex
+   item would squeeze the box down to a few characters, which is worse
+   than the sidebar's own category/product <select>s that remain the
+   full-featured way to filter on a phone. */
+@media (max-width: 700px) {
+  .nav-search { display: none; }
+}
+
 .nav-actions {
   display: flex;
   align-items: center;

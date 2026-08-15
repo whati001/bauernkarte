@@ -34,6 +34,40 @@ pub async fn list_approved_by_category(pool: &PgPool, category_id: i64) -> sqlx:
     .await
 }
 
+/// Name-substring match over the same approved-and-not-deleted set the
+/// filter `<select>` offers — the product half of the navbar's global
+/// search suggestions (`handlers::search::suggest`).
+pub async fn search_approved_by_name(pool: &PgPool, term: &str, limit: i64) -> sqlx::Result<Vec<Product>> {
+    sqlx::query_as!(
+        Product,
+        r#"select id, category, name, description, icon, approved, deleted,
+                  created_by, modified_by, created, modified
+           from product
+           where approved and not deleted and name ilike $1
+           order by name
+           limit $2"#,
+        crate::db::contains_pattern(term),
+        limit
+    )
+    .fetch_all(pool)
+    .await
+}
+
+/// `find` restricted to what a visitor may actually filter by — the
+/// navbar suggestion `id` arrives in a URL, so it can't be assumed to
+/// name an approved product just because the dropdown only offers those.
+pub async fn find_approved(pool: &PgPool, id: i64) -> sqlx::Result<Option<Product>> {
+    sqlx::query_as!(
+        Product,
+        r#"select id, category, name, description, icon, approved, deleted,
+                  created_by, modified_by, created, modified
+           from product where id = $1 and approved and not deleted"#,
+        id
+    )
+    .fetch_optional(pool)
+    .await
+}
+
 pub async fn find(pool: &PgPool, id: i64) -> sqlx::Result<Option<Product>> {
     sqlx::query_as!(
         Product,

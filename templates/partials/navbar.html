@@ -1,5 +1,32 @@
 <nav id="navbar">
   <a class="brand" href="/">{% include "icons/sprout.svg" %} {{ "nav-brand"|t }}</a>
+  <!-- Global category/product picker. Deliberately not a free-text
+       search: the input only filters the suggestion list, nothing is
+       submitted, and the actual filter is only ever applied by clicking
+       a suggestion (which hits /api/search/select — see
+       handlers::search::select). There is no Enter handler and no
+       enclosing <form>, so a typed-but-unmatched term does nothing. -->
+  <div class="nav-search" data-on:click__outside="$navOpen = false">
+    <div class="nav-search-box">
+      {% include "icons/search.svg" %}
+      <input id="nav-search-input" type="text" autocomplete="off"
+             role="combobox" aria-controls="nav-suggestions" aria-autocomplete="list"
+             data-attr:aria-expanded="$navOpen ? 'true' : 'false'"
+             placeholder="{{ "nav-search-placeholder"|t }}"
+             aria-label="{{ "nav-search-label"|t }}"
+             data-bind:nav-query
+             data-on:input__debounce.200ms="@get('/api/search/suggest')"
+             data-on:click="@get('/api/search/suggest')"
+             data-on:keydown="evt.key === 'Escape' && ($navOpen = false)">
+      <!-- Clears the *filter*, not just the text — leaving the box empty
+           while the sidebar stayed filtered is the one state that would
+           read as broken. -->
+      <button type="button" class="nav-search-clear" data-show="$navQuery.length > 0"
+              aria-label="{{ "nav-search-clear"|t }}" title="{{ "nav-search-clear"|t }}"
+              data-on:click="$navQuery = ''; $navOpen = false; $categoryId = ''; $productId = ''; @get('/api/store/back')">{% include "icons/x.svg" %}</button>
+    </div>
+    {{ suggestions_html|safe }}
+  </div>
   <div class="nav-actions">
     {% if let Some(name) = user_name %}
       <span class="nav-user-name">{{ name }}</span>

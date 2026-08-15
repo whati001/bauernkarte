@@ -8,6 +8,10 @@ nav-login = Login
 nav-logout = Logout
 nav-account = Konto
 nav-new-store = Neues Geschäft
+nav-search-label = Kategorie oder Produkt suchen
+nav-search-placeholder = Kategorie oder Produkt…
+nav-search-no-matches = Keine passende Kategorie oder Produkt
+nav-search-clear = Suche zurücksetzen
 
 ## Search sidebar
 search-category = Kategorie
