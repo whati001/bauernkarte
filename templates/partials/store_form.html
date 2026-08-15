@@ -7,8 +7,8 @@
        company / products / save) — the form is long enough that a flat
        run of fields gives no sense of where one concern ends and the
        next begins. -->
-  <form class="store-form" data-on:submit__prevent="@{% if is_edit %}patch{% else %}post{% endif %}('{{ action }}')">
-    <section class="form-card">
+  <form class="panel-stack" data-on:submit__prevent="@{% if is_edit %}patch{% else %}post{% endif %}('{{ action }}')">
+    <section class="panel-card">
       <h3><label for="store-name">{% include "icons/store.svg" %} {{ "store-form-name"|t }}</label></h3>
       <div class="field">
         <input id="store-name" type="text" name="name" data-bind:store-name value="{{ name }}" required>
@@ -22,7 +22,7 @@
          id'd specifically so map.js can find it and detect "picker
          mode" is active, and its own id (store-lat-input) doubles as
          that detection hook. -->
-    <section class="form-card" id="location-picker" data-store-lat="{% if let Some(v) = lat %}{{ v }}{% else %}{% endif %}" data-store-lon="{% if let Some(v) = lon %}{{ v }}{% else %}{% endif %}">
+    <section class="panel-card" id="location-picker" data-store-lat="{% if let Some(v) = lat %}{{ v }}{% else %}{% endif %}" data-store-lon="{% if let Some(v) = lon %}{{ v }}{% else %}{% endif %}">
       <h3>{% include "icons/map-pin.svg" %} {{ "store-form-location"|t }}</h3>
       <p id="location-picker-status" class="location-picker-status" data-text="{{ location_status_expr }}"></p>
       <!-- type="number", not type="hidden", on purpose: Datastar's
@@ -37,7 +37,7 @@
       <button type="button" class="btn" id="use-my-location-btn">{% include "icons/map-pin.svg" %} {{ "search-use-my-location"|t }}</button>
     </section>
 
-    <section class="form-card">
+    <section class="panel-card">
       <h3>{% include "icons/store.svg" %} {{ "store-form-opening-hours"|t }}</h3>
       <!-- Most submissions don't have hours to hand, and seven rows of
            empty selects is a lot of form to scroll past to reach the
@@ -82,7 +82,7 @@
     </section>
 
     {% if !is_edit %}
-    <section class="form-card">
+    <section class="panel-card">
       <h3>{% include "icons/building-2.svg" %} {{ "store-form-company"|t }}</h3>
       <div class="field checkbox-field">
         <input id="is-company-checkbox" type="checkbox" data-bind:is-company>
@@ -125,7 +125,7 @@
          parameterised per loop iteration, and each block needs its
          signal names index-suffixed. The partial still serves its other
          two (single-product) callers unchanged. -->
-    <section class="form-card">
+    <section class="panel-card">
       <h3>{% include "icons/package.svg" %} {{ "store-form-product-heading"|t }}</h3>
       {% for s in product_slots %}
       <div class="product-slot" data-show="{{ s.show_expr }}">
@@ -178,7 +178,7 @@
     </section>
     {% endif %}
 
-    <section class="form-card form-card-actions">
+    <section class="panel-card panel-card-actions">
       <div id="form-error" class="form-error"></div>
       <button type="submit" class="primary" data-attr:disabled="!$storeLat || !$storeLon">{% include "icons/circle-check.svg" %} {{ "action-save"|t }}</button>
     </section>

@@ -1,6 +1,8 @@
 <div class="sidebar-panel">
   <h2>{% include "icons/user.svg" %} {{ "auth-register-heading"|t }}</h2>
-  <form data-on:submit__prevent="@post('/register')">
+  <div class="panel-stack">
+    <section class="panel-card">
+      <form data-on:submit__prevent="@post('/register')">
     <div class="field">
       <label for="reg-name">{% include "icons/user.svg" %} {{ "auth-name"|t }}</label>
       <input id="reg-name" type="text" name="name" autocomplete="name" data-bind:name required>
@@ -15,6 +17,10 @@
     </div>
     <div id="form-error" class="form-error"></div>
     <button type="submit" class="primary">{% include "icons/user.svg" %} {{ "auth-register-heading"|t }}</button>
-  </form>
-  <p>{{ "auth-have-account"|t }} <a href="/login" data-on:click__prevent="@get('/login')">{{ "auth-login-heading"|t }}</a></p>
+      </form>
+    </section>
+    <section class="panel-card">
+      <p>{{ "auth-have-account"|t }} <a href="/login" data-on:click__prevent="@get('/login')">{{ "auth-login-heading"|t }}</a></p>
+    </section>
+  </div>
 </div>

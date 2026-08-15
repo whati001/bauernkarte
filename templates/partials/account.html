@@ -6,46 +6,56 @@
   {% if let Some(msg) = success_message %}
   <div class="form-success">{% include "icons/circle-check.svg" %} {{ msg }}</div>
   {% endif %}
-  <form data-on:submit__prevent="@post('/account')">
-    <div class="field">
-      <label for="acc-name">{% include "icons/user.svg" %} {{ "auth-name"|t }}</label>
-      <input id="acc-name" type="text" name="name" autocomplete="name" data-bind:name value="{{ name }}" required>
-    </div>
-    <div class="field">
-      <label for="acc-email">{% include "icons/mail.svg" %} {{ "auth-email"|t }}</label>
-      <input id="acc-email" type="email" name="email" autocomplete="email" data-bind:email value="{{ email }}" required>
-    </div>
-    <div id="form-error" class="form-error"></div>
-    <button type="submit" class="primary">{{ "action-save"|t }}</button>
-  </form>
+  <!-- Three groups, one `.panel-card` each — see DESIGN.md. -->
+  <div class="panel-stack">
+    <section class="panel-card">
+      <h3>{% include "icons/user.svg" %} {{ "account-heading"|t }}</h3>
+      <form data-on:submit__prevent="@post('/account')">
+        <div class="field">
+          <label for="acc-name">{{ "auth-name"|t }}</label>
+          <input id="acc-name" type="text" name="name" autocomplete="name" data-bind:name value="{{ name }}" required>
+        </div>
+        <div class="field">
+          <label for="acc-email">{{ "auth-email"|t }}</label>
+          <input id="acc-email" type="email" name="email" autocomplete="email" data-bind:email value="{{ email }}" required>
+        </div>
+        <div id="form-error" class="form-error"></div>
+        <button type="submit" class="primary">{% include "icons/circle-check.svg" %} {{ "action-save"|t }}</button>
+      </form>
+    </section>
 
-  <h3>{% include "icons/lock.svg" %} {{ "account-change-password"|t }}</h3>
-  <form data-on:submit__prevent="@post('/account/password')">
-    <div class="field">
-      <label for="acc-current-password">{{ "account-current-password"|t }}</label>
-      <input id="acc-current-password" type="password" name="current_password" autocomplete="current-password" data-bind:current-password required>
-    </div>
-    <div class="field">
-      <label for="acc-new-password">{{ "account-new-password"|t }}</label>
-      <input id="acc-new-password" type="password" name="new_password" autocomplete="new-password" data-bind:new-password minlength="8" required>
-    </div>
-    <div id="password-form-error" class="form-error"></div>
-    <button type="submit" class="primary">{{ "account-change-password"|t }}</button>
-  </form>
+    <section class="panel-card">
+      <h3>{% include "icons/lock.svg" %} {{ "account-change-password"|t }}</h3>
+      <form data-on:submit__prevent="@post('/account/password')">
+        <div class="field">
+          <label for="acc-current-password">{{ "account-current-password"|t }}</label>
+          <input id="acc-current-password" type="password" name="current_password" autocomplete="current-password" data-bind:current-password required>
+        </div>
+        <div class="field">
+          <label for="acc-new-password">{{ "account-new-password"|t }}</label>
+          <input id="acc-new-password" type="password" name="new_password" autocomplete="new-password" data-bind:new-password minlength="8" required>
+        </div>
+        <div id="password-form-error" class="form-error"></div>
+        <button type="submit" class="primary">{% include "icons/lock.svg" %} {{ "account-change-password"|t }}</button>
+      </form>
+    </section>
 
-  <h3>{% include "icons/triangle-alert.svg" %} {{ "account-pending-heading"|t }}</h3>
-  {% if pending.is_empty() %}
-  <p>{{ "account-pending-empty"|t }}</p>
-  {% else %}
-  <ul style="list-style: none; margin: 0; padding: 0;">
-    {% for item in pending %}
-    <li class="pending-note">
-      <span class="pending-note-label">{% include "icons/triangle-alert.svg" %} {{ item.label }}</span>
-      {% if let Some(path) = item.edit_path %}
-      <a href="#" data-on:click__prevent="@get('{{ path }}')">{{ "action-edit"|t }}</a>
+    <section class="panel-card">
+      <h3>{% include "icons/triangle-alert.svg" %} {{ "account-pending-heading"|t }}</h3>
+      {% if pending.is_empty() %}
+      <p>{{ "account-pending-empty"|t }}</p>
+      {% else %}
+      <ul class="pending-list">
+        {% for item in pending %}
+        <li class="pending-note">
+          <span class="pending-note-label">{% include "icons/triangle-alert.svg" %} {{ item.label }}</span>
+          {% if let Some(path) = item.edit_path %}
+          <a href="#" data-on:click__prevent="@get('{{ path }}')">{{ "action-edit"|t }}</a>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
       {% endif %}
-    </li>
-    {% endfor %}
-  </ul>
-  {% endif %}
+    </section>
+  </div>
 </div>

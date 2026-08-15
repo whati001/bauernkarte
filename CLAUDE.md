@@ -35,6 +35,22 @@ Guidance for Claude Code when working in this repository.
 
 See `README.md` for local dev setup and `RUNBOOK.md` for admin operations.
 
+## UI design guide
+
+**Read [`DESIGN.md`](DESIGN.md) before touching anything visual** —
+templates in `templates/` or `static/app.css`. It defines the surface
+tokens (warm `--shell` chrome vs. neutral `--surface` content), the
+`.panel-card` group container every sidebar panel is built from, the
+single "selected" treatment, the spacing/radius/shadow scales, and the
+responsive breakpoints.
+
+Two rules it's worth repeating here:
+
+- **Tokens, never literals.** Every colour is redefined for the dark
+  theme; a hard-coded hex is a light-theme-only bug.
+- **Group into `.panel-card`s**, one per concern, rather than a flat run
+  of fields.
+
 ## Coding principles
 
 Keep it **KISS** and **modular**:

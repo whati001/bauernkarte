@@ -17,6 +17,7 @@ nav-products-label = Beliebte Produkte
 nav-products-all = Alle Produkte
 
 ## Search sidebar
+search-filter-heading = Filter
 search-category = Kategorie
 search-product = Produkt
 search-distance = Umkreis

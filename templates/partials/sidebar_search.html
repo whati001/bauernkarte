@@ -13,7 +13,8 @@
        is exactly the kind of duplication that drifted out of sync
        before: the icon added below would otherwise need updating in
        two places). -->
-  <div class="filter-card">
+  <section class="panel-card">
+    <h3>{% include "icons/tag.svg" %} {{ "search-filter-heading"|t }}</h3>
     <div class="field">
       <label for="category-select">{% include "icons/tag.svg" %} {{ "search-category"|t }}</label>
       {% include "partials/category_options.html" %}
@@ -34,6 +35,6 @@
       <label for="distance-range">{% include "icons/map-pin.svg" %} {{ "search-distance"|t }}: <span data-text="$distanceKm"></span> km</label>
       <input id="distance-range" type="range" min="1" max="100" data-bind:distance-km data-on:change="@get('/api/stores')">
     </div>
-  </div>
+  </section>
   {{ results_html|safe }}
 </div>

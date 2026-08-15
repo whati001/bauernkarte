@@ -4,7 +4,8 @@
     <button class="back-link" data-on:click="@get('/api/store/back')">{% include "icons/chevron-left.svg" %} {{ "action-back"|t }}</button>
   </div>
 
-  <section class="company-block">
+  <div class="panel-stack">
+  <section class="panel-card company-block">
     <div class="block-heading">
       <h2>{% include "icons/building-2.svg" %} {{ company_name }}</h2>
       {% if logged_in %}
@@ -16,7 +17,7 @@
     {% if let Some(hp) = company_homepage %}<p><a href="{{ hp }}" target="_blank" rel="noopener">{{ hp }}</a></p>{% endif %}
   </section>
 
-  <section class="store-block">
+  <section class="panel-card store-block">
     <div class="block-heading">
       <h3>{% include "icons/store.svg" %} {{ store_name }}</h3>
       {% if logged_in %}
@@ -50,7 +51,7 @@
 
   <section class="products">
     {% for p in products %}
-    <article class="product{% if p.selected %} selected{% endif %}">
+    <article class="panel-card product{% if p.selected %} selected{% endif %}">
       <div class="block-heading">
         <h4>{% if let Some(icon) = p.product_icon %}{{ icon }}{% else %}{% include "icons/package.svg" %}{% endif %} {{ p.product_name }}</h4>
         {% if logged_in %}
@@ -117,6 +118,7 @@
       {% endif %}
     </article>
     {% endfor %}
-    {% if products.is_empty() %}<p>{{ "detail-no-products"|t }}</p>{% endif %}
+    {% if products.is_empty() %}<section class="panel-card"><p>{{ "detail-no-products"|t }}</p></section>{% endif %}
   </section>
+  </div>
 </div>

@@ -592,6 +592,10 @@ a:hover { text-decoration: underline; }
   transition: width 0.15s var(--ease);
 }
 .sidebar-panel { padding: var(--space-4); }
+/* The search panel's filter card and its results list are siblings
+   rather than one `.panel-stack`, since the results are patched
+   separately (#sidebar-results) — this keeps their spacing identical. */
+.sidebar-panel > .panel-card { margin-bottom: var(--space-4); }
 
 #map { flex: 1; min-height: 0; background: var(--surface-2); }
 
@@ -803,18 +807,23 @@ a:hover { text-decoration: underline; }
 /* Opening-hours grid (store_form.html) — one row per weekday, two time
    inputs each; both blank means closed that day (opening_hours::parse). */
 /* ============================================================
-   Store form — one card per group (store_form.html)
+   Panel cards — the sidebar's group container, used by every panel
+   (search filters, store detail, store form, account, auth). One
+   concern per card so a long panel reads as a set of groups rather
+   than one undifferentiated run of fields. See DESIGN.md.
    ============================================================ */
-.store-form { display: flex; flex-direction: column; gap: var(--space-4); }
+.panel-stack { display: flex; flex-direction: column; gap: var(--space-4); }
 
-.form-card {
+.panel-card {
   padding: var(--space-4);
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
 }
-.form-card > h3 {
+.panel-card > h3,
+.panel-card > .block-heading > h2,
+.panel-card > .block-heading > h3 {
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -825,11 +834,17 @@ a:hover { text-decoration: underline; }
 }
 /* The single-control groups use the heading *as* the field's label
    rather than repeating the word underneath it. */
-.form-card > h3 label { display: contents; cursor: pointer; }
-.form-card > h3 .icon { color: var(--text-muted); }
-.form-card .field:last-child { margin-bottom: 0; }
+.panel-card > h3 label { display: contents; cursor: pointer; }
+.panel-card > h3 .icon,
+.panel-card > .block-heading .icon { color: var(--accent); }
+.panel-card > .block-heading { margin-bottom: var(--space-3); }
+.panel-card > *:last-child { margin-bottom: 0; }
+.panel-card .field:last-child { margin-bottom: 0; }
 /* Nothing to title — just the error slot and the submit button. */
-.form-card-actions { display: flex; flex-direction: column; gap: var(--space-3); }
+.panel-card-actions { display: flex; flex-direction: column; gap: var(--space-3); }
+/* Highlighted product (arrived at from a map pin) — same accent ring
+   the old `.product.selected` used. */
+.panel-card.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 
 /* One product per block, scoped by an accent rule down its left edge so
    several stacked blocks read as separate entries rather than one long
@@ -1066,22 +1081,6 @@ a.icon-btn.danger:hover, button.icon-btn.danger:hover { background: var(--critic
 /* ============================================================
    Filter card (sidebar_search.html's category/product/distance fields)
    ============================================================ */
-/* Sits *on* the sidebar rather than floating above it: this is chrome
-   (the controls that drive the list), not content like the result cards
-   below it, so it shares `--shell` and keeps only a hairline to group
-   the fields. The white surface inside it belongs to the `<select>`s
-   themselves (`.field select`), which is what should read as
-   "fill this in". A drop shadow under a same-colored panel just looks
-   like grime, so there is none. */
-.filter-card {
-  padding: var(--space-4);
-  margin-bottom: var(--space-4);
-  background: var(--shell);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-}
-.filter-card .field:last-child { margin-bottom: 0; }
-
 /* ============================================================
    Results list
    ============================================================ */
@@ -1175,7 +1174,6 @@ a.icon-btn.danger:hover, button.icon-btn.danger:hover { background: var(--critic
 .block-heading h2, .block-heading h3, .block-heading h4 { display: flex; align-items: center; gap: var(--space-2); margin: 0; }
 .block-heading .icon { color: var(--accent); }
 
-.company-block, .store-block { margin-bottom: var(--space-5); }
 
 .maps-link {
   display: inline-flex;
@@ -1193,14 +1191,9 @@ a.icon-btn.danger:hover, button.icon-btn.danger:hover { background: var(--critic
   margin-top: var(--space-2);
 }
 
-.products { display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-4); }
-.product {
-  padding: var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-}
-.product.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+/* Products are `.panel-card`s in their own right (one per offering) —
+   this only supplies the gap between them. */
+.products { display: flex; flex-direction: column; gap: var(--space-4); }
 
 .rating-row { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; margin: var(--space-2) 0; }
 .rating-badge {
@@ -1233,6 +1226,7 @@ button.rated:hover { filter: brightness(0.97); }
 }
 .gallery img { width: 64px; height: 64px; object-fit: cover; display: block; }
 
+.pending-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
 .pending-note {
   display: flex;
   align-items: center;
