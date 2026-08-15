@@ -31,16 +31,42 @@
       <button type="button" class="btn" id="use-my-location-btn">{% include "icons/map-pin.svg" %} {{ "search-use-my-location"|t }}</button>
     </div>
 
-    <div class="field">
+    <!-- Most submissions don't have hours to hand, and seven rows of
+         empty selects is a lot of form to scroll past to reach the parts
+         that are required. The grid below is hidden until this is
+         ticked; unticked also *means* "no hours", enforced server-side
+         (opening_hours::parse) rather than by clearing the day signals
+         here, since they stay populated while merely hidden. -->
+    <div class="field checkbox-field">
+      <input id="has-opening-hours" type="checkbox" data-bind:has-opening-hours>
+      <label for="has-opening-hours" style="margin: 0;">{{ "store-form-define-opening-hours"|t }}</label>
+    </div>
+
+    <div class="field" data-show="$hasOpeningHours">
       <label>{{ "store-form-opening-hours"|t }}</label>
       <p class="field-hint">{{ "store-form-opening-hours-hint"|t }}</p>
       <div class="opening-hours-grid">
         {% for d in opening_hours %}
         <div class="opening-hours-row">
           <span class="opening-hours-day">{{ d.label }}</span>
-          <input type="time" data-bind:oh-{{ d.key }}-open value="{% if let Some(v) = d.open %}{{ v }}{% endif %}">
+          <!-- Half-hour <select>s, not <input type="time"> — see
+               opening_hours::time_options for why. The blank option is
+               what makes a day closed (both blank), and `selected` is
+               belt-and-braces: the form handler also patches these
+               signals, which is what actually drives the bound value. -->
+          <select data-bind:oh-{{ d.key }}-open aria-label="{{ d.label }} {{ "store-form-opens"|t }}">
+            <option value="">{{ "opening-hours-closed"|t }}</option>
+            {% for t in time_options %}
+            <option value="{{ t }}"{% if let Some(v) = d.open %}{% if v == t %} selected{% endif %}{% endif %}>{{ t }}</option>
+            {% endfor %}
+          </select>
           <span class="opening-hours-sep">–</span>
-          <input type="time" data-bind:oh-{{ d.key }}-close value="{% if let Some(v) = d.close %}{{ v }}{% endif %}">
+          <select data-bind:oh-{{ d.key }}-close aria-label="{{ d.label }} {{ "store-form-closes"|t }}">
+            <option value="">{{ "opening-hours-closed"|t }}</option>
+            {% for t in time_options %}
+            <option value="{{ t }}"{% if let Some(v) = d.close %}{% if v == t %} selected{% endif %}{% endif %}>{{ t }}</option>
+            {% endfor %}
+          </select>
         </div>
         {% endfor %}
       </div>

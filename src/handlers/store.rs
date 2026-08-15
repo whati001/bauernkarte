@@ -22,7 +22,7 @@ use crate::{
     models::{Category, Company, Product},
     opening_hours::{self, OpeningHoursFields},
     seasonality::{self, SeasonalityFields},
-    sse::patch_elements_at,
+    sse::{patch_elements_at, patch_signals},
     state::AppState,
     templates::render,
 };
@@ -40,6 +40,9 @@ struct StoreFormTemplate {
     lat: Option<f64>,
     lon: Option<f64>,
     opening_hours: Vec<opening_hours::WeekdayRow>,
+    /// Every half hour, `"00:00"` .. `"24:00"` — the same list for all 14
+    /// `<select>`s in the grid (`opening_hours::time_options`).
+    time_options: Vec<String>,
     companies: Vec<Company>,
     /// Only populated (and only rendered, per the template's `!is_edit`
     /// guard) for the new-store form — a store SHALL carry at least one
@@ -86,6 +89,7 @@ pub async fn new_form(
         lat: None,
         lon: None,
         opening_hours: opening_hours::week_rows(&[]),
+        time_options: opening_hours::time_options(),
         companies,
         products,
         categories,
@@ -93,7 +97,12 @@ pub async fn new_form(
         seasonal_months: seasonality::month_rows(None),
         location_status_expr: location_status_expr(),
     });
-    Ok(Sse::new(stream::iter(vec![Ok(patch_elements_at("#sidebar", "inner", &html))])))
+    // Elements first, then signals — see `edit_form` below for why the
+    // signal patch is needed at all.
+    Ok(Sse::new(stream::iter(vec![
+        Ok(patch_elements_at("#sidebar", "inner", &html)),
+        Ok(patch_signals(&opening_hours::form_signals(&[]))),
+    ])))
 }
 
 /// `GET /store/{id}/edit` — catalog-editing: any logged-in user.
@@ -115,6 +124,7 @@ pub async fn edit_form(
         lat: Some(store.lat),
         lon: Some(store.lon),
         opening_hours: opening_hours::week_rows(&hours),
+        time_options: opening_hours::time_options(),
         companies,
         products: Vec::new(),
         categories: Vec::new(),
@@ -122,7 +132,15 @@ pub async fn edit_form(
         seasonal_months: Vec::new(),
         location_status_expr: location_status_expr(),
     });
-    Ok(Sse::new(stream::iter(vec![Ok(patch_elements_at("#sidebar", "inner", &html))])))
+    // The 14 `oh*` signals (and `hasOpeningHours`) outlive every #sidebar
+    // swap, so without this the store edited *before* this one would
+    // still be in them: `data-bind` seeds a signal from the element only
+    // when it's missing, then drives the element from the signal, so a
+    // stale value beats the freshly rendered `selected` option.
+    Ok(Sse::new(stream::iter(vec![
+        Ok(patch_elements_at("#sidebar", "inner", &html)),
+        Ok(patch_signals(&opening_hours::form_signals(&hours))),
+    ])))
 }
 
 #[derive(Deserialize)]

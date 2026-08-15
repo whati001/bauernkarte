@@ -53,12 +53,60 @@ pub fn week_rows(hours: &[DayHours]) -> Vec<WeekdayRow> {
         .collect()
 }
 
+/// Every half hour of the day, `"00:00"` .. `"24:00"` — the options the
+/// form's time `<select>`s offer (49 entries).
+///
+/// A plain `<select>` rather than the `<input type="time">` this replaced:
+/// the native control is a ready-made picker, but its UI differs sharply
+/// between browsers, it invites free-typed minute values the business
+/// doesn't want, and it cannot express `"24:00"` at all (its ceiling is
+/// `23:59`) — which is the natural way to say "open until midnight".
+/// `"24:00"` sorts correctly against the rest under the plain string
+/// comparison `parse` uses below, and `week_rows` renders it verbatim.
+pub fn time_options() -> Vec<String> {
+    (0..=48)
+        .map(|i| format!("{:02}:{:02}", i / 2, if i % 2 == 0 { 0 } else { 30 }))
+        .collect()
+}
+
+/// The form's own signal values, for a `patch-signals` alongside the
+/// rendered form.
+///
+/// Signals outlive `#sidebar` swaps, so without this the *previous*
+/// store's hours would still be in `$ohMonOpen` & co. when the next form
+/// mounts — and `data-bind` initializes from the element only
+/// `ifMissing`, then drives the element from the signal, so the stale
+/// value wins over the freshly rendered `selected` option.
+pub fn form_signals(hours: &[DayHours]) -> serde_json::Value {
+    let mut map = serde_json::Map::new();
+    for (day, key, _) in WEEKDAYS {
+        let entry = hours.iter().find(|h| h.day == day);
+        let (open, close) = match entry {
+            Some(e) => (e.open.as_str(), e.close.as_str()),
+            None => ("", ""),
+        };
+        // `data-bind:oh-mon-open` in the template is `$ohMonOpen` as a
+        // signal — Datastar camel-cases the kebab attribute key.
+        let day = format!("{}{}", key[..1].to_uppercase(), &key[1..]);
+        map.insert(format!("oh{day}Open"), open.into());
+        map.insert(format!("oh{day}Close"), close.into());
+    }
+    map.insert("hasOpeningHours".to_string(), (!hours.is_empty()).into());
+    serde_json::Value::Object(map)
+}
+
 /// The form's 14 flat `oh<Day><Open|Close>` signal fields — `#[serde(flatten)]`d
 /// into `store::NewStoreBody`/`store::EditStoreBody`, since both render
 /// the same 7-day grid (`store_form.html`).
 #[derive(Debug, Default, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OpeningHoursFields {
+    /// The form's "Öffnungszeiten definieren" checkbox. Unchecked means
+    /// "no hours specified" regardless of what the (hidden) day fields
+    /// still hold — decided here rather than by clearing 14 signals
+    /// client-side when the box is unticked.
+    #[serde(default)]
+    pub has_opening_hours: bool,
     #[serde(default)]
     pub oh_mon_open: Option<String>,
     #[serde(default)]
@@ -96,6 +144,12 @@ pub struct OpeningHoursFields {
 /// string comparison is a valid chronological one); exactly one set is
 /// rejected rather than silently guessed at.
 pub fn parse(fields: &OpeningHoursFields) -> Result<Vec<DayHours>, AppError> {
+    // The day grid is hidden, not cleared, when the box is unticked — so
+    // its signals may still carry a previous edit. The checkbox is the
+    // authority.
+    if !fields.has_opening_hours {
+        return Ok(Vec::new());
+    }
     let pairs: [(i16, &Option<String>, &Option<String>); 7] = [
         (1, &fields.oh_mon_open, &fields.oh_mon_close),
         (2, &fields.oh_tue_open, &fields.oh_tue_close),

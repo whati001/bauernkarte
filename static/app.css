@@ -481,20 +481,20 @@ a:hover { text-decoration: underline; }
 .product-pick.active:hover { background: var(--accent); color: var(--accent-contrast); filter: brightness(1.08); }
 .product-pick-icon { font-size: 1.05em; }
 
-/* Pinned to the right edge of the scroller rather than trailing the last
-   chip — the row scrolls sideways, and the one control that reaches the
-   *rest* of the catalog is no use parked off-screen. The shell-colored
-   backdrop (plus the fade to its left) is what the chips slide under. */
+/* Pinned to the leading edge of the scroller — the row scrolls sideways,
+   and the one control that reaches the *rest* of the catalog is no use
+   parked off-screen. The shell-colored backdrop (plus the fade to its
+   right) is what the chips slide under. */
 .product-more {
   position: sticky;
-  right: 0;
-  margin-left: auto;
+  left: 0;
+  margin-right: var(--space-1);
   color: var(--text-primary);
   background: var(--shell);
   border-color: var(--border-strong);
-  box-shadow: -12px 0 12px -6px var(--shell);
+  box-shadow: 12px 0 12px -6px var(--shell);
 }
-.product-more:hover { background: var(--shell-2); box-shadow: -12px 0 12px -6px var(--shell); }
+.product-more:hover { background: var(--shell-2); box-shadow: 12px 0 12px -6px var(--shell); }
 .product-more-icon { display: inline-flex; color: var(--text-secondary); }
 .product-more-icon .icon { width: 1em; height: 1em; vertical-align: 0; }
 
@@ -805,11 +805,20 @@ a:hover { text-decoration: underline; }
 .opening-hours-grid { display: flex; flex-direction: column; gap: var(--space-2); }
 .opening-hours-row {
   display: grid;
-  grid-template-columns: 2.5em 1fr auto 1fr;
+  grid-template-columns: 2.2em minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: var(--space-2);
 }
-.opening-hours-row input[type="time"] { min-height: var(--touch-target); }
+/* The two selects share the row's slack evenly. `min-width: 0` is what
+   lets them actually shrink inside the grid track — without it the
+   "Geschlossen" option sets an intrinsic minimum wider than the sidebar
+   and the row overflows instead of the text ellipsising. */
+.opening-hours-row select {
+  min-height: var(--touch-target);
+  min-width: 0;
+  padding-left: var(--space-2);
+  padding-right: var(--space-1);
+}
 .opening-hours-day { font-size: var(--font-size-sm); font-weight: 600; color: var(--text-secondary); }
 .opening-hours-sep { color: var(--text-muted); text-align: center; }
 
