@@ -1,5 +1,11 @@
 <nav id="navbar">
-  <a class="brand" href="/">{% include "icons/sprout.svg" %} {{ "nav-brand"|t }}</a>
+  <a class="brand" href="/">
+    <span class="brand-mark">{% include "icons/sprout.svg" %}</span>
+    <span class="brand-text">
+      <span class="brand-name">{{ "nav-brand"|t }}</span>
+      <span class="brand-tagline">{{ "nav-tagline"|t }}</span>
+    </span>
+  </a>
   <!-- Global category/product picker. Deliberately not a free-text
        search: the input only filters the suggestion list, nothing is
        submitted, and the actual filter is only ever applied by clicking
@@ -34,7 +40,7 @@
       <a class="nav-link" href="/store/new" data-on:click__prevent="@get('/store/new')">{% include "icons/store.svg" %} {{ "nav-new-store"|t }}</a>
       <button class="nav-link" data-on:click="@post('/logout')">{% include "icons/log-out.svg" %} {{ "nav-logout"|t }}</button>
     {% else %}
-      <a class="nav-link" href="/login" data-on:click__prevent="@get('/login')">{% include "icons/log-in.svg" %} {{ "nav-login"|t }}</a>
+      <a class="nav-link nav-cta" href="/login" data-on:click__prevent="@get('/login')">{% include "icons/log-in.svg" %} {{ "nav-login"|t }}</a>
     {% endif %}
     <!-- Plain server navigation (no data-on:click__prevent) — switching
          language reloads the page on purpose, see handlers/locale.rs. -->

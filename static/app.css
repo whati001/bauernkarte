@@ -13,6 +13,15 @@
   --page-bg: #f9f9f7;
   --surface: #fcfcfb;
   --surface-2: #f2f1ee; /* hover wash, input backgrounds */
+  /* The app's chrome (navbar + sidebar) — a warm tan that reads as
+     "farm", and that the near-white `--surface` cards sitting on it
+     (filter card, result cards) now visibly lift off of, which they
+     didn't when chrome and cards were the same near-white. Kept light
+     enough that `--text-muted` on it stays as legible as it was on
+     `--surface`; content surfaces themselves are deliberately left
+     neutral so photos and product chips aren't tinted. */
+  --shell: #f5efe4;
+  --shell-2: #eae0cd; /* hover wash for controls sitting on --shell */
   --text-primary: #0b0b0b;
   --text-secondary: #52514e;
   --text-muted: #898781;
@@ -64,6 +73,11 @@
     --page-bg: #0d0d0d;
     --surface: #1a1a19;
     --surface-2: #232322;
+    /* Warm near-black, a touch *darker* than `--surface` so the cards on
+       it still read as the elevated layer — the light theme gets that
+       cue from the other direction (see `--shell` above). */
+    --shell: #15120e;
+    --shell-2: #241f16;
     --text-primary: #ffffff;
     --text-secondary: #c3c2b7;
     --text-muted: #898781;
@@ -90,6 +104,8 @@
   --page-bg: #0d0d0d;
   --surface: #1a1a19;
   --surface-2: #232322;
+  --shell: #15120e;
+  --shell-2: #241f16;
   --text-primary: #ffffff;
   --text-secondary: #c3c2b7;
   --text-muted: #898781;
@@ -210,9 +226,9 @@ a:hover { text-decoration: underline; }
   justify-content: space-between;
   gap: var(--space-3);
   min-height: var(--nav-height);
-  padding: 0 var(--space-4);
+  padding: var(--space-2) var(--space-4);
   border-bottom: 1px solid var(--border);
-  background: var(--surface);
+  background: var(--shell);
   box-shadow: var(--shadow-sm);
   position: relative;
   z-index: 1000;
@@ -222,11 +238,56 @@ a:hover { text-decoration: underline; }
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  font-weight: 700;
-  font-size: var(--font-size-md);
   color: var(--text-primary);
 }
-#navbar .brand:hover { text-decoration: none; color: var(--accent); }
+#navbar .brand:hover { text-decoration: none; }
+#navbar .brand:hover .brand-name { color: var(--accent); }
+
+/* Green tile behind the sprout — the one place the accent appears as a
+   filled shape rather than as text/border color, so it reads as the
+   logo mark. */
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  color: var(--accent-contrast);
+  background: var(--accent);
+  border-radius: var(--radius-md);
+}
+.brand-mark .icon { width: 20px; height: 20px; vertical-align: 0; }
+
+.brand-text { display: flex; flex-direction: column; line-height: 1.15; }
+.brand-name { font-weight: 700; font-size: var(--font-size-md); }
+.brand-tagline {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  /* Never wrap: a two-line tagline pushes #navbar past --nav-height,
+     and every pixel it takes comes off the map. Hidden outright below
+     the width where it stops fitting (see the media query). */
+  white-space: nowrap;
+}
+/* Below this the tagline no longer fits on the row next to the login
+   button and the language switch, and wrapping the navbar to two lines
+   costs more than the tagline is worth — the name alone still
+   identifies the app. */
+@media (max-width: 640px) {
+  .brand-tagline { display: none; }
+}
+/* Small phones: the brand mark and the login pill are both wider than
+   the plain icon + text link they replaced, which was enough to wrap
+   #navbar to two rows at 360px. Trimming the gutters and the brand type
+   buys back more than that costs. */
+@media (max-width: 400px) {
+  #navbar { padding-left: var(--space-2); padding-right: var(--space-2); gap: var(--space-2); }
+  .brand-mark { width: 30px; height: 30px; }
+  .brand-name { font-size: var(--font-size-base); }
+}
 
 /* Global category/product picker — centered by `margin: 0 auto` inside
    #navbar's space-between row, so it stays visually centered on the page
@@ -247,7 +308,10 @@ a:hover { text-decoration: underline; }
   align-items: center;
   gap: var(--space-2);
   padding: 0 var(--space-2) 0 var(--space-3);
-  background: var(--surface-2);
+  /* `--surface`, not the usual `--surface-2` input wash: on the warm
+     `--shell` navbar the input needs to read as a lighter well, and the
+     grey wash would just look like a smudge on the tan. */
+  background: var(--surface);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-full);
 }
@@ -286,7 +350,7 @@ a:hover { text-decoration: underline; }
   border-radius: var(--radius-full);
   min-height: auto;
 }
-.nav-search-clear:hover { background: var(--surface); color: var(--text-primary); }
+.nav-search-clear:hover { background: var(--surface-2); color: var(--text-primary); }
 
 /* Above the map (Leaflet panes sit at z-index 400-700) and above
    #navbar's own stacking context children. */
@@ -385,7 +449,23 @@ a:hover { text-decoration: underline; }
   background: none;
   border: none;
 }
-.nav-link:hover { background: var(--surface-2); color: var(--text-primary); text-decoration: none; }
+.nav-link:hover { background: var(--shell-2); color: var(--text-primary); text-decoration: none; }
+
+/* Login — the navbar's one call to action, so it's the filled-accent
+   pill rather than another quiet text link. Same green as the active
+   language chip; the pill shape is what keeps the two from reading as
+   the same control. */
+.nav-link.nav-cta {
+  color: var(--accent-contrast);
+  background: var(--accent);
+  border-radius: var(--radius-full);
+  font-weight: 600;
+}
+.nav-link.nav-cta:hover {
+  color: var(--accent-contrast);
+  background: var(--accent);
+  filter: brightness(1.08);
+}
 
 .lang-switch {
   display: inline-flex;
@@ -406,7 +486,7 @@ a:hover { text-decoration: underline; }
   font-weight: 600;
   color: var(--text-secondary);
 }
-.lang-link:hover { background: var(--surface-2); text-decoration: none; }
+.lang-link:hover { background: var(--shell-2); text-decoration: none; }
 .lang-link.active { background: var(--accent); color: var(--accent-contrast); }
 .lang-link.active:hover { background: var(--accent); }
 
@@ -427,7 +507,7 @@ a:hover { text-decoration: underline; }
      region left (see the html/body comment above). */
   overscroll-behavior-y: contain;
   border-right: 1px solid var(--border);
-  background: var(--surface);
+  background: var(--shell);
   transition: width 0.15s var(--ease);
 }
 .sidebar-panel { padding: var(--space-4); }

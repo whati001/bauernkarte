@@ -4,6 +4,7 @@
 
 ## Navbar
 nav-brand = Was hat der Bauer
+nav-tagline = Buy local, support farmers
 nav-login = Login
 nav-logout = Logout
 nav-account = Account
