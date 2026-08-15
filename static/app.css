@@ -644,11 +644,7 @@ a:hover { text-decoration: underline; }
   background: none;
 }
 .leaflet-bar a,
-.leaflet-touch .leaflet-bar a,
-.leaflet-bar a:first-child,
-.leaflet-bar a:last-child,
-.leaflet-touch .leaflet-bar a:first-child,
-.leaflet-touch .leaflet-bar a:last-child {
+.leaflet-touch .leaflet-bar a {
   width: var(--touch-target);
   height: var(--touch-target);
   line-height: calc(var(--touch-target) - 2px);
@@ -658,10 +654,31 @@ a:hover { text-decoration: underline; }
   color: var(--text-primary);
   box-shadow: var(--shadow-sm);
 }
+/* Only the radius needs to reach this far. Leaflet gives the first/last
+   button per-corner radii from `.leaflet-touch .leaflet-bar a:first-child`
+   — longhands at (0,3,1), which out-specify the `border-radius`
+   shorthand above and would square off the top of the "+" and the bottom
+   of the "−". Everything else deliberately stays on the lower-specificity
+   selector so `:hover` below can still win. */
+.leaflet-bar a:first-child,
+.leaflet-bar a:last-child,
+.leaflet-touch .leaflet-bar a:first-child,
+.leaflet-touch .leaflet-bar a:last-child { border-radius: 50%; }
+
 .leaflet-bar a + a { margin-top: var(--space-2); }
+/* Background wash only, matching `.map-fab` — no underline. These are
+   `<a>`s, so the global `a:hover` rule applies, and it sits later in the
+   cascade than Leaflet's own `.leaflet-bar a { text-decoration: none }`
+   at equal specificity, which is what underlined the +/− glyph. */
 .leaflet-bar a:hover,
-.leaflet-bar a:focus { background: var(--shell-2); }
-.leaflet-bar a.leaflet-disabled { background: var(--surface); color: var(--text-muted); }
+.leaflet-bar a:focus,
+.leaflet-touch .leaflet-bar a:hover,
+.leaflet-touch .leaflet-bar a:focus {
+  background: var(--shell-2);
+  text-decoration: none;
+}
+.leaflet-bar a.leaflet-disabled,
+.leaflet-touch .leaflet-bar a.leaflet-disabled { background: var(--surface); color: var(--text-muted); }
 .leaflet-control-zoom-in,
 .leaflet-control-zoom-out,
 .leaflet-touch .leaflet-control-zoom-in,
