@@ -48,6 +48,13 @@ const MONTHS: [(i16, &str, &str); 12] = [
     (12, "dec", "month-dec"),
 ];
 
+/// The signal-name stems (`"jan"` .. `"dec"`) behind `data-bind:month-*`
+/// — needed by `handlers::product::slot_signals`, which builds those
+/// names for the new-store form's indexed product blocks.
+pub fn month_keys() -> impl Iterator<Item = &'static str> {
+    MONTHS.iter().map(|(_, key, _)| *key)
+}
+
 /// (start index, end index) of each consecutive run of `true` in a
 /// 12-slot Jan..Dec array — deliberately *not* circular (a run available
 /// Nov+Dec plus Jan+Feb is two runs, not one wrapping across New Year's):

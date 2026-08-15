@@ -114,7 +114,8 @@ store-form-company = Firma
 store-form-company-choose = — wählen —
 store-form-company-description = Firmenbeschreibung (optional)
 store-form-company-homepage = Firmen-Homepage (optional)
-store-form-product-heading = Erstes Produkt (mindestens eines erforderlich)
+store-form-product-heading = Produkte (mindestens eines erforderlich)
+store-form-product-n = Produkt
 
 ## Company form
 company-form-heading = Firma bearbeiten

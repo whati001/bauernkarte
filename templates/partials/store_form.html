@@ -3,11 +3,17 @@
     <button class="back-link" data-on:click="@get('/api/store/back')">{% include "icons/chevron-left.svg" %} {{ "action-back-to-search"|t }}</button>
   </div>
   <h2>{% include "icons/store.svg" %} {% if is_edit %}{{ "store-form-edit-heading"|t }}{% else %}{{ "store-form-new-heading"|t }}{% endif %}</h2>
-  <form data-on:submit__prevent="@{% if is_edit %}patch{% else %}post{% endif %}('{{ action }}')">
-    <div class="field">
-      <label for="store-name">{% include "icons/store.svg" %} {{ "store-form-name"|t }}</label>
-      <input id="store-name" type="text" name="name" data-bind:store-name value="{{ name }}" required>
-    </div>
+  <!-- One `.form-card` per group (name / location / opening hours /
+       company / products / save) — the form is long enough that a flat
+       run of fields gives no sense of where one concern ends and the
+       next begins. -->
+  <form class="store-form" data-on:submit__prevent="@{% if is_edit %}patch{% else %}post{% endif %}('{{ action }}')">
+    <section class="form-card">
+      <h3><label for="store-name">{% include "icons/store.svg" %} {{ "store-form-name"|t }}</label></h3>
+      <div class="field">
+        <input id="store-name" type="text" name="name" data-bind:store-name value="{{ name }}" required>
+      </div>
+    </section>
 
     <!-- Position is picked by clicking the map (map.js's location-picker
          module), not typed — see design.md's follow-up decision on this.
@@ -16,8 +22,8 @@
          id'd specifically so map.js can find it and detect "picker
          mode" is active, and its own id (store-lat-input) doubles as
          that detection hook. -->
-    <div class="field" id="location-picker" data-store-lat="{% if let Some(v) = lat %}{{ v }}{% else %}{% endif %}" data-store-lon="{% if let Some(v) = lon %}{{ v }}{% else %}{% endif %}">
-      <label>{% include "icons/map-pin.svg" %} {{ "store-form-location"|t }}</label>
+    <section class="form-card" id="location-picker" data-store-lat="{% if let Some(v) = lat %}{{ v }}{% else %}{% endif %}" data-store-lon="{% if let Some(v) = lon %}{{ v }}{% else %}{% endif %}">
+      <h3>{% include "icons/map-pin.svg" %} {{ "store-form-location"|t }}</h3>
       <p id="location-picker-status" class="location-picker-status" data-text="{{ location_status_expr }}"></p>
       <!-- type="number", not type="hidden", on purpose: Datastar's
            data-bind coerces a number input's value to a JSON number,
@@ -29,115 +35,152 @@
       <input type="number" step="any" style="display: none;" id="store-lat-input" name="lat" data-bind:store-lat value="{% if let Some(v) = lat %}{{ v }}{% endif %}">
       <input type="number" step="any" style="display: none;" id="store-lon-input" name="lon" data-bind:store-lon value="{% if let Some(v) = lon %}{{ v }}{% endif %}">
       <button type="button" class="btn" id="use-my-location-btn">{% include "icons/map-pin.svg" %} {{ "search-use-my-location"|t }}</button>
-    </div>
+    </section>
 
-    <!-- Most submissions don't have hours to hand, and seven rows of
-         empty selects is a lot of form to scroll past to reach the parts
-         that are required. The grid below is hidden until this is
-         ticked; unticked also *means* "no hours", enforced server-side
-         (opening_hours::parse) rather than by clearing the day signals
-         here, since they stay populated while merely hidden. -->
-    <div class="field checkbox-field">
-      <input id="has-opening-hours" type="checkbox" data-bind:has-opening-hours>
-      <label for="has-opening-hours" style="margin: 0;">{{ "store-form-define-opening-hours"|t }}</label>
-    </div>
+    <section class="form-card">
+      <h3>{% include "icons/store.svg" %} {{ "store-form-opening-hours"|t }}</h3>
+      <!-- Most submissions don't have hours to hand, and seven rows of
+           empty selects is a lot of form to scroll past to reach the
+           parts that are required. The grid below is hidden until this
+           is ticked; unticked also *means* "no hours", enforced
+           server-side (opening_hours::parse) rather than by clearing the
+           day signals here, since they stay populated while merely
+           hidden. -->
+      <div class="field checkbox-field">
+        <input id="has-opening-hours" type="checkbox" data-bind:has-opening-hours>
+        <label for="has-opening-hours" style="margin: 0;">{{ "store-form-define-opening-hours"|t }}</label>
+      </div>
 
-    <div class="field" data-show="$hasOpeningHours">
-      <label>{{ "store-form-opening-hours"|t }}</label>
-      <p class="field-hint">{{ "store-form-opening-hours-hint"|t }}</p>
-      <div class="opening-hours-grid">
-        {% for d in opening_hours %}
-        <div class="opening-hours-row">
-          <span class="opening-hours-day">{{ d.label }}</span>
-          <!-- Half-hour <select>s, not <input type="time"> — see
-               opening_hours::time_options for why. The blank option is
-               what makes a day closed (both blank), and `selected` is
-               belt-and-braces: the form handler also patches these
-               signals, which is what actually drives the bound value. -->
-          <select data-bind:oh-{{ d.key }}-open aria-label="{{ d.label }} {{ "store-form-opens"|t }}">
-            <option value="">{{ "opening-hours-closed"|t }}</option>
-            {% for t in time_options %}
-            <option value="{{ t }}"{% if let Some(v) = d.open %}{% if v == t %} selected{% endif %}{% endif %}>{{ t }}</option>
-            {% endfor %}
-          </select>
-          <span class="opening-hours-sep">–</span>
-          <select data-bind:oh-{{ d.key }}-close aria-label="{{ d.label }} {{ "store-form-closes"|t }}">
-            <option value="">{{ "opening-hours-closed"|t }}</option>
-            {% for t in time_options %}
-            <option value="{{ t }}"{% if let Some(v) = d.close %}{% if v == t %} selected{% endif %}{% endif %}>{{ t }}</option>
+      <div class="field" data-show="$hasOpeningHours">
+        <p class="field-hint">{{ "store-form-opening-hours-hint"|t }}</p>
+        <div class="opening-hours-grid">
+          {% for d in opening_hours %}
+          <div class="opening-hours-row">
+            <span class="opening-hours-day">{{ d.label }}</span>
+            <!-- Half-hour <select>s, not <input type="time"> — see
+                 opening_hours::time_options for why. The blank option is
+                 what makes a day closed (both blank), and `selected` is
+                 belt-and-braces: the form handler also patches these
+                 signals, which is what actually drives the bound value. -->
+            <select data-bind:oh-{{ d.key }}-open aria-label="{{ d.label }} {{ "store-form-opens"|t }}">
+              <option value="">{{ "opening-hours-closed"|t }}</option>
+              {% for t in time_options %}
+              <option value="{{ t }}"{% if let Some(v) = d.open %}{% if v == t %} selected{% endif %}{% endif %}>{{ t }}</option>
+              {% endfor %}
+            </select>
+            <span class="opening-hours-sep">–</span>
+            <select data-bind:oh-{{ d.key }}-close aria-label="{{ d.label }} {{ "store-form-closes"|t }}">
+              <option value="">{{ "opening-hours-closed"|t }}</option>
+              {% for t in time_options %}
+              <option value="{{ t }}"{% if let Some(v) = d.close %}{% if v == t %} selected{% endif %}{% endif %}>{{ t }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    {% if !is_edit %}
+    <section class="form-card">
+      <h3>{% include "icons/building-2.svg" %} {{ "store-form-company"|t }}</h3>
+      <div class="field checkbox-field">
+        <input id="is-company-checkbox" type="checkbox" data-bind:is-company>
+        <label for="is-company-checkbox" style="margin: 0;">{{ "store-form-is-company"|t }}</label>
+      </div>
+      <div class="field" data-show="!$isCompany">
+        <label for="store-company">{{ "store-form-company"|t }}</label>
+        <select id="store-company" data-bind:company-id>
+          <option value="">{{ "store-form-company-choose"|t }}</option>
+          {% for c in companies %}
+          <option value="{{ c.id }}">{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field" data-show="$isCompany">
+        <label for="company-description">{{ "store-form-company-description"|t }}</label>
+        <textarea id="company-description" name="company_description" data-bind:company-description></textarea>
+      </div>
+      <div class="field" data-show="$isCompany">
+        <label for="company-homepage">{{ "store-form-company-homepage"|t }}</label>
+        <input id="company-homepage" type="url" name="company_homepage" data-bind:company-homepage>
+      </div>
+    </section>
+
+    <!-- A store SHALL carry at least one product on creation — one never
+         showing up is otherwise indistinguishable from a bug (the entire
+         search/map path requires at least one approved store_product to
+         find a store at all, see handlers::product::resolve_product's
+         doc comment).
+
+         Every block is in the markup up front and revealed as the
+         previous one is filled (`show_expr`, built in
+         product::slot_views), so "name a product, get another slot"
+         needs no client-side templating. The server skips unfilled ones
+         (product::parse_slots), so the ceiling costs nothing when only
+         one product is named.
+
+         The seasonality markup is inlined rather than including
+         partials/seasonality_fields.html: an Askama include can't be
+         parameterised per loop iteration, and each block needs its
+         signal names index-suffixed. The partial still serves its other
+         two (single-product) callers unchanged. -->
+    <section class="form-card">
+      <h3>{% include "icons/package.svg" %} {{ "store-form-product-heading"|t }}</h3>
+      {% for s in product_slots %}
+      <div class="product-slot" data-show="{{ s.show_expr }}">
+        <h4>{{ "store-form-product-n"|t }} {{ s.number }}</h4>
+        <div class="field checkbox-field">
+          <input id="is-new-product-{{ s.index }}" type="checkbox" data-bind:is-new-product{{ s.index }}>
+          <label for="is-new-product-{{ s.index }}" style="margin: 0;">{{ "product-form-new-checkbox"|t }}</label>
+        </div>
+        <div class="field" data-show="!$isNewProduct{{ s.index }}">
+          <label for="existing-product-{{ s.index }}">{% include "icons/package.svg" %} {{ "product-form-product"|t }}</label>
+          <select id="existing-product-{{ s.index }}" data-bind:product-id{{ s.index }}>
+            <option value="">{{ "product-form-choose"|t }}</option>
+            {% for p in products %}
+            <option value="{{ p.id }}">{% if let Some(icon) = p.icon %}{{ icon }}{% else %}📦{% endif %} {{ p.name }}</option>
             {% endfor %}
           </select>
         </div>
-        {% endfor %}
+        <div class="field" data-show="$isNewProduct{{ s.index }}">
+          <label for="new-product-name-{{ s.index }}">{% include "icons/package.svg" %} {{ "product-form-name"|t }}</label>
+          <input id="new-product-name-{{ s.index }}" type="text" data-bind:new-product-name{{ s.index }}>
+        </div>
+        <div class="field" data-show="$isNewProduct{{ s.index }}">
+          <label for="new-product-category-{{ s.index }}">{% include "icons/tag.svg" %} {{ "product-form-category"|t }}</label>
+          <select id="new-product-category-{{ s.index }}" data-bind:new-product-category-id{{ s.index }}>
+            <option value="">{{ "product-form-choose"|t }}</option>
+            {% for c in categories %}
+            <option value="{{ c.id }}">{{ c.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field" data-show="$isNewProduct{{ s.index }}">
+          <label for="new-product-desc-{{ s.index }}">{{ "product-form-description-optional"|t }}</label>
+          <textarea id="new-product-desc-{{ s.index }}" data-bind:new-product-description{{ s.index }}></textarea>
+        </div>
+        <div class="field checkbox-field">
+          <input id="is-seasonal-{{ s.index }}" type="checkbox" data-bind:is-seasonal{{ s.index }}>
+          <label for="is-seasonal-{{ s.index }}" style="margin: 0;">{{ "product-form-seasonal-checkbox"|t }}</label>
+        </div>
+        <p class="field-hint" data-show="!$isSeasonal{{ s.index }}">{{ "product-form-seasonal-hint"|t }}</p>
+        <div class="month-grid" data-show="$isSeasonal{{ s.index }}">
+          {% for m in s.seasonal_months %}
+          <label class="month-chip">
+            <input type="checkbox" data-bind:month-{{ m.key }}{{ s.index }} {% if m.available %}checked{% endif %}>
+            <span>{{ m.label }}</span>
+          </label>
+          {% endfor %}
+        </div>
       </div>
-    </div>
-
-    {% if !is_edit %}
-    <div class="field checkbox-field">
-      <input id="is-company-checkbox" type="checkbox" data-bind:is-company>
-      <label for="is-company-checkbox" style="margin: 0;">{{ "store-form-is-company"|t }}</label>
-    </div>
-    <div class="field" data-show="!$isCompany">
-      <label for="store-company">{% include "icons/building-2.svg" %} {{ "store-form-company"|t }}</label>
-      <select id="store-company" data-bind:company-id>
-        <option value="">{{ "store-form-company-choose"|t }}</option>
-        {% for c in companies %}
-        <option value="{{ c.id }}">{{ c.name }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="field" data-show="$isCompany">
-      <label for="company-description">{% include "icons/building-2.svg" %} {{ "store-form-company-description"|t }}</label>
-      <textarea id="company-description" name="company_description" data-bind:company-description></textarea>
-    </div>
-    <div class="field" data-show="$isCompany">
-      <label for="company-homepage">{{ "store-form-company-homepage"|t }}</label>
-      <input id="company-homepage" type="url" name="company_homepage" data-bind:company-homepage>
-    </div>
-
-    <!-- A store SHALL carry at least one product on creation — one
-         never showing up is otherwise indistinguishable from a bug (the
-         entire search/map path requires at least one approved
-         store_product to find a store at all, see
-         handlers::product::resolve_product's doc comment). Mirrors
-         product_form.html's existing-vs-new fields/signal names exactly
-         (same `resolve_product` on the server reads either shape), so
-         this stays a single source of truth for how that choice renders. -->
-    <h3>{% include "icons/package.svg" %} {{ "store-form-product-heading"|t }}</h3>
-    <div class="field checkbox-field">
-      <input id="is-new-product-checkbox" type="checkbox" data-bind:is-new-product>
-      <label for="is-new-product-checkbox" style="margin: 0;">{{ "product-form-new-checkbox"|t }}</label>
-    </div>
-    <div class="field" data-show="!$isNewProduct">
-      <label for="existing-product">{% include "icons/package.svg" %} {{ "product-form-product"|t }}</label>
-      <select id="existing-product" name="product_id" data-bind:product-id>
-        <option value="">{{ "product-form-choose"|t }}</option>
-        {% for p in products %}
-        <option value="{{ p.id }}">{% if let Some(icon) = p.icon %}{{ icon }}{% else %}📦{% endif %} {{ p.name }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="field" data-show="$isNewProduct">
-      <label for="new-product-name">{% include "icons/package.svg" %} {{ "product-form-name"|t }}</label>
-      <input id="new-product-name" type="text" name="new_product_name" data-bind:new-product-name>
-    </div>
-    <div class="field" data-show="$isNewProduct">
-      <label for="new-product-category">{% include "icons/tag.svg" %} {{ "product-form-category"|t }}</label>
-      <select id="new-product-category" name="new_product_category_id" data-bind:new-product-category-id>
-        <option value="">{{ "product-form-choose"|t }}</option>
-        {% for c in categories %}
-        <option value="{{ c.id }}">{{ c.name }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="field" data-show="$isNewProduct">
-      <label for="new-product-desc">{{ "product-form-description-optional"|t }}</label>
-      <textarea id="new-product-desc" name="new_product_description" data-bind:new-product-description></textarea>
-    </div>
-    {% include "partials/seasonality_fields.html" %}
+      {% endfor %}
+    </section>
     {% endif %}
 
-    <div id="form-error" class="form-error"></div>
-    <button type="submit" class="primary" data-attr:disabled="!$storeLat || !$storeLon">{% include "icons/circle-check.svg" %} {{ "action-save"|t }}</button>
+    <section class="form-card form-card-actions">
+      <div id="form-error" class="form-error"></div>
+      <button type="submit" class="primary" data-attr:disabled="!$storeLat || !$storeLon">{% include "icons/circle-check.svg" %} {{ "action-save"|t }}</button>
+    </section>
   </form>
 </div>

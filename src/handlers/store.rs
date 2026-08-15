@@ -15,13 +15,13 @@ use crate::{
     auth::CurrentUser,
     db,
     error::{AppError, AppResult},
-    handlers::product::{resolve_product, NewProductSelection},
+    handlers::product::{self, resolve_product},
     handlers::store_detail::load_detail_or_404,
     i18n,
     i18n as filters, // see templates.rs's comment on this alias
     models::{Category, Company, Product},
     opening_hours::{self, OpeningHoursFields},
-    seasonality::{self, SeasonalityFields},
+    seasonality,
     sse::{patch_elements_at, patch_signals},
     state::AppState,
     templates::render,
@@ -52,10 +52,9 @@ struct StoreFormTemplate {
     products: Vec<Product>,
     categories: Vec<Category>,
     /// Same `!is_edit`-only scope as `products` above — the new-store
-    /// form's embedded "first product" section, all months available by
-    /// default (a brand-new listing has no prior seasonality to prefill).
-    is_seasonal: bool,
-    seasonal_months: Vec<seasonality::MonthRow>,
+    /// form's repeating product blocks, revealed one at a time as the
+    /// previous one is filled (`product::slot_views`).
+    product_slots: Vec<product::ProductSlotView>,
     /// Pre-built `data-text` JS ternary for the picker status line —
     /// built here (not in the template) so the two translated fragments
     /// go through `serde_json::to_string` for correct JS-string escaping
@@ -93,8 +92,7 @@ pub async fn new_form(
         companies,
         products,
         categories,
-        is_seasonal: false,
-        seasonal_months: seasonality::month_rows(None),
+        product_slots: product::slot_views(),
         location_status_expr: location_status_expr(),
     });
     // Elements first, then signals — see `edit_form` below for why the
@@ -102,6 +100,7 @@ pub async fn new_form(
     Ok(Sse::new(stream::iter(vec![
         Ok(patch_elements_at("#sidebar", "inner", &html)),
         Ok(patch_signals(&opening_hours::form_signals(&[]))),
+        Ok(patch_signals(&product::slot_signals())),
     ])))
 }
 
@@ -128,8 +127,7 @@ pub async fn edit_form(
         companies,
         products: Vec::new(),
         categories: Vec::new(),
-        is_seasonal: false,
-        seasonal_months: Vec::new(),
+        product_slots: Vec::new(),
         location_status_expr: location_status_expr(),
     });
     // The 14 `oh*` signals (and `hasOpeningHours`) outlive every #sidebar
@@ -160,11 +158,13 @@ pub struct NewStoreBody {
     #[serde(default)]
     company_homepage: Option<String>,
     #[serde(flatten)]
-    product: NewProductSelection,
-    #[serde(flatten)]
     opening_hours: OpeningHoursFields,
+    /// Everything else in the signal blob — the index-suffixed product
+    /// blocks (`productId0`, `isSeasonal1`, …), unpacked by
+    /// `product::parse_slots`. A catch-all rather than 5 x 18 named
+    /// fields, and it keeps the slot shape defined in exactly one place.
     #[serde(flatten)]
-    seasonality: SeasonalityFields,
+    product_slots: std::collections::HashMap<String, serde_json::Value>,
 }
 
 fn non_empty(s: Option<String>) -> Option<String> {
@@ -195,12 +195,25 @@ pub async fn create(
     // All parsed/validated before any mutation (company/store/product) —
     // same "fail before committing" reasoning as `resolve_product` below.
     let hours = opening_hours::parse(&body.opening_hours)?;
-    let seasonal_months = seasonality::parse(&body.seasonality)?;
-    // Resolved (and, for a brand-new product, inserted) before the
-    // company/store themselves — a store must carry at least one product
-    // (see `resolve_product`'s doc comment), so failing this validation
-    // must not leave an orphaned company/store behind.
-    let product = resolve_product(&state.pool, &body.product, user.id).await?;
+    let slots = product::parse_slots(&body.product_slots)?;
+    if slots.is_empty() {
+        return Err(AppError::Validation("Bitte mindestens ein Produkt angeben.".into()));
+    }
+    // Each slot's seasonality is validated up front, before anything is
+    // written — a bad month set in the *third* product must not leave a
+    // company, a store and two listings behind.
+    let mut resolved = Vec::with_capacity(slots.len());
+    for slot in &slots {
+        resolved.push(seasonality::parse(&slot.seasonality)?);
+    }
+    // Products are resolved (and, for brand-new ones, inserted) before
+    // the company/store themselves — a store must carry at least one
+    // product (see `resolve_product`'s doc comment), so failing this
+    // validation must not leave an orphaned company/store behind.
+    let mut products = Vec::with_capacity(slots.len());
+    for slot in &slots {
+        products.push(resolve_product(&state.pool, &slot.selection, user.id).await?);
+    }
 
     let company_id = if body.is_company {
         let company = db::company::insert(
@@ -227,10 +240,12 @@ pub async fn create(
     )
     .await?;
 
-    db::store_product::insert(&state.pool, store.id, product.id, seasonal_months, user.id).await?;
+    for (product, seasonal_months) in products.iter().zip(resolved) {
+        db::store_product::insert(&state.pool, store.id, product.id, seasonal_months, user.id).await?;
+    }
     tracing::info!(
-        user_id = %user.id, store_id = %store.id, company_id = %company_id, product_id = %product.id,
-        "store submitted for review"
+        user_id = %user.id, store_id = %store.id, company_id = %company_id,
+        product_count = products.len(), "store submitted for review"
     );
 
     let html = crate::templates::render_confirmation(&i18n::translate_with_name(

@@ -802,6 +802,53 @@ a:hover { text-decoration: underline; }
 
 /* Opening-hours grid (store_form.html) — one row per weekday, two time
    inputs each; both blank means closed that day (opening_hours::parse). */
+/* ============================================================
+   Store form — one card per group (store_form.html)
+   ============================================================ */
+.store-form { display: flex; flex-direction: column; gap: var(--space-4); }
+
+.form-card {
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+.form-card > h3 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+/* The single-control groups use the heading *as* the field's label
+   rather than repeating the word underneath it. */
+.form-card > h3 label { display: contents; cursor: pointer; }
+.form-card > h3 .icon { color: var(--text-muted); }
+.form-card .field:last-child { margin-bottom: 0; }
+/* Nothing to title — just the error slot and the submit button. */
+.form-card-actions { display: flex; flex-direction: column; gap: var(--space-3); }
+
+/* One product per block, scoped by an accent rule down its left edge so
+   several stacked blocks read as separate entries rather than one long
+   run of fields. Later blocks appear as the previous one is named (the
+   `data-show` in store_form.html). */
+.product-slot {
+  padding-left: var(--space-3);
+  border-left: 3px solid var(--accent);
+}
+.product-slot + .product-slot { margin-top: var(--space-4); }
+.product-slot > h4 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+}
+
 .opening-hours-grid { display: flex; flex-direction: column; gap: var(--space-2); }
 .opening-hours-row {
   display: grid;

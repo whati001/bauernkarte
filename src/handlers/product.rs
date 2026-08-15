@@ -97,6 +97,129 @@ pub struct NewProductSelection {
     new_product_description: Option<String>,
 }
 
+impl NewProductSelection {
+    /// Whether this slot names a product at all — an untouched slot in
+    /// the new-store form's repeating list is simply skipped, not an
+    /// error. "Filled" deliberately needs more than the new-product
+    /// checkbox being ticked: the form reveals the next slot off this
+    /// same condition, so ticking a box alone must not conjure one.
+    fn is_filled(&self) -> bool {
+        if self.is_new_product {
+            non_empty(self.new_product_name.clone()).is_some()
+        } else {
+            non_empty(self.product_id.clone()).is_some()
+        }
+    }
+}
+
+/// How many product blocks the new-store form renders. They're all in
+/// the markup up front and revealed one at a time as the previous one is
+/// filled (see `slot_show_exprs`) — a fixed ceiling is what lets the
+/// whole repeat stay declarative, with no client-side templating.
+pub const MAX_PRODUCT_SLOTS: usize = 5;
+
+/// One filled product block from the new-store form.
+pub struct ProductSlot {
+    pub selection: NewProductSelection,
+    pub seasonality: SeasonalityFields,
+}
+
+/// Datastar sends one flat signal object, so the form's repeated blocks
+/// are index-suffixed (`productId0`, `isSeasonal1`, `monthJan1`, …).
+/// This strips the suffix off each slot's keys and hands the result to
+/// the *existing* `NewProductSelection`/`SeasonalityFields` deserializers
+/// — one definition of those shapes, shared with the single-product
+/// forms, rather than a second index-aware copy.
+///
+/// Unfilled slots are skipped, so gaps don't matter and the caller only
+/// ever sees products someone actually named.
+pub fn parse_slots(fields: &std::collections::HashMap<String, serde_json::Value>) -> AppResult<Vec<ProductSlot>> {
+    let bad = || AppError::Validation("Ungültige Produktangaben.".into());
+    let mut slots = Vec::new();
+    for i in 0..MAX_PRODUCT_SLOTS {
+        let suffix = i.to_string();
+        let sub: serde_json::Map<String, serde_json::Value> = fields
+            .iter()
+            .filter_map(|(k, v)| k.strip_suffix(&suffix).map(|base| (base.to_string(), v.clone())))
+            .collect();
+        let value = serde_json::Value::Object(sub);
+        let selection: NewProductSelection =
+            serde_json::from_value(value.clone()).map_err(|_| bad())?;
+        if !selection.is_filled() {
+            continue;
+        }
+        let seasonality: SeasonalityFields = serde_json::from_value(value).map_err(|_| bad())?;
+        slots.push(ProductSlot { selection, seasonality });
+    }
+    Ok(slots)
+}
+
+/// One rendered product block in the new-store form.
+pub struct ProductSlotView {
+    /// Signal-name suffix (`0`..`MAX_PRODUCT_SLOTS-1`) and, +1, the
+    /// heading number.
+    pub index: usize,
+    pub number: usize,
+    /// `data-show` expression: the first block is always visible, each
+    /// later one appears once *every* block before it is filled. Built
+    /// here rather than in the template because it's a JS expression over
+    /// index-suffixed signal names, which Askama can't assemble cleanly.
+    pub show_expr: String,
+    pub seasonal_months: Vec<seasonality::MonthRow>,
+}
+
+/// The blocks the new-store form renders, all empty (a new store has no
+/// prior products), with all months available by default.
+pub fn slot_views() -> Vec<ProductSlotView> {
+    let mut filled_so_far: Vec<String> = Vec::new();
+    (0..MAX_PRODUCT_SLOTS)
+        .map(|index| {
+            let show_expr = if filled_so_far.is_empty() {
+                "true".to_string()
+            } else {
+                filled_so_far.join(" && ")
+            };
+            // Mirrors `NewProductSelection::is_filled` on the server.
+            filled_so_far.push(format!(
+                "($isNewProduct{index} ? $newProductName{index} != '' : $productId{index} != '')"
+            ));
+            ProductSlotView {
+                index,
+                number: index + 1,
+                show_expr,
+                seasonal_months: seasonality::month_rows(None),
+            }
+        })
+        .collect()
+}
+
+/// Empty values for every slot signal, for a `patch-signals` alongside
+/// the freshly rendered form — signals outlive `#sidebar` swaps, so
+/// without this the products typed into the *previous* new-store attempt
+/// would still be in them (same hazard as `opening_hours::form_signals`).
+pub fn slot_signals() -> serde_json::Value {
+    let mut map = serde_json::Map::new();
+    for i in 0..MAX_PRODUCT_SLOTS {
+        map.insert(format!("isNewProduct{i}"), false.into());
+        map.insert(format!("productId{i}"), "".into());
+        map.insert(format!("newProductName{i}"), "".into());
+        map.insert(format!("newProductCategoryId{i}"), "".into());
+        map.insert(format!("newProductDescription{i}"), "".into());
+        map.insert(format!("isSeasonal{i}"), false.into());
+        for month in seasonality::month_keys() {
+            // Available by default — `seasonality::parse` only looks at
+            // these when `isSeasonal` is on, but the grid renders them
+            // ticked, so the signals have to agree.
+            map.insert(format!("month{}{i}", capitalize(month)), true.into());
+        }
+    }
+    serde_json::Value::Object(map)
+}
+
+fn capitalize(s: &str) -> String {
+    format!("{}{}", s[..1].to_uppercase(), &s[1..])
+}
+
 /// Resolves a `NewProductSelection` to a concrete `Product` row —
 /// inserting a new one (`approved=false`) if `is_new_product` is set,
 /// otherwise looking up the chosen existing one. Shared by the "add
