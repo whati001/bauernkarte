@@ -166,45 +166,76 @@ function currentCenter() {
   return [Number.isFinite(lat) ? lat : AUSTRIA_CENTER.lat, Number.isFinite(lon) ? lon : AUSTRIA_CENTER.lon];
 }
 
-function initGeolocation() {
-  const onResolved = (lat, lon, available) => {
-    geoAvailable = available;
-    mergePatch({ geoAvailable: available });
-    setLatLon(lat, lon);
-    map.setView([lat, lon], available ? DEFAULT_ZOOM : AUSTRIA_ZOOM);
+// Shared by the automatic attempt on load (`initGeolocation`) and the
+// map's locate button (`wireLocateButton`) — same signals, same view
+// change, same radius reset, so a manual retry lands the app in exactly
+// the state a successful first attempt would have.
+function applyPosition(lat, lon, available) {
+  geoAvailable = available;
+  mergePatch({ geoAvailable: available });
+  setLatLon(lat, lon);
+  map.setView([lat, lon], available ? DEFAULT_ZOOM : AUSTRIA_ZOOM);
 
-    if (available) {
-      // A radius only defaults to something narrow once it's anchored
-      // to a real position — reset the slider (and the signal it binds
-      // to) from whatever the pre-fix 100 km default was.
-      const slider = document.getElementById("distance-range");
-      if (slider) {
-        slider.value = String(GEOLOCATED_DEFAULT_RADIUS_KM);
-        slider.dispatchEvent(new Event("input", { bubbles: true }));
-        slider.dispatchEvent(new Event("change", { bubbles: true }));
-      }
+  if (available) {
+    // A radius only defaults to something narrow once it's anchored
+    // to a real position — reset the slider (and the signal it binds
+    // to) from whatever the pre-fix 100 km default was.
+    const slider = document.getElementById("distance-range");
+    if (slider) {
+      slider.value = String(GEOLOCATED_DEFAULT_RADIUS_KM);
+      slider.dispatchEvent(new Event("input", { bubbles: true }));
+      slider.dispatchEvent(new Event("change", { bubbles: true }));
     }
-    // Explicit, not left to the slider's dispatched "change" above: that
-    // event fires before the circle exists yet (`updateRadiusCircle`
-    // hasn't run at that point), so `fitMapToRadius`'s "no circle yet"
-    // early-return would otherwise make the very first fit silently a
-    // no-op — the initial view would then sit at plain `DEFAULT_ZOOM`
-    // instead of fit to the actual radius, until the user dragged the
-    // slider once themselves.
-    updateRadiusCircle(lat, lon);
-    if (available) fitMapToRadius();
-  };
+  }
+  // Explicit, not left to the slider's dispatched "change" above: that
+  // event fires before the circle exists yet (`updateRadiusCircle`
+  // hasn't run at that point), so `fitMapToRadius`'s "no circle yet"
+  // early-return would otherwise make the very first fit silently a
+  // no-op — the initial view would then sit at plain `DEFAULT_ZOOM`
+  // instead of fit to the actual radius, until the user dragged the
+  // slider once themselves.
+  updateRadiusCircle(lat, lon);
+  if (available) fitMapToRadius();
+}
 
+function initGeolocation() {
   if (!navigator.geolocation) {
-    onResolved(AUSTRIA_CENTER.lat, AUSTRIA_CENTER.lon, false);
+    applyPosition(AUSTRIA_CENTER.lat, AUSTRIA_CENTER.lon, false);
     return;
   }
 
   navigator.geolocation.getCurrentPosition(
-    (pos) => onResolved(pos.coords.latitude, pos.coords.longitude, true),
-    () => onResolved(AUSTRIA_CENTER.lat, AUSTRIA_CENTER.lon, false),
+    (pos) => applyPosition(pos.coords.latitude, pos.coords.longitude, true),
+    () => applyPosition(AUSTRIA_CENTER.lat, AUSTRIA_CENTER.lon, false),
     { timeout: 8000 },
   );
+}
+
+// The map's locate button. Only a *success* changes anything: a denial
+// or timeout leaves the current view alone rather than yanking the map
+// back to the Austria centroid, which is the opposite of what someone
+// pressing "find me" wants. That matches how a denied fix on load is
+// already handled — silently, via the fallback — so there's no error
+// state to show beyond the button returning to rest.
+function wireLocateButton() {
+  const btn = document.getElementById("map-locate");
+  if (!btn || btn.dataset.pfWired) return;
+  btn.dataset.pfWired = "1";
+  if (!navigator.geolocation) {
+    btn.disabled = true;
+    return;
+  }
+  btn.addEventListener("click", () => {
+    btn.classList.add("locating");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        btn.classList.remove("locating");
+        applyPosition(pos.coords.latitude, pos.coords.longitude, true);
+      },
+      () => btn.classList.remove("locating"),
+      { timeout: 8000, enableHighAccuracy: true },
+    );
+  });
 }
 
 // ---- click-to-place location picker (store_form.html) ----
@@ -665,5 +696,6 @@ window.addEventListener("resize", redrawAndReselect);
 // Toggle first: `observeResults()` runs `syncSidebarLifecycle()`, which
 // flips the stack button's label via `setSidebarCollapsed`.
 wireSidebarToggle();
+wireLocateButton();
 observeResults();
 initGeolocation();

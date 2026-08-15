@@ -63,6 +63,9 @@
   --sidebar-width: 360px;
   --nav-height: 56px;
   --touch-target: 44px;
+  /* Pitch of the map's floating control column (.map-fab) — one button
+     plus the gap under it. */
+  --map-fab-step: calc(var(--touch-target) + var(--space-2));
 
   --ease: cubic-bezier(0.2, 0, 0, 1);
 }
@@ -575,17 +578,16 @@ a:hover { text-decoration: underline; }
 
 #map { flex: 1; min-height: 0; background: var(--surface-2); }
 
-/* The panel's toggle (layout.html) — rides the map's top-left corner,
-   directly under the navbar's brand mark, and slides with the sidebar so
-   it always floats over the map rather than over the panel. The only
-   manual control the panel has, so it never hides: closed, it's the one
-   way back. Touch-target sized (the same 44px minimum every other
-   interactive control here uses — see .icon-btn), not just a visually
-   tidy circle: it floats over the map, so it needs to be as easy to hit
-   on a phone as everything else. */
-#sidebar-open {
+/* Map controls (layout.html) — a single column down the map's top-left
+   corner, starting under the navbar's brand mark: sidebar toggle, locate
+   me, then Leaflet's own zoom buttons (restyled to match further down).
+   They slide with the sidebar so they always float over the map rather
+   than over the panel. Touch-target sized (the same 44px minimum every
+   other interactive control here uses — see .icon-btn), not just
+   visually tidy circles: they float over the map, so they need to be as
+   easy to hit on a phone as everything else. */
+.map-fab {
   position: absolute;
-  top: var(--space-3);
   left: calc(var(--sidebar-width) + var(--space-3));
   z-index: 500;
   display: flex;
@@ -597,16 +599,73 @@ a:hover { text-decoration: underline; }
   border-radius: 50%;
   border: 1px solid var(--border);
   background: var(--surface);
+  color: var(--text-primary);
   box-shadow: var(--shadow-sm);
   cursor: pointer;
   transition: left 0.15s var(--ease);
 }
-#sidebar-open svg { width: 18px; height: 18px; }
-#layout.sidebar-collapsed #sidebar-open { left: var(--space-3); }
+.map-fab:hover { background: var(--shell-2); }
+.map-fab svg { width: 18px; height: 18px; }
+#layout.sidebar-collapsed .map-fab { left: var(--space-3); }
 
-/* Leaflet's own zoom control anchors to the same corner — drop it below
-   the stack button instead of letting the two overlap. */
-.leaflet-top.leaflet-left { margin-top: calc(var(--touch-target) + var(--space-2)); }
+/* One --map-fab-step per control down the column, so adding or removing
+   one only means renumbering the multipliers below. */
+#sidebar-open { top: var(--space-3); }
+#map-locate { top: calc(var(--space-3) + var(--map-fab-step)); }
+/* Leaflet anchors its control container to the same corner and adds its
+   own 10px margin, so this only has to clear the two buttons above. */
+.leaflet-top.leaflet-left { margin-top: calc(2 * var(--map-fab-step)); }
+
+/* Resolving a fix takes a second or two and nothing else on screen moves
+   until it lands — without this the button looks like it ignored the
+   click. Reverts on both success and failure (map.js). */
+.map-fab.locating { opacity: 0.6; }
+.map-fab.locating svg { animation: locate-pulse 1s ease-in-out infinite; }
+@keyframes locate-pulse {
+  50% { opacity: 0.35; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .map-fab.locating svg { animation: none; }
+}
+.map-fab:disabled { opacity: 0.45; cursor: default; }
+.map-fab:disabled:hover { background: var(--surface); }
+
+/* Leaflet's zoom control ships as one rounded-rect bar with a hairline
+   between the two buttons; this splits it into two separate circles
+   matching .map-fab above, and swaps its hardcoded #fff/#ccc/black for
+   this app's tokens so it isn't a white box in the dark theme. */
+/* `.leaflet-touch .leaflet-bar` is where the 2px container border comes
+   from, and it out-specifies a bare `.leaflet-bar` — hence both
+   selectors, or the two circles stay boxed in a rounded rectangle. */
+.leaflet-bar,
+.leaflet-touch .leaflet-bar {
+  border: none;
+  box-shadow: none;
+  background: none;
+}
+.leaflet-bar a,
+.leaflet-touch .leaflet-bar a,
+.leaflet-bar a:first-child,
+.leaflet-bar a:last-child,
+.leaflet-touch .leaflet-bar a:first-child,
+.leaflet-touch .leaflet-bar a:last-child {
+  width: var(--touch-target);
+  height: var(--touch-target);
+  line-height: calc(var(--touch-target) - 2px);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+.leaflet-bar a + a { margin-top: var(--space-2); }
+.leaflet-bar a:hover,
+.leaflet-bar a:focus { background: var(--shell-2); }
+.leaflet-bar a.leaflet-disabled { background: var(--surface); color: var(--text-muted); }
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out,
+.leaflet-touch .leaflet-control-zoom-in,
+.leaflet-touch .leaflet-control-zoom-out { font-size: 20px; }
 
 #layout.sidebar-collapsed #sidebar { width: 0; overflow: hidden; border-right: none; }
 
@@ -636,9 +695,9 @@ a:hover { text-decoration: underline; }
   }
   #map { order: 1; }
   /* Sidebar and map stack vertically here, so the vertical boundary the
-     desktop rule slides along doesn't exist — the toggle just keeps the
-     map's top-left corner, the map now being the top 55%. */
-  #sidebar-open { left: var(--space-3); }
+     desktop rule slides along doesn't exist — the control column just
+     keeps the map's top-left corner, the map now being the top 55%. */
+  .map-fab { left: var(--space-3); }
   #layout.sidebar-collapsed #sidebar { flex-basis: 0; border-top: none; }
 
   /* iOS Safari zooms the whole page in on focus for any text input

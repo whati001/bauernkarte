@@ -39,7 +39,13 @@
          panel like the distance slider/location picker. Rides the map's
          top-left corner and toggles; its label flips client-side (see
          setSidebarCollapsed). -->
-    <button id="sidebar-open" type="button" aria-label="{{ "map-sidebar-expand"|t }}" title="{{ "map-sidebar-expand"|t }}" data-collapse-label="{{ "map-sidebar-collapse"|t }}" data-expand-label="{{ "map-sidebar-expand"|t }}">{% include "icons/layers.svg" %}</button>
+    <button id="sidebar-open" class="map-fab" type="button" aria-label="{{ "map-sidebar-expand"|t }}" title="{{ "map-sidebar-expand"|t }}" data-collapse-label="{{ "map-sidebar-collapse"|t }}" data-expand-label="{{ "map-sidebar-expand"|t }}">{% include "icons/layers.svg" %}</button>
+    <!-- Re-runs geolocation on demand — the automatic attempt happens
+         once on load, and there was no way to retry it after granting
+         permission or moving. Stacks under the sidebar toggle and above
+         Leaflet's own zoom control (see .map-fab in app.css, which also
+         reshapes that control to match). -->
+    <button id="map-locate" class="map-fab" type="button" aria-label="{{ "search-use-my-location"|t }}" title="{{ "search-use-my-location"|t }}">{% include "icons/locate-fixed.svg" %}</button>
     <div id="map"></div>
   </div>
 
