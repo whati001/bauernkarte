@@ -38,6 +38,10 @@ const AUSTRIA_ZOOM = 8;
 // since Leaflet needs the pixel size up front for iconSize/iconAnchor).
 const PIN_SIZE = 40;
 const PIN_SIZE_SELECTED = 52;
+// The "you are here" dot — deliberately much smaller than a store pin
+// (and a different colour, see .user-location-dot in app.css) so it
+// reads as a position rather than as one more result.
+const USER_DOT_SIZE = 18;
 // Screen-space (not geographic) clustering radius: stores whose current
 // on-screen pixel positions fall in the same PIXEL_RADIUS-sized grid
 // cell render as one count badge instead of individual pins. Fixed
@@ -80,6 +84,48 @@ L.tileLayer(TILE_URL, { attribution: TILE_ATTRIBUTION, maxZoom: TILE_MAX_ZOOM })
 // position, publish it to the signals, and centre the map on it.
 
 let geoAvailable = false;
+let userMarker = null;
+
+/// "You are here". Only ever drawn for a real fix — with geolocation
+/// denied or still unresolved, `lat`/`lon` hold the Austria-centroid
+/// fallback, and a dot there would claim to be the visitor's position
+/// when it's a stand-in for not knowing (the same reason the results
+/// list drops its distances in that case, see `SearchQuery::origin`).
+///
+/// Kept in its own variable rather than the `markers` array so
+/// `redrawMarkers` — which clears that array wholesale on every search
+/// and zoom — can't wipe it.
+///
+/// `interactive: false` matters: the store form's location picker places
+/// its pin from map clicks, and an interactive marker sitting under the
+/// cursor would swallow them.
+function updateUserMarker(lat, lon, available) {
+  if (!available) {
+    if (userMarker) {
+      map.removeLayer(userMarker);
+      userMarker = null;
+    }
+    return;
+  }
+  if (userMarker) {
+    userMarker.setLatLng([lat, lon]);
+    return;
+  }
+  userMarker = L.marker([lat, lon], {
+    icon: L.divIcon({
+      className: "map-pin",
+      html: '<div class="user-location-dot"></div>',
+      iconSize: [USER_DOT_SIZE, USER_DOT_SIZE],
+      iconAnchor: [USER_DOT_SIZE / 2, USER_DOT_SIZE / 2],
+    }),
+    interactive: false,
+    keyboard: false,
+    // Above ordinary store pins so it stays findable in a cluster of
+    // them, below the selected one (1000) which is what the visitor is
+    // actually looking at.
+    zIndexOffset: 500,
+  }).addTo(map);
+}
 
 function setLatLon(lat, lon) {
   // Documented data-bind contract: setting .value + dispatching the
@@ -112,6 +158,7 @@ function applyPosition(lat, lon, available) {
   geoAvailable = available;
   mergePatch({ geoAvailable: available });
   setLatLon(lat, lon);
+  updateUserMarker(lat, lon, available);
   map.setView([lat, lon], available ? DEFAULT_ZOOM : AUSTRIA_ZOOM);
 }
 

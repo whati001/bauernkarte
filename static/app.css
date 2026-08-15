@@ -33,6 +33,10 @@
   --accent-wash: rgba(0, 131, 0, 0.1);
 
   --good: #0ca30c;
+  /* "You are here" only. Blue by convention (every mapping app uses it
+     for the viewer's own position) and, more practically, the one hue
+     that can't be mistaken for a green store pin. */
+  --user-dot: #1a6bd8;
   --warning: #b8790a; /* darkened from the reference #fab219 for AA text-on-light use */
   --serious: #ec835a;
   --critical: #d03b3b;
@@ -92,6 +96,7 @@
     --accent-wash: rgba(31, 174, 31, 0.16);
 
     --good: #0ca30c;
+    --user-dot: #5b9bff;
     --warning: #e0a838;
     --serious: #ec835a;
     --critical: #e66767;
@@ -118,6 +123,7 @@
   --accent-contrast: #05170a;
   --accent-wash: rgba(31, 174, 31, 0.16);
   --good: #0ca30c;
+  --user-dot: #5b9bff;
   --warning: #e0a838;
   --serious: #ec835a;
   --critical: #e66767;
@@ -1284,6 +1290,21 @@ button.rated:hover { filter: brightness(0.97); }
    `.product.selected` elsewhere, not a new ad hoc meaning; --critical
    stays reserved for destructive actions. Other pins are left alone so
    nearby stores stay visible, Booking.com-map style. */
+/* The viewer's own position (map.js's updateUserMarker) — a small blue
+   dot with a white collar and a soft halo, the shape every mapping app
+   uses for "here". Deliberately unlike a store pin in both size and
+   hue: it is a position, not a result. Size is mirrored by
+   USER_DOT_SIZE in map.js, which Leaflet needs up front for
+   iconSize/iconAnchor. */
+.user-location-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--user-dot);
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--user-dot) 25%, transparent), var(--shadow-sm);
+}
+
 .map-pin-dot.selected {
   width: 52px;
   height: 52px;

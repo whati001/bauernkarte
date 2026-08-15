@@ -67,6 +67,7 @@ nested card — nesting cards inside cards reads as noise.
 | `--accent` | The brand green. Group-title icons, links, the *one* primary action, and "this is selected". |
 | `--accent-contrast` | Text/icons on a filled accent background. |
 | `--accent-wash` | Faint accent tint for large fills only. Too light for a border or a 3px rule — that was a real bug. |
+| `--user-dot` | The viewer's own position on the map (`.user-location-dot`) and nothing else. Blue by mapping convention, and the one hue that can't be mistaken for a green store pin. |
 | `--critical` / `--critical-wash` | Destructive actions only (delete). Never "selected". |
 | `--warning` / `--warning-wash` | Pending-review notices. |
 | `--text-primary` / `--text-secondary` / `--text-muted` | Body, labels, de-emphasised. |
