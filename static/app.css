@@ -481,6 +481,23 @@ a:hover { text-decoration: underline; }
 .product-pick.active:hover { background: var(--accent); color: var(--accent-contrast); filter: brightness(1.08); }
 .product-pick-icon { font-size: 1.05em; }
 
+/* Pinned to the right edge of the scroller rather than trailing the last
+   chip — the row scrolls sideways, and the one control that reaches the
+   *rest* of the catalog is no use parked off-screen. The shell-colored
+   backdrop (plus the fade to its left) is what the chips slide under. */
+.product-more {
+  position: sticky;
+  right: 0;
+  margin-left: auto;
+  color: var(--text-primary);
+  background: var(--shell);
+  border-color: var(--border-strong);
+  box-shadow: -12px 0 12px -6px var(--shell);
+}
+.product-more:hover { background: var(--shell-2); box-shadow: -12px 0 12px -6px var(--shell); }
+.product-more-icon { display: inline-flex; color: var(--text-secondary); }
+.product-more-icon .icon { width: 1em; height: 1em; vertical-align: 0; }
+
 .nav-actions {
   display: flex;
   align-items: center;

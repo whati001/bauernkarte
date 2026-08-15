@@ -79,6 +79,24 @@
       <span class="product-pick-name">{{ p.name }}</span>
     </button>
     {% endfor %}
+    <!-- The row only carries the top handful (pages::NAV_PRODUCT_LIMIT);
+         this is the way to the rest, i.e. the sidebar's own product
+         <select> plus the category and radius filters.
+
+         It proxy-clicks the map's stack button rather than toggling the
+         layout class itself, so opening from here goes through exactly
+         the same path as opening from the map — including the
+         `openedByUser` flag map.js sets there, which is what keeps the
+         panel from vanishing again on the next store deselect. Guarded
+         on "currently collapsed" because that button *toggles*: an
+         unguarded proxy-click would close the panel someone just asked
+         to see. -->
+    <button type="button" class="product-pick product-more"
+            title="{{ "nav-products-all"|t }}"
+            data-on:click="document.getElementById('layout').classList.contains('sidebar-collapsed') && document.getElementById('sidebar-open').click()">
+      <span class="product-more-icon" aria-hidden="true">{% include "icons/layers.svg" %}</span>
+      <span class="product-pick-name">{{ "nav-products-all"|t }}</span>
+    </button>
   </div>
   {% endif %}
 </nav>

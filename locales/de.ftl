@@ -14,6 +14,7 @@ nav-search-placeholder = Kategorie oder Produkt…
 nav-search-no-matches = Keine passende Kategorie oder Produkt
 nav-search-clear = Suche zurücksetzen
 nav-products-label = Beliebte Produkte
+nav-products-all = Alle Produkte
 
 ## Search sidebar
 search-category = Kategorie
