@@ -20,7 +20,7 @@ use crate::{
     i18n as filters, // see templates.rs's comment on this alias
     models::{Category, Product},
     seasonality::{self, SeasonalityFields},
-    sse::patch_elements_at,
+    sse::{patch_elements_at, patch_signals},
     state::AppState,
     templates::{render, render_confirmation},
 };
@@ -74,7 +74,10 @@ pub async fn new_form(
         is_seasonal: false,
         seasonal_months: seasonality::month_rows(None),
     });
-    Ok(Sse::new(stream::iter(vec![Ok(patch_elements_at("#sidebar", "inner", &html))])))
+    Ok(Sse::new(stream::iter(vec![
+        Ok(patch_elements_at("#sidebar", "inner", &html)),
+        Ok(patch_signals(&selection_signals())),
+    ])))
 }
 
 /// The product-form's "existing vs. new" choice — the shared shape both
@@ -87,8 +90,14 @@ pub async fn new_form(
 pub struct NewProductSelection {
     #[serde(default)]
     is_new_product: bool,
+    /// Deliberately *not* `productId`: that signal is the search
+    /// filter's, app-wide, and a form binding the same name silently
+    /// re-filtered the map the moment someone picked a product to add
+    /// (the offer's own choice and "what the map is showing" are not the
+    /// same thing). `offerProductId` is local to whichever product form
+    /// is on screen.
     #[serde(default)]
-    product_id: Option<String>,
+    offer_product_id: Option<String>,
     #[serde(default)]
     new_product_name: Option<String>,
     #[serde(default)]
@@ -107,7 +116,7 @@ impl NewProductSelection {
         if self.is_new_product {
             non_empty(self.new_product_name.clone()).is_some()
         } else {
-            non_empty(self.product_id.clone()).is_some()
+            non_empty(self.offer_product_id.clone()).is_some()
         }
     }
 }
@@ -181,7 +190,7 @@ pub fn slot_views() -> Vec<ProductSlotView> {
             };
             // Mirrors `NewProductSelection::is_filled` on the server.
             filled_so_far.push(format!(
-                "($isNewProduct{index} ? $newProductName{index} != '' : $productId{index} != '')"
+                "($isNewProduct{index} ? $newProductName{index} != '' : $offerProductId{index} != '')"
             ));
             ProductSlotView {
                 index,
@@ -193,6 +202,24 @@ pub fn slot_views() -> Vec<ProductSlotView> {
         .collect()
 }
 
+/// Empty values for one product-selection block. `suffix` is `""` for
+/// the standalone "add product to store" form and `"0".."4"` for the
+/// new-store form's repeating blocks.
+fn blank_selection(map: &mut serde_json::Map<String, serde_json::Value>, suffix: &str) {
+    map.insert(format!("isNewProduct{suffix}"), false.into());
+    map.insert(format!("offerProductId{suffix}"), "".into());
+    map.insert(format!("newProductName{suffix}"), "".into());
+    map.insert(format!("newProductCategoryId{suffix}"), "".into());
+    map.insert(format!("newProductDescription{suffix}"), "".into());
+    map.insert(format!("isSeasonal{suffix}"), false.into());
+    for month in seasonality::month_keys() {
+        // Available by default — `seasonality::parse` only looks at
+        // these when `isSeasonal` is on, but the grid renders them
+        // ticked, so the signals have to agree.
+        map.insert(format!("month{}{suffix}", capitalize(month)), true.into());
+    }
+}
+
 /// Empty values for every slot signal, for a `patch-signals` alongside
 /// the freshly rendered form — signals outlive `#sidebar` swaps, so
 /// without this the products typed into the *previous* new-store attempt
@@ -200,19 +227,16 @@ pub fn slot_views() -> Vec<ProductSlotView> {
 pub fn slot_signals() -> serde_json::Value {
     let mut map = serde_json::Map::new();
     for i in 0..MAX_PRODUCT_SLOTS {
-        map.insert(format!("isNewProduct{i}"), false.into());
-        map.insert(format!("productId{i}"), "".into());
-        map.insert(format!("newProductName{i}"), "".into());
-        map.insert(format!("newProductCategoryId{i}"), "".into());
-        map.insert(format!("newProductDescription{i}"), "".into());
-        map.insert(format!("isSeasonal{i}"), false.into());
-        for month in seasonality::month_keys() {
-            // Available by default — `seasonality::parse` only looks at
-            // these when `isSeasonal` is on, but the grid renders them
-            // ticked, so the signals have to agree.
-            map.insert(format!("month{}{i}", capitalize(month)), true.into());
-        }
+        blank_selection(&mut map, &i.to_string());
     }
+    serde_json::Value::Object(map)
+}
+
+/// Same, for the single-block "add product to store" form — reopening it
+/// would otherwise still hold the previous visit's choice.
+pub fn selection_signals() -> serde_json::Value {
+    let mut map = serde_json::Map::new();
+    blank_selection(&mut map, "");
     serde_json::Value::Object(map)
 }
 
@@ -252,7 +276,7 @@ pub async fn resolve_product(
         )
         .await?)
     } else {
-        let product_id: i64 = non_empty(sel.product_id.clone())
+        let product_id: i64 = non_empty(sel.offer_product_id.clone())
             .and_then(|s| s.parse().ok())
             .ok_or_else(|| AppError::Validation("Bitte ein Produkt wählen.".into()))?;
         db::product::find(pool, product_id).await?.ok_or(AppError::NotFound)

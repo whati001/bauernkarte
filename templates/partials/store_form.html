@@ -136,7 +136,7 @@
         </div>
         <div class="field" data-show="!$isNewProduct{{ s.index }}">
           <label for="existing-product-{{ s.index }}">{% include "icons/package.svg" %} {{ "product-form-product"|t }}</label>
-          <select id="existing-product-{{ s.index }}" data-bind:product-id{{ s.index }}>
+          <select id="existing-product-{{ s.index }}" data-bind:offer-product-id{{ s.index }}>
             <option value="">{{ "product-form-choose"|t }}</option>
             {% for p in products %}
             <option value="{{ p.id }}">{% if let Some(icon) = p.icon %}{{ icon }}{% else %}📦{% endif %} {{ p.name }}</option>
