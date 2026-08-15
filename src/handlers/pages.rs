@@ -9,7 +9,6 @@ use serde_json::json;
 use crate::{
     auth::OptionalUser,
     db,
-    db::store::MAX_DISTANCE_KM,
     error::AppResult,
     handlers::search::{render_map_data, render_search_panel, run_search, SearchQuery, AUSTRIA_LAT, AUSTRIA_LON},
     handlers::store_detail::{load_detail_or_404, render_detail_panel},
@@ -27,16 +26,13 @@ pub const NAV_PRODUCT_LIMIT: i64 = 12;
 
 /// `geo_available: None` renders `$geoAvailable` as JSON `null` —
 /// "not yet determined" — distinct from `Some(false)` ("checked, denied/
-/// unsupported"). The search-radius control and its map circle
-/// (`sidebar_search.html`, `map.js`) only show once it's `Some(true)`:
-/// a radius drawn around the Austria-centroid fallback would imply a
-/// precision the app doesn't have. While unresolved-or-unavailable, the
-/// search itself still runs, just at the spec's full 100 km cap instead
-/// of a arbitrarily-anchored 5 km default.
+/// unsupported"). Only `Some(true)` makes the results distance-ranked
+/// (`SearchQuery::origin`); the other two both mean `lat`/`lon` hold the
+/// Austria-centroid fallback, which is fine for centring the map but is
+/// not the visitor's position, so the list stays alphabetical.
 fn base_signals(lat: f64, lon: f64, geo_available: Option<bool>, logged_in: bool) -> serde_json::Value {
-    let distance_km = if geo_available == Some(true) { 5.0 } else { MAX_DISTANCE_KM };
     json!({
-        "categoryId": "", "productId": "", "distanceKm": distance_km,
+        "categoryId": "", "productId": "",
         "lat": lat, "lon": lon, "geoAvailable": geo_available,
         "resultCount": 0, "selectedStoreId": null, "loggedIn": logged_in,
         // Navbar global search: the picked category/product's name and
@@ -49,31 +45,33 @@ fn base_signals(lat: f64, lon: f64, geo_available: Option<bool>, logged_in: bool
 }
 
 /// `GET /` — full page, map shell + default search sidebar, per the
-/// store-search capability. Server-side first paint uses the Austria
-/// centroid fallback at the full 100 km radius (design.md §8.1, extended
-/// per follow-up: geolocation status is unknown at this point, so no
-/// radius is assumed); the client overrides `$lat/$lon/$geoAvailable`
-/// via geolocation once the browser resolves it (`static/map.js`), which
-/// re-triggers `/api/stores` through `data-effect` and — if geolocation
-/// succeeded — narrows the default radius back to 5 km.
+/// store-search capability. Geolocation status is unknown at first
+/// paint, so this renders every matching store in alphabetical order;
+/// the client overrides `$lat/$lon/$geoAvailable` once the browser
+/// resolves a fix (`static/map.js`), which re-triggers `/api/stores`
+/// through `data-effect` and re-ranks the same list by distance.
 pub async fn index(State(state): State<AppState>, OptionalUser(user): OptionalUser) -> AppResult<impl IntoResponse> {
     let q = SearchQuery {
         category_id: None,
         product_id: None,
-        distance_km: Some(MAX_DISTANCE_KM),
         lat: Some(AUSTRIA_LAT),
         lon: Some(AUSTRIA_LON),
+        // First paint has no fix yet, so results come back alphabetical;
+        // map.js re-runs the search through `data-effect` once
+        // geolocation resolves, which is when the distance ranking (and
+        // the per-card distance) appears.
+        geo_available: None,
     };
     let results = run_search(&state, &q).await?;
-    let panel = render_search_panel(&state, None, None, &results).await?;
-    let map_data_html = render_map_data(&panel.map_stores);
+    let sidebar_html = render_search_panel(&state, None, &results).await?;
+    let map_data_html = render_map_data(&results);
     let signals = base_signals(AUSTRIA_LAT, AUSTRIA_LON, None, user.is_some());
     let nav_products = db::product::list_top_rated(&state.pool, NAV_PRODUCT_LIMIT).await?;
     Ok(full_page(
         "Was hat der Bauer",
         user.map(|u| u.name),
         &signals,
-        panel.sidebar_html,
+        sidebar_html,
         map_data_html,
         // Map-first: the search panel is rendered but starts collapsed —
         // it's one click away (the map's stack button), and the navbar's
@@ -100,7 +98,7 @@ pub async fn store_page(
     // filter of its own, but the map behind it (see full_page's own doc
     // comment) still needs *some* pin set on first paint, same as the
     // plain search landing page gets.
-    let map_stores = db::store::search_all_for_map(&state.pool, None, None).await?;
+    let map_stores = db::store::search(&state.pool, None, None, None).await?;
     let map_data_html = render_map_data(&map_stores);
     // Geolocation status genuinely doesn't matter for a detail deep
     // link, but the signal set is shared app-wide (the visitor might hit

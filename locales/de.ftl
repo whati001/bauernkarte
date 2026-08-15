@@ -20,17 +20,12 @@ nav-products-all = Alle Produkte
 search-filter-heading = Filter
 search-category = Kategorie
 search-product = Produkt
-search-distance = Umkreis
 search-all = Alle
 search-results-count = { $count ->
     [one] { $count } Ergebnis
    *[other] { $count } Ergebnisse
 }
-search-no-results = Keine Ergebnisse in diesem Umkreis.
-search-no-results-nearby = { $count ->
-    [one] Keine Ergebnisse in diesem Umkreis — { $count } Angebot weiter entfernt gefunden.
-   *[other] Keine Ergebnisse in diesem Umkreis — { $count } Angebote weiter entfernt gefunden.
-}
+search-no-results = Keine Geschäfte für diese Auswahl.
 search-more = mehr
 search-location-unavailable = Standort nicht verfügbar
 search-pick-on-map = 👆 Auf der Karte klicken, um den Standort zu wählen

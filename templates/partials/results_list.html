@@ -7,7 +7,9 @@
         data-on:keydown="(evt.key === 'Enter' || evt.key === ' ') && @get('/api/store/{{ s.id }}')">
       <div class="result-card-header">
         <strong>{{ s.name }}</strong>
-        <span class="icon-label result-distance">{% include "icons/map-pin.svg" %} {{ s.distance_km_display }} km</span>
+        {% if let Some(km) = s.distance_km_display %}
+        <span class="icon-label result-distance">{% include "icons/map-pin.svg" %} {{ km }} km</span>
+        {% endif %}
       </div>
       <div class="result-products">
         {% for p in s.products %}
@@ -20,11 +22,7 @@
     </li>
     {% endfor %}
     {% if results.is_empty() %}
-      {% if let Some(msg) = nationwide_empty_message %}
-      <li class="no-results">{{ msg }}</li>
-      {% else %}
-      <li class="no-results">{{ "search-no-results"|t }}</li>
-      {% endif %}
+    <li class="no-results">{{ "search-no-results"|t }}</li>
     {% endif %}
   </ul>
 </div>

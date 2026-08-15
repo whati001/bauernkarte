@@ -137,9 +137,9 @@ pub struct Image {
 /// One product a store carries, as summarized for search/map results —
 /// name + icon (for display) and its `UP`-rating count (for ranking).
 /// Never fetched standalone; always one entry of the top-5 list
-/// `db::store::search`/`search_all_for_map` compute in SQL (`json_agg`
-/// over a ranked, `limit 5` subquery) and attach to `StoreSearchResult`/
-/// `MapStorePin`, ranked by `rating_count` descending, ties broken
+/// `db::store::search` computes in SQL (`json_agg` over a ranked,
+/// `limit 5` subquery) and attaches to `StoreSearchResult`,
+/// ranked by `rating_count` descending, ties broken
 /// alphabetically by `name` — one query per search, no per-store
 /// follow-up request (store-search capability's "single search request"
 /// requirement).
@@ -150,42 +150,23 @@ pub struct ProductSummary {
     pub rating_count: i64,
 }
 
-/// One row of a store-search result — the "Umkreis" (radius) filtered
-/// list (store-search capability — kept minimal per design.md: id, name,
-/// coordinates, distance, top products).
+/// One matching store — the same rows drive both the results list and
+/// the map's pins (see `db::store::search`; there is no radius, so the
+/// two are the same set).
+///
+/// `distance_m` is `None` until geolocation resolves: with no real
+/// origin there is no distance worth showing, and the list falls back to
+/// alphabetical order.
 #[derive(Debug, Clone, Serialize)]
 pub struct StoreSearchResult {
     pub id: i64,
     pub name: String,
     pub lat: f64,
     pub lon: f64,
-    pub distance_m: f64,
+    pub distance_m: Option<f64>,
     /// Top 5 by rating, see `ProductSummary`. The store may carry more —
     /// `product_total` says how many, so the UI can show a "+N more"
     /// indicator instead of silently truncating.
-    pub products: Vec<ProductSummary>,
-    pub product_total: i64,
-}
-
-/// One map pin — every approved store matching the category/product
-/// filter *nationwide*, deliberately not distance-limited. The map shows
-/// every pin regardless of the "Umkreis" radius (only the results list
-/// is radius-filtered, per the follow-up that split this from
-/// `StoreSearchResult`); no `distance_m` since it isn't measured against
-/// any particular origin.
-///
-/// `product_total` drives the pin's glyph (map.js): a store carrying
-/// exactly one matching product shows that product's own icon (the first
-/// and only entry of `products`), a store carrying several shows a
-/// generic shop glyph instead — picking one of several products' icons
-/// to stand in for the whole store would be arbitrary.
-#[derive(Debug, Clone, Serialize)]
-pub struct MapStorePin {
-    pub id: i64,
-    pub name: String,
-    pub lat: f64,
-    pub lon: f64,
-    /// Top 5 by rating, see `ProductSummary` — shown in the hover tooltip.
     pub products: Vec<ProductSummary>,
     pub product_total: i64,
 }

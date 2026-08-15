@@ -19,7 +19,7 @@ use crate::{
     error::{AppError, AppResult},
     i18n,
     i18n as filters, // see templates.rs's comment on this alias
-    models::{Category, MapStorePin, Product, ProductSummary, StoreSearchResult},
+    models::{Category, Product, ProductSummary, StoreSearchResult},
     sse::{patch_elements, patch_elements_at, patch_signals},
     state::AppState,
     templates::render,
@@ -30,7 +30,6 @@ use crate::{
 /// the capital.
 pub const AUSTRIA_LAT: f64 = 47.5162;
 pub const AUSTRIA_LON: f64 = 14.5501;
-pub const DEFAULT_DISTANCE_KM: f64 = 5.0;
 
 #[derive(Debug, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -39,9 +38,26 @@ pub struct SearchQuery {
     pub category_id: Option<i64>,
     #[serde(default, deserialize_with = "empty_string_as_none")]
     pub product_id: Option<i64>,
-    pub distance_km: Option<f64>,
     pub lat: Option<f64>,
     pub lon: Option<f64>,
+    /// `Some(true)` only once the browser has actually returned a fix —
+    /// `None` means "not determined yet" and `Some(false)` "denied or
+    /// unsupported". `lat`/`lon` carry the Austria-centroid fallback in
+    /// those two cases, which is fine for centring the map but must not
+    /// be treated as the visitor's position (see `origin`).
+    #[serde(default)]
+    pub geo_available: Option<bool>,
+}
+
+impl SearchQuery {
+    /// The point to rank results by, or `None` when there's no real fix
+    /// to rank against.
+    fn origin(&self) -> Option<(f64, f64)> {
+        match (self.geo_available, self.lat, self.lon) {
+            (Some(true), Some(lat), Some(lon)) => Some((lat, lon)),
+            _ => None,
+        }
+    }
 }
 
 /// `<select>`/`<input>` elements bound via `data-bind` send `""` (not
@@ -74,7 +90,9 @@ struct StoreResultView {
     /// affordance instead of silently truncating the list.
     products: Vec<ProductSummary>,
     products_more: i64,
-    distance_km_display: String,
+    /// `None` when there's no geolocation fix — the card then shows no
+    /// distance at all rather than one measured from a fallback point.
+    distance_km_display: Option<String>,
 }
 
 impl From<&StoreSearchResult> for StoreResultView {
@@ -84,7 +102,7 @@ impl From<&StoreSearchResult> for StoreResultView {
             name: r.name.clone(),
             products: r.products.clone(),
             products_more: (r.product_total - r.products.len() as i64).max(0),
-            distance_km_display: format!("{:.1}", r.distance_m / 1000.0),
+            distance_km_display: r.distance_m.map(|m| format!("{:.1}", m / 1000.0)),
         }
     }
 }
@@ -94,15 +112,6 @@ impl From<&StoreSearchResult> for StoreResultView {
 struct ResultsListTemplate {
     results: Vec<StoreResultView>,
     result_count_text: String,
-    /// Pre-translated "no results in your radius, but N exist further
-    /// away" message — `Some` only when `results` is empty *and* at
-    /// least one nationwide match exists, so an empty "Umkreis" search
-    /// doesn't read as a dead end when the map still shows real pins
-    /// just outside it (e.g. a product only sold by stores >100 km out —
-    /// beyond even the radius slider's own max). `None` (including
-    /// whenever `results` isn't empty) falls back to the template's
-    /// plain `search-no-results`.
-    nationwide_empty_message: Option<String>,
 }
 
 #[derive(Template)]
@@ -128,39 +137,27 @@ struct SidebarSearchTemplate {
 #[derive(Template)]
 #[template(path = "partials/map_data.html")]
 struct MapDataTemplate {
-    map_stores: Vec<MapStorePin>,
+    map_stores: Vec<StoreSearchResult>,
     map_stores_json: String,
 }
 
-pub fn render_map_data(map_stores: &[MapStorePin]) -> String {
+/// Pins for the same rows the results list shows — with the radius gone
+/// the two are the same set, so this takes the search results directly
+/// rather than re-querying.
+pub fn render_map_data(map_stores: &[StoreSearchResult]) -> String {
     let map_stores_json = serde_json::to_string(map_stores).unwrap_or_else(|_| "[]".to_string());
     render(MapDataTemplate { map_stores: map_stores.to_vec(), map_stores_json })
 }
 
-pub fn render_results(results: &[StoreSearchResult], nationwide_count: usize) -> String {
+pub fn render_results(results: &[StoreSearchResult]) -> String {
     let mut args = std::collections::HashMap::new();
     args.insert("count".to_string(), results.len().to_string());
     let result_count_text =
         i18n::translate_with_args(i18n::current_locale(), "search-results-count", &args);
-    let nationwide_empty_message = (results.is_empty() && nationwide_count > 0).then(|| {
-        let mut args = std::collections::HashMap::new();
-        args.insert("count".to_string(), nationwide_count.to_string());
-        i18n::translate_with_args(i18n::current_locale(), "search-no-results-nearby", &args)
-    });
     render(ResultsListTemplate {
         results: results.iter().map(StoreResultView::from).collect(),
         result_count_text,
-        nationwide_empty_message,
     })
-}
-
-/// Sidebar search panel (filters + an initial results list) plus the
-/// nationwide store set the caller needs for the *separate* `#map-data`
-/// patch — bundled together, not two independent queries, since both are
-/// derived from the same `search_all_for_map` call.
-pub struct SearchPanel {
-    pub sidebar_html: String,
-    pub map_stores: Vec<MapStorePin>,
 }
 
 /// Builds `SearchPanel` — used by `GET /api/store/back` and by
@@ -169,29 +166,22 @@ pub struct SearchPanel {
 pub async fn render_search_panel(
     state: &AppState,
     category_id: Option<i64>,
-    product_id: Option<i64>,
     results: &[StoreSearchResult],
-) -> AppResult<SearchPanel> {
+) -> AppResult<String> {
     let categories = db::category::list_all(&state.pool).await?;
     let products = match category_id {
         Some(cid) => db::product::list_approved_by_category(&state.pool, cid).await?,
         None => db::product::list_all_approved(&state.pool).await?,
     };
-    let map_stores = db::store::search_all_for_map(&state.pool, product_id, category_id).await?;
-    let sidebar_html = render(SidebarSearchTemplate {
+    Ok(render(SidebarSearchTemplate {
         categories,
         products,
-        results_html: render_results(results, map_stores.len()),
-    });
-    Ok(SearchPanel { sidebar_html, map_stores })
+        results_html: render_results(results),
+    }))
 }
 
 pub async fn run_search(state: &AppState, q: &SearchQuery) -> AppResult<Vec<StoreSearchResult>> {
-    let lat = q.lat.unwrap_or(AUSTRIA_LAT);
-    let lon = q.lon.unwrap_or(AUSTRIA_LON);
-    let distance_km = q.distance_km.unwrap_or(DEFAULT_DISTANCE_KM);
-    let results = db::store::search(&state.pool, lat, lon, distance_km, q.product_id, q.category_id).await?;
-    Ok(results)
+    Ok(db::store::search(&state.pool, q.origin(), q.product_id, q.category_id).await?)
 }
 
 /// `GET /api/stores` — Datastar SSE: `patch-signals {resultCount}` +
@@ -202,12 +192,11 @@ pub async fn stores(
 ) -> AppResult<Sse<impl stream::Stream<Item = Result<Event, Infallible>>>> {
     let results = run_search(&state, &q).await?;
     let count = results.len();
-    let map_stores = db::store::search_all_for_map(&state.pool, q.product_id, q.category_id).await?;
-    let results_html = render_results(&results, map_stores.len());
-    let map_data_html = render_map_data(&map_stores);
+    let results_html = render_results(&results);
+    let map_data_html = render_map_data(&results);
     tracing::debug!(
-        category_id = ?q.category_id, product_id = ?q.product_id, distance_km = ?q.distance_km,
-        result_count = count, nationwide_count = map_stores.len(),
+        category_id = ?q.category_id, product_id = ?q.product_id,
+        ranked_by_distance = q.origin().is_some(), result_count = count,
         "search executed"
     );
 
@@ -431,8 +420,8 @@ async fn apply_filter(
 ) -> AppResult<Sse<impl stream::Stream<Item = Result<Event, Infallible>>>> {
     let q = SearchQuery { category_id, product_id, ..q };
     let results = run_search(&state, &q).await?;
-    let panel = render_search_panel(&state, category_id, product_id, &results).await?;
-    let map_data_html = render_map_data(&panel.map_stores);
+    let sidebar_html = render_search_panel(&state, category_id, &results).await?;
+    let map_data_html = render_map_data(&results);
 
     // Elements *before* signals, and the order genuinely matters: the
     // product `<select>`'s options are rebuilt by this patch (they cascade
@@ -447,7 +436,7 @@ async fn apply_filter(
     // payload *removes* the signal rather than blanking it (see sse.rs).
     Ok(Sse::new(stream::iter(vec![
         Ok(patch_elements(&render_empty_suggestions())),
-        Ok(patch_elements_at("#sidebar", "inner", &panel.sidebar_html)),
+        Ok(patch_elements_at("#sidebar", "inner", &sidebar_html)),
         Ok(patch_elements(&map_data_html)),
         Ok(patch_signals(&serde_json::json!({
             "categoryId": signal_id(category_id),

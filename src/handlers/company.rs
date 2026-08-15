@@ -179,10 +179,10 @@ async fn render_return(
 async fn search_panel_events(state: &AppState) -> AppResult<Vec<Event>> {
     let q = crate::handlers::search::SearchQuery::default();
     let results = crate::handlers::search::run_search(state, &q).await?;
-    let panel = crate::handlers::search::render_search_panel(state, None, None, &results).await?;
-    let map_data_html = crate::handlers::search::render_map_data(&panel.map_stores);
+    let sidebar_html = crate::handlers::search::render_search_panel(state, None, &results).await?;
+    let map_data_html = crate::handlers::search::render_map_data(&results);
     Ok(vec![
-        patch_elements_at("#sidebar", "inner", &panel.sidebar_html),
+        patch_elements_at("#sidebar", "inner", &sidebar_html),
         crate::sse::patch_elements(&map_data_html),
     ])
 }

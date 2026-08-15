@@ -345,10 +345,10 @@ pub async fn delete(
     // search rather than a now-404ing detail view.
     let q = crate::handlers::search::SearchQuery::default();
     let results = crate::handlers::search::run_search(&state, &q).await?;
-    let panel = crate::handlers::search::render_search_panel(&state, None, None, &results).await?;
-    let map_data_html = crate::handlers::search::render_map_data(&panel.map_stores);
+    let sidebar_html = crate::handlers::search::render_search_panel(&state, None, &results).await?;
+    let map_data_html = crate::handlers::search::render_map_data(&results);
     Ok(Sse::new(stream::iter(vec![
-        Ok(patch_elements_at("#sidebar", "inner", &panel.sidebar_html)),
+        Ok(patch_elements_at("#sidebar", "inner", &sidebar_html)),
         Ok(crate::sse::patch_elements(&map_data_html)),
     ])))
 }

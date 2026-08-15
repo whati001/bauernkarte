@@ -144,10 +144,10 @@ pub async fn back(
     DatastarSignals(q): DatastarSignals<SearchQuery>,
 ) -> AppResult<Sse<impl stream::Stream<Item = Result<Event, Infallible>>>> {
     let results = run_search(&state, &q).await?;
-    let panel = render_search_panel(&state, q.category_id, q.product_id, &results).await?;
-    let map_data_html = render_map_data(&panel.map_stores);
+    let sidebar_html = render_search_panel(&state, q.category_id, &results).await?;
+    let map_data_html = render_map_data(&results);
     Ok(Sse::new(stream::iter(vec![
-        Ok(patch_elements_at("#sidebar", "inner", &panel.sidebar_html)),
+        Ok(patch_elements_at("#sidebar", "inner", &sidebar_html)),
         Ok(patch_elements(&map_data_html)),
     ])))
 }

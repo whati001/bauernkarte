@@ -5,28 +5,26 @@
 //      load and write it into the Datastar signal store.
 //   2. Watch the server-rendered #sidebar-results fragment for changes
 //      and redraw Leaflet markers from the JSON blob embedded in it.
-//   3. While geolocation is available, draw a circle showing the current
-//      search radius and keep it live as the slider moves.
 //
 // Signal writes use `mergePatch`, imported directly from the vendored
 // datastar.js ES module — confirmed by reading the shipped bundle's own
 // source (`k=(e,{ifMissing:t}={})=>{...}`, exported as `mergePatch`),
-// not guessed from docs. Marker/circle redraws deliberately do NOT use
+// not guessed from docs. Marker redraws deliberately do NOT use
 // Datastar's internal signal-*read* primitives (`signal`/`effect`) since
 // their calling convention isn't publicly documented; reading plain,
-// self-authored DOM/JSON (a `<script>` blob, the slider's own `.value`)
-// is robust regardless of Datastar internals.
+// self-authored DOM/JSON (a `<script>` blob) is robust regardless of
+// Datastar internals.
 //
 // IMPORTANT if you're editing templates: multi-word `data-bind`/`data-*`
-// *attribute names* must be kebab-case (`data-bind:distance-km`), never
-// camelCase (`data-bind:distanceKm`) — HTML lowercases attribute names
+// *attribute names* must be kebab-case (`data-bind:store-name`), never
+// camelCase (`data-bind:storeName`) — HTML lowercases attribute names
 // during parsing, so the camelCase form silently binds to a *different*,
 // entirely-lowercase signal than the one the rest of the app reads.
 // Datastar itself converts a kebab-case key to camelCase internally
 // (confirmed in the bundle: `Ct.camel = e => e.replace(/-[a-z]/g, ...)`)
-// — that conversion is exactly what makes `distance-km` become the
-// `distanceKm` signal every other reference in this app expects.
-// Attribute *values* (e.g. `data-text="$distanceKm"`) are untouched by
+// — that conversion is exactly what makes `store-name` become the
+// `storeName` signal every other reference in this app expects.
+// Attribute *values* (e.g. `data-text="$navIcon"`) are untouched by
 // HTML's lowercasing and are written in real camelCase as-is.
 
 import { mergePatch } from "/static/datastar.js";
@@ -34,7 +32,6 @@ import { mergePatch } from "/static/datastar.js";
 const AUSTRIA_CENTER = { lat: 47.5162, lon: 14.5501 };
 const DEFAULT_ZOOM = 14;
 const AUSTRIA_ZOOM = 8;
-const GEOLOCATED_DEFAULT_RADIUS_KM = 5;
 
 // Marker sizing (total rendered diameter, including the white border —
 // see .map-pin-dot/.map-pin-dot.selected in app.css, kept in sync here
@@ -75,10 +72,14 @@ const map = L.map("map", { zoomControl: true }).setView(
 );
 L.tileLayer(TILE_URL, { attribution: TILE_ATTRIBUTION, maxZoom: TILE_MAX_ZOOM }).addTo(map);
 
-// ---- geolocation + the search-radius circle ----
+// ---- geolocation ----
+//
+// There is no search radius: nearness ranks the results list (see
+// db::store::search) rather than filtering it, so nothing here draws a
+// circle or clamps a distance any more. All this still does is resolve a
+// position, publish it to the signals, and centre the map on it.
 
 let geoAvailable = false;
-let radiusCircle = null;
 
 function setLatLon(lat, lon) {
   // Documented data-bind contract: setting .value + dispatching the
@@ -92,74 +93,6 @@ function setLatLon(lat, lon) {
   lonInput.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
-function currentRadiusKm() {
-  const slider = document.getElementById("distance-range");
-  const val = slider ? Number(slider.value) : NaN;
-  return Number.isFinite(val) && val > 0 ? val : GEOLOCATED_DEFAULT_RADIUS_KM;
-}
-
-/// Only meaningful once we have a real fix — a circle around the
-/// Austria-centroid fallback would claim a precision the app doesn't
-/// have (matches the search-radius control itself being hidden via
-/// `data-show="$geoAvailable === true"` in sidebar_search.html).
-///
-/// Purely geometry — does NOT touch the map's view. `fitMapToRadius`
-/// (below) is the separate, deliberately-less-frequent step that
-/// re-centers/re-zooms; splitting them means dragging the slider redraws
-/// the circle live on every tick without the camera fighting the drag,
-/// while letting go (the `change` event) settles the view once.
-function updateRadiusCircle(lat, lon) {
-  if (!geoAvailable) {
-    if (radiusCircle) {
-      map.removeLayer(radiusCircle);
-      radiusCircle = null;
-    }
-    return;
-  }
-  const radiusM = currentRadiusKm() * 1000;
-  if (radiusCircle) {
-    radiusCircle.setLatLng([lat, lon]);
-    radiusCircle.setRadius(radiusM);
-  } else {
-    radiusCircle = L.circle([lat, lon], {
-      radius: radiusM,
-      color: "#2f6b3a",
-      weight: 1,
-      fillOpacity: 0.08,
-      interactive: false,
-    }).addTo(map);
-  }
-}
-
-// A circle's on-screen size is a straightforward function of zoom and
-// latitude (Web Mercator foreshortening) — a "5 km" circle at a fixed
-// street-level zoom can legitimately span most of the viewport, which
-// reads as "wrong" even though the geometry (radius in meters, per
-// Leaflet's L.circle contract) is correct. Re-fitting the view to the
-// circle's own bounds after every change is what keeps "5 km" and
-// "80 km" both looking like a sensible, consistent circle instead of
-// requiring the zoom level to already happen to match the radius.
-function fitMapToRadius() {
-  if (!radiusCircle) return;
-  map.fitBounds(radiusCircle.getBounds(), { padding: [40, 40] });
-}
-
-function wireDistanceSlider() {
-  const slider = document.getElementById("distance-range");
-  if (!slider || slider.dataset.pfWired) return;
-  slider.dataset.pfWired = "1";
-  // Fires once the drag settles (not on every tick, unlike the circle's
-  // own live resize below) — re-centers/zooms the view to match.
-  slider.addEventListener("change", fitMapToRadius);
-  // Datastar's own `data-bind:distance-km` listener already updates the
-  // signal on this same "input" event; this is a second, independent
-  // listener purely for the circle's live radius — no interference.
-  slider.addEventListener("input", () => {
-    const [lat, lon] = currentCenter();
-    updateRadiusCircle(lat, lon);
-  });
-}
-
 function currentCenter() {
   const lat = Number(document.getElementById("lat-input").value);
   const lon = Number(document.getElementById("lon-input").value);
@@ -168,34 +101,18 @@ function currentCenter() {
 
 // Shared by the automatic attempt on load (`initGeolocation`) and the
 // map's locate button (`wireLocateButton`) — same signals, same view
-// change, same radius reset, so a manual retry lands the app in exactly
-// the state a successful first attempt would have.
+// change, so a manual retry lands the app in exactly the state a
+// successful first attempt would have.
+//
+// Publishing `geoAvailable` is what re-ranks the results: the search
+// only sorts by distance when it's `true` (see SearchQuery::origin), and
+// `sidebar_search.html`'s `data-effect` re-runs the search whenever
+// $lat/$lon land here.
 function applyPosition(lat, lon, available) {
   geoAvailable = available;
   mergePatch({ geoAvailable: available });
   setLatLon(lat, lon);
   map.setView([lat, lon], available ? DEFAULT_ZOOM : AUSTRIA_ZOOM);
-
-  if (available) {
-    // A radius only defaults to something narrow once it's anchored
-    // to a real position — reset the slider (and the signal it binds
-    // to) from whatever the pre-fix 100 km default was.
-    const slider = document.getElementById("distance-range");
-    if (slider) {
-      slider.value = String(GEOLOCATED_DEFAULT_RADIUS_KM);
-      slider.dispatchEvent(new Event("input", { bubbles: true }));
-      slider.dispatchEvent(new Event("change", { bubbles: true }));
-    }
-  }
-  // Explicit, not left to the slider's dispatched "change" above: that
-  // event fires before the circle exists yet (`updateRadiusCircle`
-  // hasn't run at that point), so `fitMapToRadius`'s "no circle yet"
-  // early-return would otherwise make the very first fit silently a
-  // no-op — the initial view would then sit at plain `DEFAULT_ZOOM`
-  // instead of fit to the actual radius, until the user dragged the
-  // slider once themselves.
-  updateRadiusCircle(lat, lon);
-  if (available) fitMapToRadius();
 }
 
 function initGeolocation() {
@@ -474,7 +391,7 @@ function escapeHtml(s) {
 const GENERIC_SHOP_GLYPH = "🏬";
 
 // `store` is the plain JSON blob from `#map-stores-json` (see
-// `MapStorePin` / `models.rs`), or absent for the location-picker's own
+// `StoreSearchResult` / `models.rs`), or absent for the location-picker's own
 // marker (`placePickerMarker`), which stays a plain, glyph-less dot.
 function pinGlyph(store) {
   if (!store) return "";
@@ -495,7 +412,7 @@ function pinIcon(selected, store) {
 }
 
 // Up to 5 products (`store.products`, already ranked by rating desc /
-// name asc server-side — see `db::store::search_all_for_map`), one per
+// name asc server-side — see `db::store::search`), one per
 // line, plus a "+N more" line when the store carries more than that
 // (`store.product_total` is the true count, not capped at 5).
 function tooltipHtml(store) {
@@ -679,15 +596,14 @@ function observeResults() {
   // to/from the detail panel, and what opens/closes the panel to match.
   updateSelection();
   syncSidebarLifecycle();
-  // The distance slider and the store-form location picker both live
-  // outside #sidebar-results but are (re)created by the same full-panel
-  // swaps — hook them up (or tear the picker down) on every pass.
-  wireDistanceSlider();
+  // The store-form location picker lives outside #sidebar-results but is
+  // (re)created by the same full-panel swaps — hook it up (or tear it
+  // down) on every pass.
   wireLocationPicker();
 }
 
 // #sidebar's content gets swapped between search/detail/form states, so
-// #sidebar-results/#distance-range/#location-picker come and go — watch
+// #sidebar-results/#location-picker come and go — watch
 // the stable outer container for that and re-attach. `subtree: true` is
 // required here, not just `childList` on #sidebar itself: Datastar's
 // morph can reuse the outer wrapper node across a panel swap (e.g.
