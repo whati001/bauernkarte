@@ -394,6 +394,23 @@ function wireSidebarToggle() {
 // search panel is showing because someone opened it".
 let hadDetailPanel = false;
 
+// The navbar's "Alle Produkte" chip needs to show the panel from
+// wherever the visitor currently is — including while it already holds
+// the login form or a store detail, where merely toggling it open would
+// leave the wrong panel on screen and toggling it at all would close it.
+// The chip pairs this with `@get('/api/store/back')`, which swaps in the
+// search panel; this half guarantees the panel is open *and* counts as
+// the visitor's own doing, so the deselect rule below doesn't
+// immediately close it again.
+//
+// Published on `window` because a Datastar `data-on` expression can't
+// reach module scope — the one such bridge in this direction (the
+// lat/lon inputs in layout.html are the other direction, JS -> signals).
+window.pfShowSidebar = () => {
+  openedByUser = true;
+  setSidebarCollapsed(false);
+};
+
 // Whether the panel is open because someone asked for it (the stack
 // button, or a panel they navigated to like the account page or a form)
 // rather than because a store got selected. Deselecting only closes the

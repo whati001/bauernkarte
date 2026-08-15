@@ -77,17 +77,15 @@
          markup as well as visually, so tab order follows what's on
          screen.
 
-         It proxy-clicks the map's stack button rather than toggling the
-         layout class itself, so opening from here goes through exactly
-         the same path as opening from the map — including the
-         `openedByUser` flag map.js sets there, which is what keeps the
-         panel from vanishing again on the next store deselect. Guarded
-         on "currently collapsed" because that button *toggles*: an
-         unguarded proxy-click would close the panel someone just asked
-         to see. -->
+         Two halves, because "show me the filters" has to work from
+         wherever the visitor is: `/api/store/back` swaps the *search
+         panel* into #sidebar (whatever it held — login, a store detail,
+         a form), and `pfShowSidebar` (map.js) makes sure the panel is
+         open and marks it as the visitor's own doing so the deselect
+         rule doesn't close it again a moment later. -->
     <button type="button" class="product-pick product-more"
             title="{{ "nav-products-all"|t }}"
-            data-on:click="document.getElementById('layout').classList.contains('sidebar-collapsed') && document.getElementById('sidebar-open').click()">
+            data-on:click="pfShowSidebar(); @get('/api/store/back')">
       <span class="product-more-icon" aria-hidden="true">{% include "icons/layers.svg" %}</span>
       <span class="product-pick-name">{{ "nav-products-all"|t }}</span>
     </button>
