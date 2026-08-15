@@ -70,6 +70,12 @@ detail-rate = Bewerten
 detail-unrate = Bewertung entfernen
 detail-no-products = Noch keine Produkte für dieses Geschäft.
 detail-seasonal-availability = Saisonale Verfügbarkeit
+detail-location = Standort
+detail-rating-label = Bewertung
+detail-photos = Fotos
+detail-other-stores = Weitere Geschäfte dieser Firma
+detail-get-directions = Route berechnen
+detail-hero-art-alt = Illustration eines Bauernhofs mit den angebotenen Produkten
 opening-hours-closed = Geschlossen
 
 ## Weekdays (opening-hours grid — store_form.html, sidebar_detail.html)

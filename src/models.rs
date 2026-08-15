@@ -216,6 +216,14 @@ pub struct ImageSummary {
     pub description: Option<String>,
 }
 
+/// Another shop belonging to the same company — just enough to link to
+/// it from a store's detail page (`db::store::list_siblings`).
+#[derive(Debug, Clone, sqlx::FromRow)]
+pub struct SiblingStore {
+    pub id: i64,
+    pub name: String,
+}
+
 /// Full store detail view (store-detail capability).
 #[derive(Debug, Clone)]
 pub struct StoreDetail {
@@ -233,4 +241,7 @@ pub struct StoreDetail {
     pub company_description: Option<String>,
     pub company_homepage: Option<String>,
     pub products: Vec<StoreProductDetail>,
+    /// The company's other shops, empty when this is its only one — the
+    /// detail page skips the whole section then.
+    pub sibling_stores: Vec<SiblingStore>,
 }

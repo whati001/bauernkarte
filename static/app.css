@@ -1197,9 +1197,128 @@ a.icon-btn.danger:hover, button.icon-btn.danger:hover { background: var(--critic
   margin-top: var(--space-2);
 }
 
+/* ============================================================
+   Store detail (sidebar_detail.html)
+   ============================================================ */
+
+/* The header runs edge to edge — .sidebar-panel's own padding is
+   cancelled so the image meets the panel's sides, the way a card's
+   cover image does. */
+.detail-panel .store-hero {
+  margin: 0 calc(-1 * var(--space-4)) var(--space-4);
+  aspect-ratio: 20 / 9;
+  overflow: hidden;
+  background: var(--surface-2);
+  position: relative;
+}
+.detail-panel .store-hero img,
+.detail-panel .store-hero svg { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* The drawn fallback's produce, sitting in the crate the SVG paints.
+   Emoji rather than more hand-drawn paths: they're the same glyphs the
+   product carries everywhere else in the app, so the illustration says
+   what the shop actually sells. */
+.store-hero-produce {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 16%;
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2);
+  font-size: clamp(1.6rem, 9vw, 2.6rem);
+  line-height: 1;
+  filter: drop-shadow(0 2px 3px rgba(11, 11, 11, 0.25));
+}
+
+/* Label above a fact, so "when is it available" and "how is it rated"
+   are named rather than left as a bare bar of dots or badges. */
+.detail-fact-label {
+  margin: var(--space-3) 0 var(--space-1);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.detail-fact-label .icon { color: var(--text-muted); }
+
+.detail-facts { margin: var(--space-3) 0 0; display: flex; flex-direction: column; gap: var(--space-3); }
+.detail-fact dt {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.detail-fact dt .icon { color: var(--accent); }
+.detail-fact dd { margin: 2px 0 0; color: var(--text-primary); word-break: break-word; }
+
 /* Products are `.panel-card`s in their own right (one per offering) —
    this only supplies the gap between them. */
 .products { display: flex; flex-direction: column; gap: var(--space-4); }
+
+/* The glyph leads the row and is the thing you scan for, so it's set
+   far larger than the inline emoji used in chips and options. */
+.product-head { gap: var(--space-3); }
+.product-glyph { font-size: 2.25rem; line-height: 1; flex-shrink: 0; }
+.product-head h4 { flex: 1; min-width: 0; }
+
+/* Horizontal strip rather than a grid: photo count varies wildly
+   between shops, and a strip is the one layout that looks deliberate
+   with two photos and with twenty. */
+.photo-carousel {
+  display: flex;
+  gap: var(--space-3);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  padding-bottom: var(--space-2);
+}
+.photo-slide {
+  flex: 0 0 72%;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  color: var(--text-secondary);
+}
+.photo-slide:hover { text-decoration: none; }
+.photo-slide img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+.photo-caption {
+  font-size: var(--font-size-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sibling-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.sibling-list a { display: inline-flex; align-items: center; gap: var(--space-2); font-weight: 600; }
+
+/* Full-width so it reads as the panel's closing action, matching the
+   mockup's footer button. */
+/* `button.primary` is an element selector, so an <a class="btn primary">
+   never picked it up — hence the fill is restated here. */
+.directions-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--touch-target);
+  color: var(--accent-contrast);
+  background: var(--accent);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+.directions-btn:hover { text-decoration: none; filter: brightness(1.08); }
 
 .rating-row { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; margin: var(--space-2) 0; }
 .rating-badge {

@@ -17,7 +17,7 @@ use crate::{
     error::{AppError, AppResult},
     handlers::search::{render_map_data, render_search_panel, run_search, SearchQuery},
     i18n as filters, // see templates.rs's comment on this alias
-    models::{RatingCount, StoreDetail},
+    models::{RatingCount, SiblingStore, StoreDetail},
     opening_hours,
     seasonality,
     sse::{patch_elements, patch_elements_at},
@@ -27,7 +27,33 @@ use crate::{
 
 struct ImageView {
     id: i64,
-    description: Option<String>,
+    /// The uploader's caption when there is one, otherwise the product
+    /// the photo belongs to — the carousel is store-wide now, so a photo
+    /// with no caption still says what it's of.
+    caption: String,
+}
+
+/// Foliage hue band for the header illustration: yellow-green through
+/// green. Wide enough that different products look different, narrow
+/// enough that every one of them still looks like farmland.
+const HERO_HUE_BASE: i64 = 72;
+const HERO_HUE_SPAN: i64 = 58;
+
+/// The header illustration, used when a store has no uploaded photo.
+///
+/// It's drawn (an inline SVG farm scene, see `store_hero.html`), not a
+/// stock photo, and it's keyed to the store's *lead product*: `hue`
+/// comes from that product's id, so one product always yields the same
+/// picture and two stores leading with the same product look alike on
+/// purpose. `icons` are the store's product emoji laid into the crate in
+/// the foreground.
+///
+/// `hue` is deliberately confined to `HERO_HUE_BASE .. +HERO_HUE_SPAN` —
+/// a free 0..360 hue gave some products magenta fields, which reads as a
+/// bug rather than as variety. Only the land varies; the sky is fixed.
+struct HeroArt {
+    hue: i64,
+    icons: Vec<String>,
 }
 
 struct StoreProductView {
@@ -45,7 +71,6 @@ struct StoreProductView {
     season_summary: String,
     ratings: Vec<RatingCount>,
     viewer_has_rated_up: bool,
-    images: Vec<ImageView>,
     selected: bool,
 }
 
@@ -65,6 +90,16 @@ struct SidebarDetailTemplate {
     company_description: Option<String>,
     company_homepage: Option<String>,
     products: Vec<StoreProductView>,
+    /// The store's first uploaded photo, used as the header image.
+    /// `None` falls back to `hero_art`.
+    hero_image_id: Option<i64>,
+    hero_art: HeroArt,
+    /// Every approved photo across all of the store's products, for the
+    /// carousel. Empty means the whole section is skipped.
+    photos: Vec<ImageView>,
+    sibling_stores: Vec<SiblingStore>,
+    /// Prebuilt Google Maps link for the "Get directions" button.
+    maps_url: String,
     logged_in: bool,
 }
 
@@ -90,14 +125,41 @@ pub fn render_detail_panel_with_selection(
             season_summary: seasonality::season_summary(p.seasonal_months.as_deref()),
             ratings: p.ratings.clone(),
             viewer_has_rated_up: p.viewer_has_rated_up,
-            images: p
-                .images
-                .iter()
-                .map(|i| ImageView { id: i.id, description: i.description.clone() })
-                .collect(),
             selected: selected_store_product_id == Some(p.store_product_id),
         })
         .collect();
+
+    // Flattened across products: the carousel is a property of the store,
+    // not of one listing, so a shop with one photo on each of three
+    // products still gets a three-photo strip.
+    let photos: Vec<ImageView> = detail
+        .products
+        .iter()
+        .flat_map(|p| {
+            p.images.iter().map(|i| ImageView {
+                id: i.id,
+                caption: i.description.clone().unwrap_or_else(|| p.product_name.clone()),
+            })
+        })
+        .collect();
+
+    let hero_art = HeroArt {
+        // Products come back ordered by name, so "lead product" is stable
+        // for a given store; the hue is derived from the product's own
+        // id, which is what makes the illustration per-product rather
+        // than per-store.
+        hue: detail
+            .products
+            .first()
+            .map(|p| HERO_HUE_BASE + (p.product_id * 37).rem_euclid(HERO_HUE_SPAN))
+            .unwrap_or(HERO_HUE_BASE + 26),
+        icons: detail
+            .products
+            .iter()
+            .take(3)
+            .map(|p| p.product_icon.clone().unwrap_or_else(|| "\u{1f33e}".to_string()))
+            .collect(),
+    };
 
     render(SidebarDetailTemplate {
         store_id: detail.store_id,
@@ -110,6 +172,14 @@ pub fn render_detail_panel_with_selection(
         company_description: detail.company_description.clone(),
         company_homepage: detail.company_homepage.clone(),
         products,
+        hero_image_id: photos.first().map(|i| i.id),
+        hero_art,
+        photos,
+        sibling_stores: detail.sibling_stores.clone(),
+        maps_url: format!(
+            "https://www.google.com/maps/dir/?api=1&destination={},{}",
+            detail.lat, detail.lon
+        ),
         logged_in,
     })
 }

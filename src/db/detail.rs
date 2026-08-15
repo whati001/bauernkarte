@@ -99,5 +99,6 @@ pub async fn get_store_detail(
         company_description: header.company_description,
         company_homepage: header.company_homepage,
         products,
+        sibling_stores: crate::db::store::list_siblings(pool, header.company_id, store_id).await?,
     }))
 }

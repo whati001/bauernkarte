@@ -70,6 +70,12 @@ detail-rate = Rate
 detail-unrate = Remove rating
 detail-no-products = No products for this store yet.
 detail-seasonal-availability = Seasonal availability
+detail-location = Location
+detail-rating-label = Rating
+detail-photos = Photos
+detail-other-stores = More stores from this company
+detail-get-directions = Get directions
+detail-hero-art-alt = Illustration of a farm with the products on offer
 opening-hours-closed = Closed
 
 ## Weekdays (opening-hours grid — store_form.html, sidebar_detail.html)

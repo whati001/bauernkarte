@@ -1,7 +1,7 @@
 use serde_json::json;
 use sqlx::{types::Json, PgPool};
 
-use crate::models::{ProductSummary, Store, StoreSearchResult};
+use crate::models::{ProductSummary, SiblingStore, Store, StoreSearchResult};
 
 /// Mirrors `StoreSearchResult` for `query_as!`'s benefit — `products`
 /// comes back as a jsonb column decoded via `sqlx::types::Json`, which
@@ -119,6 +119,27 @@ pub async fn search(
             product_total: r.product_total,
         })
         .collect())
+}
+
+/// The company's *other* approved stores — the detail page links to
+/// them ("also from this company"). Excludes `store_id` itself, so an
+/// empty result means "this is the company's only shop" and the section
+/// is skipped entirely.
+pub async fn list_siblings(
+    pool: &PgPool,
+    company_id: i64,
+    store_id: i64,
+) -> sqlx::Result<Vec<SiblingStore>> {
+    sqlx::query_as!(
+        SiblingStore,
+        r#"select id, name from store
+           where company = $1 and id <> $2 and approved and not deleted
+           order by name"#,
+        company_id,
+        store_id
+    )
+    .fetch_all(pool)
+    .await
 }
 
 pub async fn find(pool: &PgPool, id: i64) -> sqlx::Result<Option<Store>> {

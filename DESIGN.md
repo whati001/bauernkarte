@@ -60,6 +60,21 @@ Within a card, a repeated sub-entity (each product in the store form)
 gets a `3px solid var(--accent)` rule down its left edge rather than a
 nested card — nesting cards inside cards reads as noise.
 
+## Illustrated fallbacks
+
+Where a photo would go but none exists, draw one — don't ship an empty
+grey box or a stock image. The store detail's header
+(`partials/store_hero.html`) is a hand-authored inline SVG farm scene,
+tinted from `--hero-hue`, which is derived from the store's **lead
+product's id**. So the picture is per *product*, not per store: two
+shops leading with the same product get the same illustration, which is
+the point.
+
+Keep the generated hue inside a believable band (`HERO_HUE_BASE` /
+`HERO_HUE_SPAN` in `store_detail.rs` confine it to yellow-green through
+green). A free 0–360° hue gave some products magenta fields, which reads
+as a bug rather than as variety. Vary the land; leave the sky fixed.
+
 ## Colour with meaning
 
 | Token | Meaning |
