@@ -39,15 +39,20 @@ const GEOLOCATED_DEFAULT_RADIUS_KM = 5;
 // Marker sizing (total rendered diameter, including the white border —
 // see .map-pin-dot/.map-pin-dot.selected in app.css, kept in sync here
 // since Leaflet needs the pixel size up front for iconSize/iconAnchor).
-const PIN_SIZE = 32;
-const PIN_SIZE_SELECTED = 42;
+const PIN_SIZE = 40;
+const PIN_SIZE_SELECTED = 52;
 // Screen-space (not geographic) clustering radius: stores whose current
 // on-screen pixel positions fall in the same PIXEL_RADIUS-sized grid
 // cell render as one count badge instead of individual pins. Fixed
 // pixel radius (not fixed km) is what makes this naturally cluster
 // more at low zoom and less at high zoom, without a zoom-dependent
 // lookup table.
-const CLUSTER_PIXEL_RADIUS = 45;
+//
+// Tracks PIN_SIZE with a little slack: below roughly a pin's own
+// diameter, neighbouring cells can each hold a pin and still overlap,
+// which is the mush that made the product glyphs unreadable in the
+// first place.
+const CLUSTER_PIXEL_RADIUS = 56;
 
 // basemap.at — verified live against the public WMTS endpoint at
 // implementation time (design.md §8.3): {z}/{y}/{x} order (row before
@@ -469,10 +474,13 @@ function bindStoreTooltip(marker, store, selected) {
   });
 }
 
+// Kept at or above PIN_SIZE at every step — a cluster standing in for
+// several stores reading as *smaller* than a single-store pin next to it
+// inverts what the badge means.
 function clusterSize(count) {
-  if (count < 10) return 34;
-  if (count < 50) return 42;
-  return 50;
+  if (count < 10) return 42;
+  if (count < 50) return 50;
+  return 58;
 }
 
 function clusterIcon(count) {

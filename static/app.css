@@ -1123,8 +1123,8 @@ button.rated:hover { filter: brightness(0.97); }
    Leaflet's iconSize/iconAnchor so the click/hover hit-area lines up
    exactly with what's drawn. */
 .map-pin-dot {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: var(--accent);
   border: 3px solid #fff;
@@ -1132,7 +1132,7 @@ button.rated:hover { filter: brightness(0.97); }
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 17px;
+  font-size: 21px;
   line-height: 1;
   transition: width 0.15s var(--ease), height 0.15s var(--ease), font-size 0.15s var(--ease);
 }
@@ -1142,9 +1142,9 @@ button.rated:hover { filter: brightness(0.97); }
    stays reserved for destructive actions. Other pins are left alone so
    nearby stores stay visible, Booking.com-map style. */
 .map-pin-dot.selected {
-  width: 42px;
-  height: 42px;
-  font-size: 22px;
+  width: 52px;
+  height: 52px;
+  font-size: 28px;
   box-shadow: 0 0 0 5px var(--accent-wash), var(--shadow-md);
 }
 
@@ -1181,5 +1181,9 @@ button.rated:hover { filter: brightness(0.97); }
   border: 3px solid #fff;
   box-shadow: var(--shadow-md);
   font-weight: 600;
+  /* Leaflet's container font (12px) is too small for a badge this size;
+     the diameter itself comes from map.js's clusterSize as an inline
+     style, so only the type is set here. */
+  font-size: 16px;
   line-height: 1;
 }
