@@ -317,8 +317,6 @@ function setSidebarCollapsed(collapsed) {
   if (!layout || !sidebar) return;
   if (layout.classList.contains("sidebar-collapsed") === collapsed) return;
   layout.classList.toggle("sidebar-collapsed", collapsed);
-  // Only the stack button's label flips — the chevron is close-only and
-  // hides with the panel (see app.css), so its label never changes.
   if (openBtn) {
     const label = collapsed ? sidebarOpenLabels.expand : sidebarOpenLabels.collapse;
     openBtn.setAttribute("aria-label", label);
@@ -337,25 +335,20 @@ function setSidebarCollapsed(collapsed) {
 // duplicating i18n lookups into map.js.
 let sidebarOpenLabels = { collapse: "", expand: "" };
 
-function wireSidebarControls() {
+function wireSidebarToggle() {
   const layout = document.getElementById("layout");
-  if (!layout) return;
-
-  const openBtn = document.getElementById("sidebar-open");
-  if (openBtn && !openBtn.dataset.pfWired) {
-    openBtn.dataset.pfWired = "1";
-    sidebarOpenLabels.collapse = openBtn.dataset.collapseLabel || "";
-    sidebarOpenLabels.expand = openBtn.dataset.expandLabel || "";
-    openBtn.addEventListener("click", () => {
-      setSidebarCollapsed(!layout.classList.contains("sidebar-collapsed"));
-    });
-  }
-
-  const closeBtn = document.getElementById("sidebar-toggle");
-  if (closeBtn && !closeBtn.dataset.pfWired) {
-    closeBtn.dataset.pfWired = "1";
-    closeBtn.addEventListener("click", () => setSidebarCollapsed(true));
-  }
+  const btn = document.getElementById("sidebar-open");
+  if (!layout || !btn || btn.dataset.pfWired) return;
+  btn.dataset.pfWired = "1";
+  sidebarOpenLabels.collapse = btn.dataset.collapseLabel || "";
+  sidebarOpenLabels.expand = btn.dataset.expandLabel || "";
+  btn.addEventListener("click", () => {
+    const collapsed = layout.classList.contains("sidebar-collapsed");
+    // Opening from here is the visitor asking for the panel; closing
+    // from here withdraws that (see `openedByUser`).
+    openedByUser = collapsed;
+    setSidebarCollapsed(!collapsed);
+  });
 }
 
 // Which panel #sidebar showed on the previous pass — the panel's
@@ -365,6 +358,14 @@ function wireSidebarControls() {
 // search panel is showing because someone opened it".
 let hadDetailPanel = false;
 
+// Whether the panel is open because someone asked for it (the stack
+// button, or a panel they navigated to like the account page or a form)
+// rather than because a store got selected. Deselecting only closes the
+// panel in the latter case: a panel that opened *for* a store goes away
+// with it, but one the visitor opened themselves stays put and falls
+// back to the results list, which is where they were before.
+let openedByUser = false;
+
 // The map-first lifecycle, run on every #sidebar mutation:
 //
 //   - a detail panel -> open it (selecting a store on the map, from the
@@ -372,20 +373,25 @@ let hadDetailPanel = false;
 //   - a detail panel replacing another detail panel -> already open,
 //     `setSidebarCollapsed` no-ops, so switching stores never flickers
 //     the panel shut and back;
+//   - anything that isn't the search or detail panel (auth, account, the
+//     store/product forms — all of which patch into #sidebar) -> open,
+//     or the panel would load invisibly and the click would look like it
+//     did nothing. Reaching one of those means the visitor navigated to
+//     it deliberately, so it counts as opening the panel themselves;
 //   - the search panel where a detail panel just was -> a deselect
-//     ("Zurück"/Escape), so close it again;
-//   - anything else (auth, account, the store/product forms — all of
-//     which patch into #sidebar) -> open, or the panel would load
-//     invisibly and the click would look like it did nothing;
+//     ("Zurück"/Escape): close, unless they opened the panel themselves;
 //   - the search panel with no detail panel before it -> leave the state
 //     alone, which is what lets the stack button open the filters and
 //     have them stay open.
 function syncSidebarLifecycle() {
   const hasDetail = !!document.getElementById("detail-panel");
   const isSearchPanel = !!document.getElementById("sidebar-results");
-  if (hasDetail || !isSearchPanel) {
+  if (hasDetail) {
     setSidebarCollapsed(false);
-  } else if (hadDetailPanel) {
+  } else if (!isSearchPanel) {
+    openedByUser = true;
+    setSidebarCollapsed(false);
+  } else if (hadDetailPanel && !openedByUser) {
     setSidebarCollapsed(true);
   }
   hadDetailPanel = hasDetail;
@@ -648,8 +654,8 @@ function redrawAndReselect() {
 map.on("zoomend", redrawAndReselect);
 window.addEventListener("resize", redrawAndReselect);
 
-// Controls first: `observeResults()` runs `syncSidebarLifecycle()`,
-// which flips the stack button's label via `setSidebarCollapsed`.
-wireSidebarControls();
+// Toggle first: `observeResults()` runs `syncSidebarLifecycle()`, which
+// flips the stack button's label via `setSidebarCollapsed`.
+wireSidebarToggle();
 observeResults();
 initGeolocation();

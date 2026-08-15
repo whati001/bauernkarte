@@ -575,15 +575,18 @@ a:hover { text-decoration: underline; }
 
 #map { flex: 1; min-height: 0; background: var(--surface-2); }
 
-/* The two sidebar controls (layout.html). Same round, floating-over-the
-   -map chrome; they differ only in where they sit and what they do.
-   Touch-target sized (the same 44px minimum every other interactive
-   control here uses — see .icon-btn), not just visually tidy circles:
-   these float over the map, so they need to be as easy to hit on a
-   phone as everything else. */
-#sidebar-open,
-#sidebar-toggle {
+/* The panel's toggle (layout.html) — rides the map's top-left corner,
+   directly under the navbar's brand mark, and slides with the sidebar so
+   it always floats over the map rather than over the panel. The only
+   manual control the panel has, so it never hides: closed, it's the one
+   way back. Touch-target sized (the same 44px minimum every other
+   interactive control here uses — see .icon-btn), not just a visually
+   tidy circle: it floats over the map, so it needs to be as easy to hit
+   on a phone as everything else. */
+#sidebar-open {
   position: absolute;
+  top: var(--space-3);
+  left: calc(var(--sidebar-width) + var(--space-3));
   z-index: 500;
   display: flex;
   align-items: center;
@@ -598,31 +601,13 @@ a:hover { text-decoration: underline; }
   cursor: pointer;
   transition: left 0.15s var(--ease);
 }
-#sidebar-open svg,
-#sidebar-toggle svg { width: 18px; height: 18px; }
-
-/* Stack button — rides the map's top-left corner, directly under the
-   navbar's brand mark, and slides with the sidebar so it's always over
-   the map rather than over the panel. This is the toggle: it's the only
-   way back once the panel is closed, so it never hides. */
-#sidebar-open {
-  top: var(--space-3);
-  left: calc(var(--sidebar-width) + var(--space-3));
-}
+#sidebar-open svg { width: 18px; height: 18px; }
 #layout.sidebar-collapsed #sidebar-open { left: var(--space-3); }
 
 /* Leaflet's own zoom control anchors to the same corner — drop it below
    the stack button instead of letting the two overlap. */
 .leaflet-top.leaflet-left { margin-top: calc(var(--touch-target) + var(--space-2)); }
 
-/* Close chevron — the panel's own top-right corner. Purely a close
-   affordance (the stack button reopens), so it goes away with the panel
-   rather than flipping into an expand arrow the way it used to. */
-#sidebar-toggle {
-  top: var(--space-3);
-  left: calc(var(--sidebar-width) - var(--touch-target) - var(--space-3));
-}
-#layout.sidebar-collapsed #sidebar-toggle { display: none; }
 #layout.sidebar-collapsed #sidebar { width: 0; overflow: hidden; border-right: none; }
 
 @media (max-width: 900px) {
@@ -651,12 +636,9 @@ a:hover { text-decoration: underline; }
   }
   #map { order: 1; }
   /* Sidebar and map stack vertically here, so the vertical boundary the
-     desktop rules pin to doesn't exist. The stack button keeps its
-     map-corner spot (the map is simply the top 55% now), and the close
-     chevron pins to the panel's top-right — which is the 55% line while
-     the panel is open, matching the flex split above. */
+     desktop rule slides along doesn't exist — the toggle just keeps the
+     map's top-left corner, the map now being the top 55%. */
   #sidebar-open { left: var(--space-3); }
-  #sidebar-toggle { top: calc(55% + var(--space-3)); left: auto; right: var(--space-3); }
   #layout.sidebar-collapsed #sidebar { flex-basis: 0; border-top: none; }
 
   /* iOS Safari zooms the whole page in on focus for any text input

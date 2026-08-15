@@ -32,18 +32,14 @@
          click-triggers used to vanish the moment #sidebar showed
          anything other than the search panel. -->
     {{ map_data_html|safe }}
-    <!-- Both persist across every #sidebar swap (search/detail/forms)
-         since they live outside that element entirely — wired once in
-         map.js rather than re-wired per panel like the distance slider/
-         location picker.
-
-         Two controls, not one: the stack button rides the map's top-left
-         corner and *toggles* (its label flips client-side, see
-         setSidebarCollapsed), while the chevron sits in the panel's own
-         top-right corner and only ever closes it — so it can disappear
-         with the panel instead of doubling as the reopen affordance. -->
+    <!-- The panel's only manual control, and the sole reason it lives
+         out here rather than in `#sidebar`: it has to survive every
+         panel swap (search/detail/forms) and stay reachable while the
+         panel is closed. Wired once in map.js rather than re-wired per
+         panel like the distance slider/location picker. Rides the map's
+         top-left corner and toggles; its label flips client-side (see
+         setSidebarCollapsed). -->
     <button id="sidebar-open" type="button" aria-label="{{ "map-sidebar-expand"|t }}" title="{{ "map-sidebar-expand"|t }}" data-collapse-label="{{ "map-sidebar-collapse"|t }}" data-expand-label="{{ "map-sidebar-expand"|t }}">{% include "icons/layers.svg" %}</button>
-    <button id="sidebar-toggle" type="button" aria-label="{{ "map-sidebar-collapse"|t }}" title="{{ "map-sidebar-collapse"|t }}">{% include "icons/chevron-left.svg" %}</button>
     <div id="map"></div>
   </div>
 
