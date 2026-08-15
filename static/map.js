@@ -305,21 +305,24 @@ function wireLocationPicker() {
 
 // ---- sidebar collapse/expand ("see only the map") ----
 //
-// Lives in `#layout` (layout.html), outside `#sidebar` itself, so it
-// survives every panel swap untouched — wired once here rather than
-// re-wired per panel like the distance slider/location picker above.
+// Both controls live in `#layout` (layout.html), outside `#sidebar`
+// itself, so they survive every panel swap untouched — wired once here
+// rather than re-wired per panel like the distance slider/location
+// picker above.
 
 function setSidebarCollapsed(collapsed) {
   const layout = document.getElementById("layout");
   const sidebar = document.getElementById("sidebar");
-  const btn = document.getElementById("sidebar-toggle");
+  const openBtn = document.getElementById("sidebar-open");
   if (!layout || !sidebar) return;
   if (layout.classList.contains("sidebar-collapsed") === collapsed) return;
   layout.classList.toggle("sidebar-collapsed", collapsed);
-  if (btn) {
-    const labelKey = collapsed ? "expand" : "collapse";
-    btn.setAttribute("aria-label", sidebarToggleLabels[labelKey]);
-    btn.setAttribute("title", sidebarToggleLabels[labelKey]);
+  // Only the stack button's label flips — the chevron is close-only and
+  // hides with the panel (see app.css), so its label never changes.
+  if (openBtn) {
+    const label = collapsed ? sidebarOpenLabels.expand : sidebarOpenLabels.collapse;
+    openBtn.setAttribute("aria-label", label);
+    openBtn.setAttribute("title", label);
   }
   // Leaflet doesn't see a CSS-only container resize (no native window
   // "resize" event fires just because #sidebar's width changed) — nudge
@@ -329,23 +332,63 @@ function setSidebarCollapsed(collapsed) {
   sidebar.addEventListener("transitionend", () => map.invalidateSize(), { once: true });
 }
 
-// The two translated labels, read off the button's own initial
-// server-rendered `aria-label`/`title` (always the "collapse" wording —
-// see layout.html) plus a hardcoded fallback set here for the "expand"
-// state, which the server never renders directly. Read once at wire time
-// rather than duplicating i18n lookups into map.js.
-let sidebarToggleLabels = { collapse: "", expand: "" };
+// The stack button's two translated labels, read off its own
+// server-rendered data attributes once at wire time rather than
+// duplicating i18n lookups into map.js.
+let sidebarOpenLabels = { collapse: "", expand: "" };
 
-function wireSidebarToggle() {
-  const btn = document.getElementById("sidebar-toggle");
+function wireSidebarControls() {
   const layout = document.getElementById("layout");
-  if (!btn || !layout || btn.dataset.pfWired) return;
-  btn.dataset.pfWired = "1";
-  sidebarToggleLabels.collapse = btn.getAttribute("aria-label") || "";
-  sidebarToggleLabels.expand = btn.dataset.expandLabel || sidebarToggleLabels.collapse;
-  btn.addEventListener("click", () => {
-    setSidebarCollapsed(!layout.classList.contains("sidebar-collapsed"));
-  });
+  if (!layout) return;
+
+  const openBtn = document.getElementById("sidebar-open");
+  if (openBtn && !openBtn.dataset.pfWired) {
+    openBtn.dataset.pfWired = "1";
+    sidebarOpenLabels.collapse = openBtn.dataset.collapseLabel || "";
+    sidebarOpenLabels.expand = openBtn.dataset.expandLabel || "";
+    openBtn.addEventListener("click", () => {
+      setSidebarCollapsed(!layout.classList.contains("sidebar-collapsed"));
+    });
+  }
+
+  const closeBtn = document.getElementById("sidebar-toggle");
+  if (closeBtn && !closeBtn.dataset.pfWired) {
+    closeBtn.dataset.pfWired = "1";
+    closeBtn.addEventListener("click", () => setSidebarCollapsed(true));
+  }
+}
+
+// Which panel #sidebar showed on the previous pass — the panel's
+// *content* is what drives the open/closed state (see
+// `syncSidebarLifecycle`), and closing on deselect needs to distinguish
+// "the search panel is back because a store was deselected" from "the
+// search panel is showing because someone opened it".
+let hadDetailPanel = false;
+
+// The map-first lifecycle, run on every #sidebar mutation:
+//
+//   - a detail panel -> open it (selecting a store on the map, from the
+//     results list, or via a /store/{id} deep link);
+//   - a detail panel replacing another detail panel -> already open,
+//     `setSidebarCollapsed` no-ops, so switching stores never flickers
+//     the panel shut and back;
+//   - the search panel where a detail panel just was -> a deselect
+//     ("Zurück"/Escape), so close it again;
+//   - anything else (auth, account, the store/product forms — all of
+//     which patch into #sidebar) -> open, or the panel would load
+//     invisibly and the click would look like it did nothing;
+//   - the search panel with no detail panel before it -> leave the state
+//     alone, which is what lets the stack button open the filters and
+//     have them stay open.
+function syncSidebarLifecycle() {
+  const hasDetail = !!document.getElementById("detail-panel");
+  const isSearchPanel = !!document.getElementById("sidebar-results");
+  if (hasDetail || !isSearchPanel) {
+    setSidebarCollapsed(false);
+  } else if (hadDetailPanel) {
+    setSidebarCollapsed(true);
+  }
+  hadDetailPanel = hasDetail;
 }
 
 // ---- markers ----
@@ -460,10 +503,11 @@ function addStoreMarker(store) {
       placePickerMarker(store.lat, store.lon);
       return;
     }
-    // Surface the sidebar again if it's currently collapsed — otherwise
-    // the detail panel loads invisibly and the click looks like it did
-    // nothing.
-    setSidebarCollapsed(false);
+    // No explicit expand here: the panel opens when its *content*
+    // becomes a detail panel (`syncSidebarLifecycle`), so it never
+    // slides open on a stale panel first, and a failed request leaves
+    // the map alone instead of revealing an unrelated one.
+    //
     // Every marker is drawn from the exact same `stores` array that
     // rendered the results list, so a matching `<li data-store-id>`
     // always exists — proxy the click onto it rather than duplicating
@@ -570,8 +614,9 @@ function observeResults() {
   }
   // Independent of whether #sidebar-results exists — this is what picks
   // up (or clears) the selection highlight when the sidebar swaps
-  // to/from the detail panel.
+  // to/from the detail panel, and what opens/closes the panel to match.
   updateSelection();
+  syncSidebarLifecycle();
   // The distance slider and the store-form location picker both live
   // outside #sidebar-results but are (re)created by the same full-panel
   // swaps — hook them up (or tear the picker down) on every pass.
@@ -603,6 +648,8 @@ function redrawAndReselect() {
 map.on("zoomend", redrawAndReselect);
 window.addEventListener("resize", redrawAndReselect);
 
+// Controls first: `observeResults()` runs `syncSidebarLifecycle()`,
+// which flips the stack button's label via `setSidebarCollapsed`.
+wireSidebarControls();
 observeResults();
 initGeolocation();
-wireSidebarToggle();

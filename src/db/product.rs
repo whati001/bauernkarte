@@ -1,7 +1,7 @@
 use serde_json::json;
 use sqlx::PgPool;
 
-use crate::models::Product;
+use crate::models::{Product, RankedProduct};
 
 /// Every approved product, regardless of category — the search filter's
 /// default state (no category selected yet). `list_approved_by_category`
@@ -29,6 +29,29 @@ pub async fn list_approved_by_category(pool: &PgPool, category_id: i64) -> sqlx:
            where approved and not deleted and category = $1
            order by name"#,
         category_id
+    )
+    .fetch_all(pool)
+    .await
+}
+
+/// The navbar's quick-pick row: approved products ranked by their total
+/// rating count across every store that carries them, ties broken
+/// alphabetically. `left join`s throughout so a product nobody has rated
+/// yet still appears (at count 0, i.e. sorted alphabetically at the
+/// bottom) rather than dropping out of the row entirely.
+pub async fn list_top_rated(pool: &PgPool, limit: i64) -> sqlx::Result<Vec<RankedProduct>> {
+    sqlx::query_as!(
+        RankedProduct,
+        r#"select p.id, p.name, p.icon
+           from product p
+           left join store_product sp
+             on sp.product = p.id and sp.approved and not sp.deleted
+           left join rating r on r.store_product = sp.id
+           where p.approved and not p.deleted
+           group by p.id, p.name, p.icon
+           order by count(r.id) desc, p.name asc
+           limit $1"#,
+        limit
     )
     .fetch_all(pool)
     .await

@@ -30,6 +30,14 @@ fn t_arg(key: &str, name: &str) -> String {
     i18n::translate_with_name(i18n::current_locale(), key, name)
 }
 
+/// Every handler here that re-renders `#navbar` (login/logout/profile
+/// change) has to re-render its quick-pick product row along with it —
+/// the row is inside `#navbar`, so a `patch-elements #navbar` built
+/// without it would silently delete the row the moment someone logs in.
+async fn nav_products(state: &AppState) -> AppResult<Vec<crate::models::RankedProduct>> {
+    Ok(db::product::list_top_rated(&state.pool, crate::handlers::pages::NAV_PRODUCT_LIMIT).await?)
+}
+
 fn valid_email(email: &str) -> bool {
     let email = email.trim();
     // Deliberately loose per design.md's "plausible email address" bar —
@@ -133,7 +141,7 @@ pub async fn register(
     auth::log_in(&session, user.id).await.map_err(AppError::from)?;
     tracing::info!(user_id = %user.id, "user registered");
 
-    let navbar_html = crate::templates::render_navbar(Some(user.name.clone()));
+    let navbar_html = crate::templates::render_navbar(Some(user.name.clone()), nav_products(&state).await?);
     // Previously this only patched #navbar, leaving the now-stale
     // registration form on screen with no visible confirmation beyond
     // the navbar changing — easy to miss. Now also swaps #sidebar to a
@@ -178,7 +186,7 @@ pub async fn login(
     auth::log_in(&session, user.id).await.map_err(AppError::from)?;
     tracing::info!(user_id = %user.id, "user logged in");
 
-    let navbar_html = crate::templates::render_navbar(Some(user.name.clone()));
+    let navbar_html = crate::templates::render_navbar(Some(user.name.clone()), nav_products(&state).await?);
     let sidebar_html = crate::templates::render_confirmation(&t_arg("auth-welcome-back", &user.name));
     Ok(Sse::new(stream::iter(vec![
         Ok(patch_signals(&json!({ "loggedIn": true }))),
@@ -188,9 +196,12 @@ pub async fn login(
 }
 
 /// `POST /logout` (user-auth capability).
-pub async fn logout(session: Session) -> AppResult<Sse<impl stream::Stream<Item = Result<Event, Infallible>>>> {
+pub async fn logout(
+    State(state): State<AppState>,
+    session: Session,
+) -> AppResult<Sse<impl stream::Stream<Item = Result<Event, Infallible>>>> {
     auth::log_out(&session).await.map_err(AppError::from)?;
-    let navbar_html = crate::templates::render_navbar(None);
+    let navbar_html = crate::templates::render_navbar(None, nav_products(&state).await?);
     Ok(Sse::new(stream::iter(vec![
         Ok(patch_signals(&json!({ "loggedIn": false }))),
         Ok(patch_elements_at("#navbar", "outer", &navbar_html)),
@@ -258,7 +269,7 @@ pub async fn update_profile(
         pending,
         success_message: Some(i18n::translate(i18n::current_locale(), "account-profile-saved")),
     });
-    let navbar_html = crate::templates::render_navbar(Some(updated.name.clone()));
+    let navbar_html = crate::templates::render_navbar(Some(updated.name.clone()), nav_products(&state).await?);
     Ok(Sse::new(stream::iter(vec![
         Ok(patch_elements_at("#sidebar", "inner", &html)),
         Ok(patch_elements_at("#navbar", "outer", &navbar_html)),

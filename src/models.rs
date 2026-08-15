@@ -190,6 +190,18 @@ pub struct MapStorePin {
     pub product_total: i64,
 }
 
+/// One entry of the navbar's quick-pick product row. The ranking (total
+/// ratings across *every* store carrying the product, ties broken
+/// alphabetically) lives entirely in `db::product::list_top_rated`'s
+/// `order by` — the count itself is never shown, so it isn't carried
+/// here. Just enough to render `icon + name` and know what to filter by.
+#[derive(Debug, Clone)]
+pub struct RankedProduct {
+    pub id: i64,
+    pub name: String,
+    pub icon: Option<String>,
+}
+
 /// A count of ratings of one `rating_type` on a `store_product`, generic
 /// over the type so the template can render `<count> <icon>` per type
 /// without a rewrite when a second type is added (ratings capability).

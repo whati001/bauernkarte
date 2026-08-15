@@ -1,52 +1,84 @@
 <nav id="navbar">
-  <a class="brand" href="/">
-    <span class="brand-mark">{% include "icons/sprout.svg" %}</span>
-    <span class="brand-text">
-      <span class="brand-name">{{ "nav-brand"|t }}</span>
-      <span class="brand-tagline">{{ "nav-tagline"|t }}</span>
-    </span>
-  </a>
-  <!-- Global category/product picker. Deliberately not a free-text
-       search: the input only filters the suggestion list, nothing is
-       submitted, and the actual filter is only ever applied by clicking
-       a suggestion (which hits /api/search/select — see
-       handlers::search::select). There is no Enter handler and no
-       enclosing <form>, so a typed-but-unmatched term does nothing. -->
-  <div class="nav-search" data-on:click__outside="$navOpen = false">
-    <div class="nav-search-box">
-      {% include "icons/search.svg" %}
-      <input id="nav-search-input" type="text" autocomplete="off"
-             role="combobox" aria-controls="nav-suggestions" aria-autocomplete="list"
-             data-attr:aria-expanded="$navOpen ? 'true' : 'false'"
-             placeholder="{{ "nav-search-placeholder"|t }}"
-             aria-label="{{ "nav-search-label"|t }}"
-             data-bind:nav-query
-             data-on:input__debounce.200ms="@get('/api/search/suggest')"
-             data-on:click="@get('/api/search/suggest')"
-             data-on:keydown="evt.key === 'Escape' && ($navOpen = false)">
-      <!-- Clears the *filter*, not just the text — leaving the box empty
-           while the sidebar stayed filtered is the one state that would
-           read as broken. -->
-      <button type="button" class="nav-search-clear" data-show="$navQuery.length > 0"
-              aria-label="{{ "nav-search-clear"|t }}" title="{{ "nav-search-clear"|t }}"
-              data-on:click="$navQuery = ''; $navOpen = false; $categoryId = ''; $productId = ''; @get('/api/store/back')">{% include "icons/x.svg" %}</button>
+  <div class="nav-main">
+    <a class="brand" href="/">
+      <span class="brand-mark">{% include "icons/sprout.svg" %}</span>
+      <span class="brand-text">
+        <span class="brand-name">{{ "nav-brand"|t }}</span>
+        <span class="brand-tagline">{{ "nav-tagline"|t }}</span>
+      </span>
+    </a>
+    <!-- Global category/product picker. Deliberately not a free-text
+         search: the input only filters the suggestion list, nothing is
+         submitted, and the actual filter is only ever applied by clicking
+         a suggestion (which hits /api/search/select — see
+         handlers::search::select). There is no Enter handler and no
+         enclosing <form>, so a typed-but-unmatched term does nothing. -->
+    <div class="nav-search" data-on:click__outside="$navOpen = false">
+      <div class="nav-search-box">
+        <!-- The picked item's emoji replaces the magnifier once
+             something is selected, so the box shows the same icon +
+             name pairing as the dropdown row and the product chips.
+             It's a sibling of the <input>, not part of `$navQuery`:
+             folded into the value it would become part of the search
+             term and stop the box from matching anything on reopen. -->
+        <span class="nav-search-icon" aria-hidden="true" data-show="$navIcon !== ''" data-text="$navIcon"></span>
+        <span class="nav-search-icon" data-show="$navIcon === ''">{% include "icons/search.svg" %}</span>
+        <input id="nav-search-input" type="text" autocomplete="off"
+               role="combobox" aria-controls="nav-suggestions" aria-autocomplete="list"
+               data-attr:aria-expanded="$navOpen ? 'true' : 'false'"
+               placeholder="{{ "nav-search-placeholder"|t }}"
+               aria-label="{{ "nav-search-label"|t }}"
+               data-bind:nav-query
+               data-on:input__debounce.200ms="@get('/api/search/suggest')"
+               data-on:click="@get('/api/search/suggest')"
+               data-on:keydown="evt.key === 'Escape' && ($navOpen = false)">
+        <!-- Clears the *filter*, not just the text — leaving the box empty
+             while the sidebar stayed filtered is the one state that would
+             read as broken. -->
+        <button type="button" class="nav-search-clear" data-show="$navQuery.length > 0"
+                aria-label="{{ "nav-search-clear"|t }}" title="{{ "nav-search-clear"|t }}"
+                data-on:click="@get('/api/search/clear')">{% include "icons/x.svg" %}</button>
+      </div>
+      {{ suggestions_html|safe }}
     </div>
-    {{ suggestions_html|safe }}
+    <div class="nav-actions">
+      {% if let Some(name) = user_name %}
+        <span class="nav-user-name">{{ name }}</span>
+        <a class="nav-link" href="/account" data-on:click__prevent="@get('/account')">{% include "icons/user.svg" %} {{ "nav-account"|t }}</a>
+        <a class="nav-link" href="/store/new" data-on:click__prevent="@get('/store/new')">{% include "icons/store.svg" %} {{ "nav-new-store"|t }}</a>
+        <button class="nav-link" data-on:click="@post('/logout')">{% include "icons/log-out.svg" %} {{ "nav-logout"|t }}</button>
+      {% else %}
+        <a class="nav-link nav-cta" href="/login" data-on:click__prevent="@get('/login')">{% include "icons/log-in.svg" %} {{ "nav-login"|t }}</a>
+      {% endif %}
+      <!-- Plain server navigation (no data-on:click__prevent) — switching
+           language reloads the page on purpose, see handlers/locale.rs. -->
+      <span class="lang-switch" role="group" aria-label="Sprache / Language">
+        <a href="/locale/de" class="lang-link{% if current_locale == "de" %} active{% endif %}" aria-current="{% if current_locale == "de" %}true{% else %}false{% endif %}">DE</a>
+        <a href="/locale/en" class="lang-link{% if current_locale == "en" %} active{% endif %}" aria-current="{% if current_locale == "en" %}true{% else %}false{% endif %}">EN</a>
+      </span>
+    </div>
   </div>
-  <div class="nav-actions">
-    {% if let Some(name) = user_name %}
-      <span class="nav-user-name">{{ name }}</span>
-      <a class="nav-link" href="/account" data-on:click__prevent="@get('/account')">{% include "icons/user.svg" %} {{ "nav-account"|t }}</a>
-      <a class="nav-link" href="/store/new" data-on:click__prevent="@get('/store/new')">{% include "icons/store.svg" %} {{ "nav-new-store"|t }}</a>
-      <button class="nav-link" data-on:click="@post('/logout')">{% include "icons/log-out.svg" %} {{ "nav-logout"|t }}</button>
-    {% else %}
-      <a class="nav-link nav-cta" href="/login" data-on:click__prevent="@get('/login')">{% include "icons/log-in.svg" %} {{ "nav-login"|t }}</a>
-    {% endif %}
-    <!-- Plain server navigation (no data-on:click__prevent) — switching
-         language reloads the page on purpose, see handlers/locale.rs. -->
-    <span class="lang-switch" role="group" aria-label="Sprache / Language">
-      <a href="/locale/de" class="lang-link{% if current_locale == "de" %} active{% endif %}" aria-current="{% if current_locale == "de" %}true{% else %}false{% endif %}">DE</a>
-      <a href="/locale/en" class="lang-link{% if current_locale == "en" %} active{% endif %}" aria-current="{% if current_locale == "en" %}true{% else %}false{% endif %}">EN</a>
-    </span>
+  <!-- Quick-pick row: the most-rated products (across every store, see
+       db::product::list_top_rated), one click each. Same target as a
+       search suggestion (/api/search/select/product/{id}), so picking
+       here and picking there land in exactly one code path.
+
+       Highlighting is `data-class:active` off `$productId` rather than
+       server-rendered: the filter can equally be set from the search
+       box or the sidebar's own <select>, and reading the signal means
+       the row reflects all three without any of them knowing about it.
+       `==` on purpose — `$productId` is the <select>-shaped string
+       ("17"), not a number. -->
+  {% if !nav_products.is_empty() %}
+  <div class="nav-products" role="group" aria-label="{{ "nav-products-label"|t }}">
+    {% for p in nav_products %}
+    <button type="button" class="product-pick" data-class:active="$productId == {{ p.id }}"
+            data-attr:aria-pressed="$productId == {{ p.id }} ? 'true' : 'false'"
+            data-on:click="$productId == {{ p.id }} ? @get('/api/search/clear') : @get('/api/search/select/product/{{ p.id }}')">
+      <span class="product-pick-icon" aria-hidden="true">{% if let Some(icon) = p.icon %}{{ icon }}{% else %}📦{% endif %}</span>
+      <span class="product-pick-name">{{ p.name }}</span>
+    </button>
+    {% endfor %}
   </div>
+  {% endif %}
 </nav>

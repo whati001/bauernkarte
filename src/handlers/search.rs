@@ -379,23 +379,60 @@ pub async fn select(
     // `<select>`s stay coherent (category "Obst" + product "Äpfel", not
     // a product hanging under "Alle"). Filtering by both is redundant but
     // harmless — the product already implies its category.
-    let (name, category_id, product_id) = match kind.as_str() {
+    let (label, icon, category_id, product_id) = match kind.as_str() {
         "category" => {
             let c = db::category::find(&state.pool, id).await?.ok_or(AppError::NotFound)?;
-            (c.name, Some(c.id), None)
+            (c.name, c.icon.unwrap_or_else(|| "🏷️".to_string()), Some(c.id), None)
         }
         "product" => {
             let p = db::product::find_approved(&state.pool, id).await?.ok_or(AppError::NotFound)?;
-            (p.name, Some(p.category), Some(p.id))
+            (p.name, p.icon.unwrap_or_else(|| "📦".to_string()), Some(p.category), Some(p.id))
         }
         _ => return Err(AppError::NotFound),
     };
+    tracing::debug!(kind = %kind, id = %id, "navbar filter selected");
+    apply_filter(state, q, category_id, product_id, label, icon).await
+}
 
+/// `GET /api/search/clear` — back to "everything", i.e. the same reset
+/// the sidebar's own "Alle" options produce. Its own route rather than a
+/// signal-assignment expression because three controls trigger it (the
+/// search box's ✕, an already-selected product chip, and any future
+/// reset affordance) and one server-side definition beats three copies
+/// of the same five assignments drifting apart.
+pub async fn clear(
+    State(state): State<AppState>,
+    DatastarSignals(q): DatastarSignals<SearchQuery>,
+) -> AppResult<Sse<impl stream::Stream<Item = Result<Event, Infallible>>>> {
+    tracing::debug!("navbar filter cleared");
+    apply_filter(state, q, None, None, String::new(), String::new()).await
+}
+
+/// Shared by `select` and `clear`: put the given category/product filter
+/// into effect everywhere it shows — sidebar panel, map pins, and the
+/// navbar's own state (box label + icon, and via `$productId` the
+/// highlighted product chip).
+///
+/// `label`/`icon` travel as JSON in a `patch-signals` payload rather than
+/// being interpolated into the dropdown's `data-on:click` expression —
+/// a database string inside a JS attribute is a quoting bug waiting to
+/// happen.
+async fn apply_filter(
+    // By value, not `&AppState`: the returned `impl Stream` would
+    // otherwise capture the borrow (edition 2024 captures every in-scope
+    // lifetime in an opaque type) and outlive it. `AppState` is a single
+    // `PgPool`, so the move costs an `Arc` bump.
+    state: AppState,
+    q: SearchQuery,
+    category_id: Option<i64>,
+    product_id: Option<i64>,
+    label: String,
+    icon: String,
+) -> AppResult<Sse<impl stream::Stream<Item = Result<Event, Infallible>>>> {
     let q = SearchQuery { category_id, product_id, ..q };
     let results = run_search(&state, &q).await?;
     let panel = render_search_panel(&state, category_id, product_id, &results).await?;
     let map_data_html = render_map_data(&panel.map_stores);
-    tracing::debug!(kind = %kind, id = %id, result_count = results.len(), "navbar suggestion selected");
 
     // Elements *before* signals, and the order genuinely matters: the
     // product `<select>`'s options are rebuilt by this patch (they cascade
@@ -415,7 +452,8 @@ pub async fn select(
         Ok(patch_signals(&serde_json::json!({
             "categoryId": signal_id(category_id),
             "productId": signal_id(product_id),
-            "navQuery": name,
+            "navQuery": label,
+            "navIcon": icon,
             "navOpen": false,
             "resultCount": results.len(),
         }))),

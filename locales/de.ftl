@@ -13,6 +13,7 @@ nav-search-label = Kategorie oder Produkt suchen
 nav-search-placeholder = Kategorie oder Produkt…
 nav-search-no-matches = Keine passende Kategorie oder Produkt
 nav-search-clear = Suche zurücksetzen
+nav-products-label = Beliebte Produkte
 
 ## Search sidebar
 search-category = Kategorie

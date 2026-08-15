@@ -18,7 +18,13 @@
 
   {{ navbar_html|safe }}
 
-  <div id="layout">
+  <!-- Map-first: the landing page renders with the panel already
+       collapsed (`GET /` passes `sidebar_collapsed`), so the first thing
+       a visitor sees is the map. A `/store/{id}` deep link renders it
+       open, since the whole point of that URL is the store info. From
+       there map.js drives the open/closed state off whichever panel
+       #sidebar holds — see `syncSidebarLifecycle`. -->
+  <div id="layout"{% if sidebar_collapsed %} class="sidebar-collapsed"{% endif %}>
     <div id="sidebar">{{ sidebar_html|safe }}</div>
     <!-- Lives outside #sidebar on purpose — see map_data.html's own doc
          comment (handlers::search::MapDataTemplate) for why: nested
@@ -26,12 +32,18 @@
          click-triggers used to vanish the moment #sidebar showed
          anything other than the search panel. -->
     {{ map_data_html|safe }}
-    <!-- Persists across every #sidebar swap (search/detail/forms) since
-         it lives outside that element entirely — wired once in map.js
-         rather than re-wired per panel like the distance slider/location
-         picker. Icon and aria-label both flip between collapse/expand
-         state client-side (see map.js's setSidebarCollapsed). -->
-    <button id="sidebar-toggle" type="button" aria-label="{{ "map-sidebar-collapse"|t }}" title="{{ "map-sidebar-collapse"|t }}" data-expand-label="{{ "map-sidebar-expand"|t }}">{% include "icons/chevron-left.svg" %}</button>
+    <!-- Both persist across every #sidebar swap (search/detail/forms)
+         since they live outside that element entirely — wired once in
+         map.js rather than re-wired per panel like the distance slider/
+         location picker.
+
+         Two controls, not one: the stack button rides the map's top-left
+         corner and *toggles* (its label flips client-side, see
+         setSidebarCollapsed), while the chevron sits in the panel's own
+         top-right corner and only ever closes it — so it can disappear
+         with the panel instead of doubling as the reopen affordance. -->
+    <button id="sidebar-open" type="button" aria-label="{{ "map-sidebar-expand"|t }}" title="{{ "map-sidebar-expand"|t }}" data-collapse-label="{{ "map-sidebar-collapse"|t }}" data-expand-label="{{ "map-sidebar-expand"|t }}">{% include "icons/layers.svg" %}</button>
+    <button id="sidebar-toggle" type="button" aria-label="{{ "map-sidebar-collapse"|t }}" title="{{ "map-sidebar-collapse"|t }}">{% include "icons/chevron-left.svg" %}</button>
     <div id="map"></div>
   </div>
 

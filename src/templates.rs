@@ -15,6 +15,7 @@
 // own module, not a global registry.
 use crate::i18n;
 use crate::i18n as filters;
+use crate::models::RankedProduct;
 use askama::{Template, Values};
 use axum::response::Html;
 use serde_json::Value;
@@ -74,13 +75,20 @@ struct NavbarTemplate {
     /// `sidebar_html`) so the container's markup lives in exactly one
     /// template, shared with the patch path.
     suggestions_html: String,
+    nav_products: Vec<RankedProduct>,
 }
 
-pub fn render_navbar(user_name: Option<String>) -> String {
+/// `products` is the quick-pick row (`db::product::list_top_rated`).
+/// Every caller has to supply it, including the ones that re-render the
+/// navbar just to flip the login state — the row lives inside `#navbar`,
+/// so a `patch-elements #navbar` built without it would silently delete
+/// the row on login/logout.
+pub fn render_navbar(user_name: Option<String>, products: Vec<RankedProduct>) -> String {
     render(NavbarTemplate {
         user_name,
         current_locale: i18n::current_locale().code(),
         suggestions_html: crate::handlers::search::render_empty_suggestions(),
+        nav_products: products,
     })
 }
 
@@ -92,6 +100,7 @@ struct LayoutTemplate {
     navbar_html: String,
     sidebar_html: String,
     map_data_html: String,
+    sidebar_collapsed: bool,
 }
 
 /// Every full-page GET (`/`, `/store/{id}`, and the anon-only auth pages)
@@ -103,20 +112,27 @@ struct LayoutTemplate {
 /// `handlers::search::render_map_data`) — every full-page GET populates
 /// the map's pins up front too, deep links (`/store/{id}`) included, not
 /// just the search landing page.
+/// `sidebar_collapsed` is the panel's *initial* state only — map.js takes
+/// over from there (`syncSidebarLifecycle`). `true` for the map-first
+/// landing page, `false` for a `/store/{id}` deep link, whose whole
+/// purpose is the panel's contents.
 pub fn full_page(
     title: &str,
     user_name: Option<String>,
     signals: &Value,
     sidebar_html: String,
     map_data_html: String,
+    sidebar_collapsed: bool,
+    nav_products: Vec<RankedProduct>,
 ) -> Html<String> {
-    let navbar_html = render_navbar(user_name);
+    let navbar_html = render_navbar(user_name, nav_products);
     let page = LayoutTemplate {
         title: title.to_string(),
         signals_json: signals.to_string(),
         navbar_html,
         sidebar_html,
         map_data_html,
+        sidebar_collapsed,
     };
     Html(render(page))
 }

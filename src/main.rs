@@ -135,6 +135,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/filters/products", get(handlers::search::filter_products))
         .route("/api/search/suggest", get(handlers::search::suggest))
         .route("/api/search/select/{kind}/{id}", get(handlers::search::select))
+        .route("/api/search/clear", get(handlers::search::clear))
         .route("/api/store/back", get(handlers::store_detail::back))
         .route("/api/store/{id}", get(handlers::store_detail::show))
         .route("/login", get(handlers::account::login_form))

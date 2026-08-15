@@ -220,18 +220,26 @@ a:hover { text-decoration: underline; }
 /* ============================================================
    Layout shell
    ============================================================ */
+/* Two stacked rows: the brand/search/actions bar, and the quick-pick
+   product row under it. */
 #navbar {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  min-height: var(--nav-height);
+  flex-direction: column;
+  gap: var(--space-2);
   padding: var(--space-2) var(--space-4);
   border-bottom: 1px solid var(--border);
   background: var(--shell);
   box-shadow: var(--shadow-sm);
   position: relative;
   z-index: 1000;
+}
+
+.nav-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: calc(var(--nav-height) - var(--space-4));
 }
 
 #navbar .brand {
@@ -284,7 +292,8 @@ a:hover { text-decoration: underline; }
    #navbar to two rows at 360px. Trimming the gutters and the brand type
    buys back more than that costs. */
 @media (max-width: 400px) {
-  #navbar { padding-left: var(--space-2); padding-right: var(--space-2); gap: var(--space-2); }
+  #navbar { padding-left: var(--space-2); padding-right: var(--space-2); }
+  .nav-main { gap: var(--space-2); }
   .brand-mark { width: 30px; height: 30px; }
   .brand-name { font-size: var(--font-size-base); }
 }
@@ -324,7 +333,16 @@ a:hover { text-decoration: underline; }
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
-.nav-search-box > .icon { color: var(--text-muted); }
+/* Fixed width so swapping the magnifier for the selected item's emoji
+   doesn't shift the input's left edge. */
+.nav-search-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.2em;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
 
 .nav-search-box input {
   flex: 1;
@@ -416,6 +434,49 @@ a:hover { text-decoration: underline; }
 @media (max-width: 700px) {
   .nav-search { display: none; }
 }
+
+/* Quick-pick product row. Scrolls sideways rather than wrapping — a
+   second navbar line that grows and shrinks with the catalog would move
+   the map's top edge around; one row that always occupies the same
+   height doesn't. */
+.nav-products {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+.nav-products::-webkit-scrollbar { display: none; }
+
+.product-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-shrink: 0;
+  min-height: calc(var(--touch-target) - 12px);
+  padding: 0 var(--space-3);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--text-secondary);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+}
+.product-pick:hover { background: var(--shell-2); color: var(--text-primary); }
+/* Toggled by `data-class:active` off `$productId` (see navbar.html) —
+   the same filled-accent pill the login button and the active language
+   chip use, so "this one is on" reads identically everywhere. */
+.product-pick.active {
+  color: var(--accent-contrast);
+  background: var(--accent);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+.product-pick.active:hover { background: var(--accent); color: var(--accent-contrast); filter: brightness(1.08); }
+.product-pick-icon { font-size: 1.05em; }
 
 .nav-actions {
   display: flex;
@@ -514,26 +575,19 @@ a:hover { text-decoration: underline; }
 
 #map { flex: 1; min-height: 0; background: var(--surface-2); }
 
-/* Collapse-to-map toggle (map.js's setSidebarCollapsed) — pinned to the
-   sidebar/map boundary, vertically centered, so it stays reachable
-   whichever panel currently occupies #sidebar. The chevron itself is
-   just chevron-left.svg mirrored via CSS rather than a second vendored
-   icon asset — "<" collapses (points toward where the sidebar goes),
-   ">" (rotated) expands it back. */
+/* The two sidebar controls (layout.html). Same round, floating-over-the
+   -map chrome; they differ only in where they sit and what they do.
+   Touch-target sized (the same 44px minimum every other interactive
+   control here uses — see .icon-btn), not just visually tidy circles:
+   these float over the map, so they need to be as easy to hit on a
+   phone as everything else. */
+#sidebar-open,
 #sidebar-toggle {
   position: absolute;
-  top: 50%;
-  left: var(--sidebar-width);
-  transform: translate(-50%, -50%);
   z-index: 500;
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Touch-target size (same 44px minimum every other interactive
-     control in this app uses — see .icon-btn), not just a visually
-     tidy circle: this is the one control on screen that's reachable
-     from *outside* #sidebar, so it needs to be as easy to hit on a
-     phone as everything else. */
   width: var(--touch-target);
   height: var(--touch-target);
   padding: 0;
@@ -544,10 +598,32 @@ a:hover { text-decoration: underline; }
   cursor: pointer;
   transition: left 0.15s var(--ease);
 }
-#sidebar-toggle svg { width: 18px; height: 18px; transition: transform 0.15s var(--ease); }
+#sidebar-open svg,
+#sidebar-toggle svg { width: 18px; height: 18px; }
+
+/* Stack button — rides the map's top-left corner, directly under the
+   navbar's brand mark, and slides with the sidebar so it's always over
+   the map rather than over the panel. This is the toggle: it's the only
+   way back once the panel is closed, so it never hides. */
+#sidebar-open {
+  top: var(--space-3);
+  left: calc(var(--sidebar-width) + var(--space-3));
+}
+#layout.sidebar-collapsed #sidebar-open { left: var(--space-3); }
+
+/* Leaflet's own zoom control anchors to the same corner — drop it below
+   the stack button instead of letting the two overlap. */
+.leaflet-top.leaflet-left { margin-top: calc(var(--touch-target) + var(--space-2)); }
+
+/* Close chevron — the panel's own top-right corner. Purely a close
+   affordance (the stack button reopens), so it goes away with the panel
+   rather than flipping into an expand arrow the way it used to. */
+#sidebar-toggle {
+  top: var(--space-3);
+  left: calc(var(--sidebar-width) - var(--touch-target) - var(--space-3));
+}
+#layout.sidebar-collapsed #sidebar-toggle { display: none; }
 #layout.sidebar-collapsed #sidebar { width: 0; overflow: hidden; border-right: none; }
-#layout.sidebar-collapsed #sidebar-toggle { left: 0; }
-#layout.sidebar-collapsed #sidebar-toggle svg { transform: rotate(180deg); }
 
 @media (max-width: 900px) {
   #layout { flex-direction: column; }
@@ -574,12 +650,13 @@ a:hover { text-decoration: underline; }
     transition: flex-basis 0.15s var(--ease);
   }
   #map { order: 1; }
-  /* The horizontal boundary the desktop rule pins to doesn't exist here
-     (sidebar/map stack vertically instead) — a fixed corner button is
-     simpler and more reliable than chasing the actual flex boundary,
-     which shifts with content height. */
-  #sidebar-toggle { position: fixed; top: auto; left: auto; right: var(--space-3); bottom: var(--space-3); transform: none; }
-  #layout.sidebar-collapsed #sidebar-toggle { left: auto; }
+  /* Sidebar and map stack vertically here, so the vertical boundary the
+     desktop rules pin to doesn't exist. The stack button keeps its
+     map-corner spot (the map is simply the top 55% now), and the close
+     chevron pins to the panel's top-right — which is the 55% line while
+     the panel is open, matching the flex split above. */
+  #sidebar-open { left: var(--space-3); }
+  #sidebar-toggle { top: calc(55% + var(--space-3)); left: auto; right: var(--space-3); }
   #layout.sidebar-collapsed #sidebar { flex-basis: 0; border-top: none; }
 
   /* iOS Safari zooms the whole page in on focus for any text input
