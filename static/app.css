@@ -858,13 +858,19 @@ a.icon-btn.danger:hover, button.icon-btn.danger:hover { background: var(--critic
 /* ============================================================
    Filter card (sidebar_search.html's category/product/distance fields)
    ============================================================ */
+/* Sits *on* the sidebar rather than floating above it: this is chrome
+   (the controls that drive the list), not content like the result cards
+   below it, so it shares `--shell` and keeps only a hairline to group
+   the fields. The white surface inside it belongs to the `<select>`s
+   themselves (`.field select`), which is what should read as
+   "fill this in". A drop shadow under a same-colored panel just looks
+   like grime, so there is none. */
 .filter-card {
   padding: var(--space-4);
   margin-bottom: var(--space-4);
-  background: var(--surface);
+  background: var(--shell);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
 }
 .filter-card .field:last-child { margin-bottom: 0; }
 
