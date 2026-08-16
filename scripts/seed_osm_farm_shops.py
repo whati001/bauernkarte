@@ -24,11 +24,22 @@ Usage:
     python3 scripts/seed_osm_farm_shops.py > /tmp/osm_seed.sql
     psql "$DATABASE_URL" -f /tmp/osm_seed.sql
 
+    # Or replay a previously saved Overpass response instead of hitting
+    # the API again:
+    python3 scripts/seed_osm_farm_shops.py < /tmp/osm_response.json > /tmp/osm_seed.sql
+
+By default this picks fetch-vs-replay from whether stdin is a tty, which
+only works when run directly in an interactive terminal. `--live` forces
+a fresh Overpass fetch regardless of stdin — needed for any programmatic
+caller (bootstrap.py's `stores` subcommand) whose own stdin isn't a real
+tty either.
+
 Everything is inserted `approved = true, created_by = NULL` — this is
 curated reference data being seeded directly, not a simulated user
 submission subject to moderation (same treatment as the `category` seed).
 """
 
+import argparse
 import json
 import sys
 import urllib.request
@@ -113,8 +124,14 @@ def sql_str(value):
 
 
 def fetch_overpass():
+    # Overpass rejects urllib's default `Python-urllib/x.y` User-Agent
+    # outright (406 Not Acceptable) — confirmed live, and matches
+    # Overpass's own documented ask for a descriptive UA identifying the
+    # calling app/contact.
     req = urllib.request.Request(
-        OVERPASS_URL, data=("data=" + urllib.parse.quote(OVERPASS_QUERY)).encode()
+        OVERPASS_URL,
+        data=("data=" + urllib.parse.quote(OVERPASS_QUERY)).encode(),
+        headers={"User-Agent": "bauernkarte-bootstrap/1.0 (andreaskarner@outlook.com)"},
     )
     with urllib.request.urlopen(req, timeout=120) as resp:
         return json.load(resp)
@@ -147,20 +164,37 @@ def parse_products(tags):
 
 
 def main():
-    data = json.load(sys.stdin) if not sys.stdin.isatty() else fetch_overpass()
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--live", action="store_true",
+        help="fetch fresh from Overpass regardless of stdin (see module docstring)",
+    )
+    args = parser.parse_args()
+
+    data = fetch_overpass() if args.live or sys.stdin.isatty() else json.load(sys.stdin)
     elements = data["elements"]
 
     named = []
+    skipped_no_product = 0
     for el in elements:
         tags = el.get("tags", {})
         name = tags.get("name")
         lat, lon = extract_latlon(el)
         if not name or lat is None or lon is None:
             continue
+        # A store with zero store_product rows doesn't show up in the
+        # app's map at all (search/results are product-driven) — it'd
+        # just be a dead company+store nobody can ever find. Skip
+        # shops whose produce=/product=/vending= tags didn't map to
+        # anything in PRODUCT_MAP, rather than insert one anyway.
+        if not parse_products(tags):
+            skipped_no_product += 1
+            continue
         named.append((el, name, lat, lon, tags))
 
     print(f"-- Generated from {len(named)} named OSM shop=farm elements in Austria")
-    print(f"-- (of {len(elements)} total; the rest had no name tag or no coordinates)")
+    print(f"-- (of {len(elements)} total; the rest had no name tag, no coordinates, "
+          f"or no mappable product — {skipped_no_product} skipped for the latter)")
     print("-- See scripts/seed_osm_farm_shops.py for provenance and the product mapping.")
     print()
 
@@ -206,26 +240,24 @@ def main():
             "true, NULL FROM new_company RETURNING id"
         )
         print(")")
-        products = parse_products(tags)
-        if products:
-            selects = []
-            for pname, _category in products:
-                # Explicit cast: a UNION ALL of several SELECTs each
-                # carrying a bare `NULL` infers the merged column as
-                # `text` instead of the target `bigint`, which Postgres
-                # then refuses to insert — harmless with a single SELECT,
-                # but every one of these has >=1 UNION ALL sibling.
-                selects.append(
-                    f"SELECT new_store.id, product.id, true, NULL::bigint "
-                    f"FROM new_store, product WHERE product.name = {sql_str(pname)}"
-                )
-            print(
-                "INSERT INTO store_product (store, product, approved, created_by)\n"
-                + "\nUNION ALL\n".join(selects)
-                + ";"
+        # `named` is pre-filtered to shops with >=1 mapped product, so
+        # this is never empty here.
+        selects = []
+        for pname, _category in parse_products(tags):
+            # Explicit cast: a UNION ALL of several SELECTs each
+            # carrying a bare `NULL` infers the merged column as
+            # `text` instead of the target `bigint`, which Postgres
+            # then refuses to insert — harmless with a single SELECT,
+            # but every one of these has >=1 UNION ALL sibling.
+            selects.append(
+                f"SELECT new_store.id, product.id, true, NULL::bigint "
+                f"FROM new_store, product WHERE product.name = {sql_str(pname)}"
             )
-        else:
-            print("SELECT 1 FROM new_store;")
+        print(
+            "INSERT INTO store_product (store, product, approved, created_by)\n"
+            + "\nUNION ALL\n".join(selects)
+            + ";"
+        )
         print()
 
     print(f"-- Done: {len(named)} companies, {len(named)} stores, "

@@ -1,15 +1,33 @@
-#!/usr/bin/env python3
-"""Bootstrap the local (non-container) dev environment: a `.env` file,
-a podman Postgres+PostGIS container, and migrations run against it.
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = ["click>=8"]
+# ///
+"""Bootstrap the local (non-container) dev environment.
 
-See bootstrap.md for details and prerequisites.
+See bootstrap.md for details and prerequisites. The shebang above runs
+this under `uv run --script`, which reads the inline `dependencies` block
+and installs/caches `click` into an ephemeral venv on the fly — no
+pre-installed `click` or manual venv needed, as long as `uv` itself is on
+PATH (https://docs.astral.sh/uv/guides/scripts/). Run it either as
+`./bootstrap.py app` (uv via the shebang) or `uv run bootstrap.py app`;
+`python3 bootstrap.py app` also still works if `click` happens to already
+be installed, just without uv managing that for you.
 
 This is the "run cargo directly on the host" path. For a fully
-containerized stack (app + db, no local Rust toolchain needed), use
-`docker compose up --build` instead — see docker-compose.yml.
+containerized stack (app + db + caddy, no local Rust toolchain needed),
+use `docker compose up --build` instead — see docker-compose.yml.
+
+Subcommands:
+    app     .env file + podman Postgres+PostGIS container + migrations
+    stores  seed the db with OpenStreetMap shop=farm data (requires `app`
+            already having been run — see scripts/seed_osm_farm_shops.py)
+    all     app, then stores
 
 Usage:
-    python3 bootstrap.py
+    ./bootstrap.py app
+    ./bootstrap.py stores
+    ./bootstrap.py all
 """
 
 import os
@@ -19,9 +37,12 @@ import sys
 import time
 from pathlib import Path
 
+import click
+
 REPO_ROOT = Path(__file__).resolve().parent
 ENV_FILE = REPO_ROOT / ".env"
 ENV_EXAMPLE = REPO_ROOT / ".env.example"
+SEED_SCRIPT = REPO_ROOT / "scripts" / "seed_osm_farm_shops.py"
 
 CONTAINER_NAME = "product_finder_db"
 DB_IMAGE = "docker.io/postgis/postgis:16-3.4"
@@ -37,7 +58,7 @@ CARGO_BIN = Path.home() / ".cargo" / "bin"
 
 
 def run(cmd, **kwargs):
-    print(f"$ {' '.join(cmd)}")
+    click.echo(f"$ {' '.join(cmd)}")
     kwargs.setdefault("check", True)
     return subprocess.run(cmd, **kwargs)
 
@@ -53,15 +74,15 @@ def cargo_env():
 
 def require(cmd_name, path, hint):
     if shutil.which(cmd_name, path=path) is None:
-        sys.exit(f"error: `{cmd_name}` not found on PATH. {hint}")
+        raise click.ClickException(f"`{cmd_name}` not found on PATH. {hint}")
 
 
 def ensure_env_file():
     if ENV_FILE.exists():
-        print(f"{ENV_FILE.name} already exists, leaving it alone")
+        click.echo(f"{ENV_FILE.name} already exists, leaving it alone")
         return
     if not ENV_EXAMPLE.exists():
-        sys.exit(f"error: {ENV_EXAMPLE.name} is missing, can't seed .env")
+        raise click.ClickException(f"{ENV_EXAMPLE.name} is missing, can't seed .env")
     shutil.copyfile(ENV_EXAMPLE, ENV_FILE)
     # .env.example ships the production-shaped defaults (port 5432,
     # SECURE_COOKIES=true); local dev needs this container's port and
@@ -71,8 +92,8 @@ def ensure_env_file():
         "SECURE_COOKIES=true", "SECURE_COOKIES=false"
     )
     ENV_FILE.write_text(text)
-    print(f"wrote {ENV_FILE.name} from {ENV_EXAMPLE.name} (port -> {DB_PORT}, "
-          f"SECURE_COOKIES -> false)")
+    click.echo(f"wrote {ENV_FILE.name} from {ENV_EXAMPLE.name} (port -> {DB_PORT}, "
+               f"SECURE_COOKIES -> false)")
 
 
 def container_exists():
@@ -92,12 +113,12 @@ def container_running():
 def ensure_container():
     if container_exists():
         if container_running():
-            print(f"{CONTAINER_NAME} already running")
+            click.echo(f"{CONTAINER_NAME} already running")
         else:
-            print(f"{CONTAINER_NAME} exists but is stopped, starting it")
+            click.echo(f"{CONTAINER_NAME} exists but is stopped, starting it")
             run(["podman", "start", CONTAINER_NAME])
         return
-    print(f"creating {CONTAINER_NAME} ({DB_IMAGE})")
+    click.echo(f"creating {CONTAINER_NAME} ({DB_IMAGE})")
     run([
         "podman", "run", "-d",
         "--name", CONTAINER_NAME,
@@ -111,7 +132,7 @@ def ensure_container():
 
 
 def wait_for_db(timeout=60):
-    print("waiting for postgres to accept connections...")
+    click.echo("waiting for postgres to accept connections...")
     deadline = time.time() + timeout
     while time.time() < deadline:
         result = subprocess.run(
@@ -120,18 +141,20 @@ def wait_for_db(timeout=60):
             capture_output=True,
         )
         if result.returncode == 0:
-            print("postgres is ready")
+            click.echo("postgres is ready")
             return
         time.sleep(1)
-    sys.exit(f"error: postgres did not become ready within {timeout}s "
-              f"(check `podman logs {CONTAINER_NAME}`)")
+    raise click.ClickException(
+        f"postgres did not become ready within {timeout}s "
+        f"(check `podman logs {CONTAINER_NAME}`)"
+    )
 
 
 def database_url_from_env_file():
     for line in ENV_FILE.read_text().splitlines():
         if line.startswith("DATABASE_URL="):
             return line.split("=", 1)[1]
-    sys.exit(f"error: DATABASE_URL not set in {ENV_FILE.name}")
+    raise click.ClickException(f"DATABASE_URL not set in {ENV_FILE.name}")
 
 
 def run_migrations(env):
@@ -139,7 +162,7 @@ def run_migrations(env):
     run(["sqlx", "migrate", "run"], cwd=REPO_ROOT, env=env)
 
 
-def main():
+def do_app():
     require("podman", None,
              "install podman, or adapt DB_IMAGE/run args in this script for docker.")
     ensure_env_file()
@@ -151,11 +174,77 @@ def main():
              "install it with: cargo install sqlx-cli --no-default-features --features postgres")
     run_migrations(env)
 
-    print()
-    print("bootstrap complete. Next:")
-    print(f"  export PATH=\"{CARGO_BIN}:$PATH\"   # if cargo isn't already on PATH")
-    print("  cargo run")
+    click.echo()
+    click.echo("app bootstrap complete. Next:")
+    click.echo(f"  export PATH=\"{CARGO_BIN}:$PATH\"   # if cargo isn't already on PATH")
+    click.echo("  cargo run")
+
+
+def do_stores():
+    """Seed the db with OpenStreetMap shop=farm data (design.md's public
+    reference data, see scripts/seed_osm_farm_shops.py's own docstring
+    for the field mapping/provenance). Requires `app` to have already
+    set up and migrated the container — this doesn't do that itself, so
+    a fresh environment should use `all` instead."""
+    require("podman", None, "install podman (see the `app` subcommand).")
+    if not container_running():
+        raise click.ClickException(
+            f"{CONTAINER_NAME} isn't running — run `bootstrap.py app` "
+            "(or `bootstrap.py all`) first."
+        )
+    if not SEED_SCRIPT.exists():
+        raise click.ClickException(f"{SEED_SCRIPT} is missing")
+
+    # `--live`: the seed script's own default (fetch-vs-replay-stdin
+    # picked from whether *its* stdin is a tty) only works run directly
+    # in a terminal — this subprocess's stdin isn't a tty regardless of
+    # how bootstrap.py itself was invoked, so `--live` forces the fetch
+    # explicitly instead of relying on that.
+    click.echo("fetching OSM shop=farm data from Overpass and generating "
+               "seed SQL (this hits a public API and can take a minute or "
+               "two)...")
+    try:
+        seed = subprocess.run(
+            [sys.executable, str(SEED_SCRIPT), "--live"],
+            cwd=REPO_ROOT, capture_output=True, text=True, check=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        raise click.ClickException(f"seed script failed:\n{exc.stderr}")
+    if seed.stderr:
+        click.echo(seed.stderr.strip())
+
+    click.echo(f"applying seed SQL against {CONTAINER_NAME}...")
+    run(
+        ["podman", "exec", "-i", CONTAINER_NAME, "psql",
+         "-U", DB_USER, "-d", DB_NAME, "-v", "ON_ERROR_STOP=1"],
+        input=seed.stdout, text=True,
+    )
+    click.echo("stores seeded.")
+
+
+@click.group()
+def cli():
+    """Bootstrap the local (non-container) BauernKarte dev environment."""
+
+
+@cli.command()
+def app():
+    """podman Postgres+PostGIS container, .env, migrations."""
+    do_app()
+
+
+@cli.command()
+def stores():
+    """Seed the db with OSM shop=farm data (requires `app` already run)."""
+    do_stores()
+
+
+@cli.command(name="all")
+def all_():
+    """app, then stores."""
+    do_app()
+    do_stores()
 
 
 if __name__ == "__main__":
-    main()
+    cli()
