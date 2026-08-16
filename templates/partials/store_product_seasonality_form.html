@@ -1,4 +1,5 @@
 <div class="sidebar-panel">
+  {% include "partials/form_back.html" %}
   <h2>📅 {{ heading }}</h2>
   <form data-on:submit__prevent="@patch('/store-product/{{ store_product_id }}')">
     {% include "partials/seasonality_fields.html" %}

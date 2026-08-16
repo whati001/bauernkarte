@@ -28,30 +28,22 @@ use crate::{
 struct CompanyFormTemplate {
     company_id: i64,
     store_id: Option<i64>,
+    /// Where the form's back button returns to (`handlers::back_action`).
+    back_action: String,
     name: String,
     description: Option<String>,
     homepage: Option<String>,
 }
 
-#[derive(Deserialize)]
-pub struct EditFormQuery {
-    #[serde(default)]
-    store_id: Option<i64>,
-}
-
 /// `GET /company/{id}/edit?store_id=` — `store_id` is carried through
-/// purely so "save" can return to that store's detail view; company
-/// itself isn't scoped to a store.
-///
-/// A plain `axum::extract::Query`, not `DatastarSignals` — this is a
-/// literal `?store_id=` baked into the link's own `@get(...)` string at
-/// render time (`sidebar_detail.html`), not a bound signal, so it's a
-/// normal query param sitting alongside whatever `?datastar=...` blob
-/// Datastar's own GET-action handling appends to the same URL.
+/// so "save" and the back button can return to that store's detail
+/// view; company itself isn't scoped to a store. See
+/// `handlers::ReturnQuery` for why it's a plain query param rather than
+/// a bound signal.
 pub async fn edit_form(
     State(state): State<AppState>,
     Path(company_id): Path<i64>,
-    Query(q): Query<EditFormQuery>,
+    Query(q): Query<super::ReturnQuery>,
     CurrentUser(_user): CurrentUser,
 ) -> AppResult<Sse<impl stream::Stream<Item = Result<Event, Infallible>>>> {
     let company = db::company::find(&state.pool, company_id).await?.ok_or(AppError::NotFound)?;
@@ -61,6 +53,7 @@ pub async fn edit_form(
     let html = render(CompanyFormTemplate {
         company_id,
         store_id: q.store_id,
+        back_action: super::back_action(q.store_id),
         name: company.name,
         description: company.description,
         homepage: company.homepage,

@@ -1,0 +1,10 @@
+<!-- Back button shared by every form that takes over #sidebar. Askama's
+     `include` renders against the *caller's* context, so each form's
+     template struct supplies its own `back_action` (built by
+     `handlers::back_action`): the originating store's detail panel, or
+     the search panel when there's no store to return to. -->
+<div class="detail-header">
+  <button class="back-link" data-on:click="@get('{{ back_action }}')">
+    {% include "icons/chevron-left.svg" %} {{ "action-back"|t }}
+  </button>
+</div>

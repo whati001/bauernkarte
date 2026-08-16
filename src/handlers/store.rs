@@ -32,6 +32,10 @@ use crate::{
 struct StoreFormTemplate {
     is_edit: bool,
     action: String,
+    /// Where the form's back button returns to
+    /// (`handlers::back_action`): the store being edited, or the search
+    /// panel for a brand-new one.
+    back_action: String,
     name: String,
     /// `None` for a brand-new store — no position exists until the user
     /// clicks the map (see `static/map.js`'s location-picker module);
@@ -84,6 +88,7 @@ pub async fn new_form(
     let html = render(StoreFormTemplate {
         is_edit: false,
         action: "/store/new".to_string(),
+        back_action: super::back_action(None),
         name: String::new(),
         lat: None,
         lon: None,
@@ -119,6 +124,7 @@ pub async fn edit_form(
     let html = render(StoreFormTemplate {
         is_edit: true,
         action: format!("/store/{store_id}"),
+        back_action: super::back_action(Some(store_id)),
         name: store.name,
         lat: Some(store.lat),
         lon: Some(store.lon),

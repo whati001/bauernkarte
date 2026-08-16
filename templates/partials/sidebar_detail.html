@@ -49,8 +49,10 @@
                   data-on:click="@get('/store/{{ store_id }}/edit')">
             {% include "icons/edit-3.svg" %} {{ "action-edit"|t }}
           </button>
-          <a href="#" class="icon-btn danger" aria-label="{{ "detail-delete-store"|t }}" title="{{ "detail-delete-store"|t }}"
-             data-on:click__prevent="@delete('/store/{{ store_id }}')">{% include "icons/trash-2.svg" %}</a>
+          <button class="btn-quiet danger" aria-label="{{ "detail-delete-store"|t }}" title="{{ "detail-delete-store"|t }}"
+                  data-on:click="@delete('/store/{{ store_id }}')">
+            {% include "icons/trash-2.svg" %} {{ "action-delete"|t }}
+          </button>
         </span>
         {% endif %}
       </div>
@@ -160,7 +162,7 @@
         {% endif %}
         <span class="action-row">
           <a href="#" class="icon-btn" aria-label="{{ "detail-edit-product"|t }}" title="{{ "detail-edit-product-title"|t }}"
-             data-on:click__prevent="@get('/product/{{ p.product_id }}/edit')">{% include "icons/edit-3.svg" %}</a>
+             data-on:click__prevent="@get('/product/{{ p.product_id }}/edit?store_id={{ store_id }}')">{% include "icons/edit-3.svg" %}</a>
           <a href="#" class="icon-btn" aria-label="{{ "detail-edit-seasonality"|t }}" title="{{ "detail-edit-seasonality-title"|t }}"
              data-on:click__prevent="@get('/store-product/{{ p.store_product_id }}/edit')">{% include "icons/leaf.svg" %}</a>
           <a href="#" class="icon-btn" aria-label="{{ "detail-add-image"|t }}" title="{{ "detail-add-image"|t }}"

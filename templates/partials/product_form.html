@@ -1,4 +1,5 @@
 <div class="sidebar-panel">
+  {% include "partials/form_back.html" %}
   <h2>{% include "icons/package.svg" %} {{ heading }}</h2>
   <form data-on:submit__prevent="@post('/store/{{ store_id }}/product/new')">
     <div class="field checkbox-field">

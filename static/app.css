@@ -1064,6 +1064,17 @@ button.danger:hover { background: var(--critical-wash); }
    the one icon-only case in this app, always with aria-label per
    accessibility guidance for controls with no visible text. */
 button.icon-btn, a.icon-btn {
+  /* Restated rather than inherited: the base sizing rule above is
+     `button, .btn`, and an `<a class="icon-btn">` matches neither, so
+     it never picked up the centring. As a flex item it still got the
+     44px box, but the icon sat at the box's left edge — which read as
+     the round hover background being shifted right of the icon. Also
+     what makes the touch target real for an icon link *outside* a flex
+     container, where `min-width/min-height` on an inline element would
+     otherwise be ignored outright. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: var(--touch-target);
   min-height: var(--touch-target);
   padding: 0;
@@ -1263,6 +1274,16 @@ a.icon-btn.danger:hover, button.icon-btn.danger:hover { background: var(--critic
   border-color: var(--accent);
 }
 .btn-quiet:hover { background: var(--accent-wash); }
+/* Destructive sibling of the same box, so "edit" and "delete" read as
+   one pair of controls rather than a labelled button next to a bare
+   icon. Stated explicitly rather than leaning on `button.danger`
+   outscoring `.btn-quiet` on specificity. */
+.btn-quiet.danger {
+  color: var(--critical);
+  border-color: var(--critical);
+  background: transparent;
+}
+.btn-quiet.danger:hover { background: var(--critical-wash); }
 
 /* ============================================================
    Store detail (sidebar_detail.html)

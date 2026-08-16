@@ -1,7 +1,5 @@
 <div class="sidebar-panel">
-  <div class="detail-header">
-    <button class="back-link" data-on:click="@get('/api/store/back')">{% include "icons/chevron-left.svg" %} {{ "action-back-to-search"|t }}</button>
-  </div>
+  {% include "partials/form_back.html" %}
   <h2>{% include "icons/store.svg" %} {% if is_edit %}{{ "store-form-edit-heading"|t }}{% else %}{{ "store-form-new-heading"|t }}{% endif %}</h2>
   <!-- One `.form-card` per group (name / location / opening hours /
        company / products / save) — the form is long enough that a flat

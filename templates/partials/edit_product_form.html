@@ -1,4 +1,5 @@
 <div class="sidebar-panel">
+  {% include "partials/form_back.html" %}
   <h2>{% include "icons/package.svg" %} {{ "edit-product-form-heading"|t }}</h2>
   <form data-on:submit__prevent="@patch('/product/{{ product_id }}')">
     <div class="field">

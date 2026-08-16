@@ -45,14 +45,24 @@ async fn detail_html_for_store_product(
 #[template(path = "partials/image_form.html")]
 struct ImageFormTemplate {
     store_product_id: i64,
+    /// Where the form's back button returns to. Looked up from the
+    /// listing rather than taken from a `?store_id=` param — a
+    /// store_product belongs to exactly one store, so this stays right
+    /// even when the form is opened by a direct URL.
+    back_action: String,
 }
 
 /// `GET /store-product/{id}/image/new` (image-upload capability).
 pub async fn new_form(
+    State(state): State<AppState>,
     Path(store_product_id): Path<i64>,
     CurrentUser(_user): CurrentUser,
 ) -> AppResult<Sse<impl stream::Stream<Item = Result<Event, Infallible>>>> {
-    let html = render(ImageFormTemplate { store_product_id });
+    let sp = db::store_product::find(&state.pool, store_product_id).await?.ok_or(AppError::NotFound)?;
+    let html = render(ImageFormTemplate {
+        store_product_id,
+        back_action: super::back_action(Some(sp.store)),
+    });
     Ok(Sse::new(stream::iter(vec![Ok(patch_elements_at("#sidebar", "inner", &html))])))
 }
 

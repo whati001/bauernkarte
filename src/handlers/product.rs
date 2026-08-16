@@ -3,7 +3,7 @@
 
 use askama::Template;
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     response::sse::{Event, Sse},
     Json,
 };
@@ -40,6 +40,8 @@ async fn detail_html(state: &AppState, store_id: i64, viewer_id: i64) -> AppResu
 #[template(path = "partials/product_form.html")]
 struct ProductFormTemplate {
     store_id: i64,
+    /// Where the form's back button returns to (`handlers::back_action`).
+    back_action: String,
     /// Pre-translated "Add product to {store}" heading — built here (not
     /// in the template) since the `t` filter only takes a literal key, no
     /// interpolation args; mirrors how `confirmation-pending` etc. are
@@ -68,6 +70,7 @@ pub async fn new_form(
     let heading = i18n::translate_with_name(i18n::current_locale(), "product-form-add-heading", &store.name);
     let html = render(ProductFormTemplate {
         store_id,
+        back_action: super::back_action(Some(store_id)),
         heading,
         products,
         categories,
@@ -330,6 +333,11 @@ pub async fn create(
 #[template(path = "partials/store_product_seasonality_form.html")]
 struct StoreProductSeasonalityFormTemplate {
     store_product_id: i64,
+    /// Where the form's back button returns to. Derived from the
+    /// listing's own `store` column rather than a `?store_id=` param —
+    /// a store_product belongs to exactly one store, so the database
+    /// already knows the answer and a direct URL works too.
+    back_action: String,
     /// Pre-translated "Edit seasonality: {product}" heading — see
     /// `ProductFormTemplate::heading`'s comment for why this isn't built
     /// in the template.
@@ -356,6 +364,7 @@ pub async fn edit_seasonality_form(
         i18n::translate_with_name(i18n::current_locale(), "store-product-seasonality-form-heading", &product.name);
     let html = render(StoreProductSeasonalityFormTemplate {
         store_product_id,
+        back_action: super::back_action(Some(sp.store)),
         heading,
         is_seasonal: months.is_some(),
         seasonal_months: seasonality::month_rows(months),
@@ -437,6 +446,11 @@ pub async fn delete(
 #[template(path = "partials/edit_product_form.html")]
 struct EditProductFormTemplate {
     product_id: i64,
+    /// Where the form's back button returns to. A product isn't scoped
+    /// to a store (the same one is sold by many), so unlike the
+    /// seasonality form above this can't be derived — it rides in on
+    /// `?store_id=` from the detail panel that opened the form.
+    back_action: String,
     name: String,
     description: Option<String>,
     category_id: i64,
@@ -447,6 +461,7 @@ struct EditProductFormTemplate {
 pub async fn edit_product_form(
     State(state): State<AppState>,
     Path(product_id): Path<i64>,
+    Query(q): Query<super::ReturnQuery>,
     CurrentUser(_user): CurrentUser,
 ) -> AppResult<Sse<impl stream::Stream<Item = Result<Event, Infallible>>>> {
     let product = db::product::find(&state.pool, product_id).await?.ok_or(AppError::NotFound)?;
@@ -456,6 +471,7 @@ pub async fn edit_product_form(
     let categories = db::category::list_all(&state.pool).await?;
     let html = render(EditProductFormTemplate {
         product_id,
+        back_action: super::back_action(q.store_id),
         name: product.name,
         description: product.description,
         category_id: product.category,
