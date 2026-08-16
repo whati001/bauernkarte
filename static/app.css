@@ -64,7 +64,11 @@
   --font-size-lg: 1.25rem;
   --font-size-xl: 1.5rem;
 
-  --sidebar-width: 360px;
+  /* The panel's default width. Also the middle of the three presets the
+     map's width button cycles through (see `SIDEBAR_WIDTHS` in map.js,
+     which overrides this custom property on #layout) — those presets are
+     values of *this* token, so a change here should keep them in step. */
+  --sidebar-width: 420px;
   --nav-height: 56px;
   --touch-target: 44px;
   /* Pitch of the map's floating control column (.map-fab) — one button
@@ -639,9 +643,10 @@ a:hover { text-decoration: underline; }
    one only means renumbering the multipliers below. */
 #sidebar-open { top: var(--space-3); }
 #map-locate { top: calc(var(--space-3) + var(--map-fab-step)); }
+#sidebar-width { top: calc(var(--space-3) + 2 * var(--map-fab-step)); }
 /* Leaflet anchors its control container to the same corner and adds its
-   own 10px margin, so this only has to clear the two buttons above. */
-.leaflet-top.leaflet-left { margin-top: calc(2 * var(--map-fab-step)); }
+   own 10px margin, so this only has to clear the three buttons above. */
+.leaflet-top.leaflet-left { margin-top: calc(3 * var(--map-fab-step)); }
 
 /* Resolving a fix takes a second or two and nothing else on screen moves
    until it lands — without this the button looks like it ignored the
@@ -712,6 +717,11 @@ a:hover { text-decoration: underline; }
 .leaflet-touch .leaflet-control-zoom-out { font-size: 20px; }
 
 #layout.sidebar-collapsed #sidebar { width: 0; overflow: hidden; border-right: none; }
+/* Nothing to widen while the panel is closed — the button would set a
+   width you can't see the effect of. The controls under it shift up to
+   close the gap. */
+#layout.sidebar-collapsed #sidebar-width { display: none; }
+#layout.sidebar-collapsed .leaflet-top.leaflet-left { margin-top: calc(2 * var(--map-fab-step)); }
 
 @media (max-width: 900px) {
   #layout { flex-direction: column; }
@@ -743,6 +753,10 @@ a:hover { text-decoration: underline; }
      keeps the map's top-left corner, the map now being the top 55%. */
   .map-fab { left: var(--space-3); }
   #layout.sidebar-collapsed #sidebar { flex-basis: 0; border-top: none; }
+  /* Stacked layout: the panel spans the full width and its *height* is
+     what's split, so a width control has nothing to act on. */
+  #sidebar-width { display: none; }
+  .leaflet-top.leaflet-left { margin-top: calc(2 * var(--map-fab-step)); }
 
   /* iOS Safari zooms the whole page in on focus for any text input
      with a computed font-size under 16px — this app's base size

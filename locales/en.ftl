@@ -185,6 +185,7 @@ confirmation-image-pending = Thanks! Your image is being reviewed.
 ## Map
 map-sidebar-collapse = Hide sidebar
 map-sidebar-expand = Show sidebar
+map-sidebar-width = Change sidebar width
 
 ## Language
 language-de = German

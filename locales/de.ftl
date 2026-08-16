@@ -185,6 +185,7 @@ confirmation-image-pending = Danke! Dein Bild wird geprüft.
 ## Map
 map-sidebar-collapse = Seitenleiste ausblenden
 map-sidebar-expand = Seitenleiste einblenden
+map-sidebar-width = Breite der Seitenleiste ändern
 
 ## Language
 language-de = Deutsch

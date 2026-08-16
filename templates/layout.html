@@ -46,6 +46,13 @@
          Leaflet's own zoom control (see .map-fab in app.css, which also
          reshapes that control to match). -->
     <button id="map-locate" class="map-fab" type="button" aria-label="{{ "search-use-my-location"|t }}" title="{{ "search-use-my-location"|t }}">{% include "icons/locate-fixed.svg" %}</button>
+    <!-- Cycles the panel through three widths (map.js's SIDEBAR_WIDTHS)
+         for visitors who want more room for results/detail, or more map.
+         Stacks under the two above and, like them, lives out here so it
+         survives every panel swap. Hidden while the panel is collapsed
+         and on the stacked mobile layout, where a width has nothing to
+         act on (see app.css). -->
+    <button id="sidebar-width" class="map-fab" type="button" aria-label="{{ "map-sidebar-width"|t }}" title="{{ "map-sidebar-width"|t }}">{% include "icons/move-horizontal.svg" %}</button>
     <div id="map"></div>
   </div>
 

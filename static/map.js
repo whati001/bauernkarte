@@ -342,6 +342,66 @@ function setSidebarCollapsed(collapsed) {
   sidebar.addEventListener("transitionend", () => map.invalidateSize(), { once: true });
 }
 
+// ---- sidebar width ----
+//
+// Three presets the `#sidebar-width` button cycles through, in px. The
+// middle one is `--sidebar-width`'s own default in app.css; picking that
+// one clears the override rather than restating it, so the stylesheet
+// stays the single source of truth for the default.
+const SIDEBAR_WIDTHS = [360, 420, 520];
+const SIDEBAR_WIDTH_KEY = "pf-sidebar-width";
+
+/// Applies a preset by overriding `--sidebar-width` on `#layout` — both
+/// `#sidebar` itself and the floating `.map-fab` column (which is
+/// positioned off that same token) live inside it, so they move
+/// together. Leaflet needs the same post-transition nudge the collapse
+/// toggle does: a CSS-only container resize fires no window "resize".
+function applySidebarWidth(px) {
+  const layout = document.getElementById("layout");
+  const sidebar = document.getElementById("sidebar");
+  if (!layout || !sidebar) return;
+  if (px === SIDEBAR_WIDTHS[1]) {
+    layout.style.removeProperty("--sidebar-width");
+  } else {
+    layout.style.setProperty("--sidebar-width", `${px}px`);
+  }
+  sidebar.addEventListener("transitionend", () => map.invalidateSize(), { once: true });
+}
+
+/// The stored preset, or the default when there's nothing usable saved.
+/// Guarded because `localStorage` throws outright when site data is
+/// blocked, and a stale/hand-edited value must not resize the panel to
+/// something arbitrary.
+function storedSidebarWidth() {
+  let saved = null;
+  try {
+    saved = window.localStorage.getItem(SIDEBAR_WIDTH_KEY);
+  } catch {
+    return SIDEBAR_WIDTHS[1];
+  }
+  const px = Number(saved);
+  return SIDEBAR_WIDTHS.includes(px) ? px : SIDEBAR_WIDTHS[1];
+}
+
+function wireSidebarWidth() {
+  const btn = document.getElementById("sidebar-width");
+  if (!btn || btn.dataset.pfWired) return;
+  btn.dataset.pfWired = "1";
+
+  let current = storedSidebarWidth();
+  if (current !== SIDEBAR_WIDTHS[1]) applySidebarWidth(current);
+
+  btn.addEventListener("click", () => {
+    current = SIDEBAR_WIDTHS[(SIDEBAR_WIDTHS.indexOf(current) + 1) % SIDEBAR_WIDTHS.length];
+    applySidebarWidth(current);
+    try {
+      window.localStorage.setItem(SIDEBAR_WIDTH_KEY, String(current));
+    } catch {
+      // Site data blocked — the width still applies for this visit.
+    }
+  });
+}
+
 // The stack button's two translated labels, read off its own
 // server-rendered data attributes once at wire time rather than
 // duplicating i18n lookups into map.js.
@@ -688,6 +748,7 @@ window.addEventListener("resize", redrawAndReselect);
 // Toggle first: `observeResults()` runs `syncSidebarLifecycle()`, which
 // flips the stack button's label via `setSidebarCollapsed`.
 wireSidebarToggle();
+wireSidebarWidth();
 wireLocateButton();
 observeResults();
 initGeolocation();

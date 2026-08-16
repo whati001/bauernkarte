@@ -134,10 +134,18 @@ be "on", it looks like that.
 - Buttons: `button.primary` is the filled accent one — **one per card**.
   `button.danger` is outline-critical. `.icon-btn` is the icon-only
   variant, and needs an `aria-label`.
-- `.map-fab` — the round floating map controls. Leaflet's own zoom
-  buttons are restyled to match; both `.leaflet-bar` and
+- `.map-fab` — the round floating map controls, one column down the
+  map's top-left corner (panel toggle, locate me, panel width), each a
+  `--map-fab-step` apart. Leaflet's own zoom buttons are restyled to
+  match and sit below them; both `.leaflet-bar` and
   `.leaflet-touch .leaflet-bar` need overriding, the latter being where
-  Leaflet's container border lives.
+  Leaflet's container border lives. Adding or removing a button means
+  renumbering the `top` multipliers *and* Leaflet's `margin-top`.
+- Sidebar width: `--sidebar-width` (420px) is the default; the
+  `#sidebar-width` fab cycles three presets by overriding that token on
+  `#layout`, persisted in `localStorage`. Any CSS-only resize of
+  `#sidebar` needs a `map.invalidateSize()` once its width transition
+  ends — Leaflet gets no window `resize` event from it.
 - Focus: one global `:focus-visible` ring (`2px solid var(--accent)`,
   `2px` offset). Never remove it; never show a ring on mouse click.
 

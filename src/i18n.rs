@@ -242,7 +242,7 @@ mod tests {
         "detail-category", "detail-location", "detail-rating-label", "detail-photos",
         "detail-other-stores", "detail-get-directions",
         "confirmation-image-pending",
-        "map-sidebar-collapse", "map-sidebar-expand",
+        "map-sidebar-collapse", "map-sidebar-expand", "map-sidebar-width",
         "language-de", "language-en",
     ];
 }
