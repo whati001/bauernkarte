@@ -37,6 +37,13 @@ tty either.
 Everything is inserted `approved = true, created_by = NULL` — this is
 curated reference data being seeded directly, not a simulated user
 submission subject to moderation (same treatment as the `category` seed).
+
+The generated SQL is idempotent: products are `ON CONFLICT (name) DO
+NOTHING`, and each shop's company/store/store_product insert is guarded
+on "no store of this name within 1m of this point" already existing. An
+earlier version guarded only the products, so a second run silently
+duplicated every shop — see the guard's own comment below for why that
+was worse than merely redundant rows.
 """
 
 import argparse
@@ -227,16 +234,32 @@ def main():
 
     for el, name, lat, lon, tags in named:
         website = tags.get("website") or tags.get("contact:website")
+        point = f"ST_SetSRID(ST_MakePoint({lon}, {lat}), 4326)::geography"
+        # The whole per-shop statement hangs off this guard: if a store
+        # with this name already sits on this spot, the company INSERT
+        # selects no row, so `new_company` is empty, so `new_store` and
+        # the store_product INSERT below it are empty too. Without it a
+        # second run duplicated every shop at identical coordinates —
+        # and two pins on the exact same point cluster into a permanent
+        # "2" badge that no amount of zooming can split, which makes
+        # those stores unreachable from the map (map.js redrawMarkers).
+        # 1 metre rather than exact equality so re-running can't be
+        # defeated by float representation drift through the geography
+        # column.
         print("WITH new_company AS (")
         print(
-            f"  INSERT INTO company (name, homepage, approved, created_by) "
-            f"VALUES ({sql_str(name)}, {sql_str(website)}, true, NULL) RETURNING id"
+            f"  INSERT INTO company (name, homepage, approved, created_by)\n"
+            f"  SELECT {sql_str(name)}, {sql_str(website)}, true, NULL\n"
+            f"  WHERE NOT EXISTS (\n"
+            f"    SELECT 1 FROM store s\n"
+            f"    WHERE s.name = {sql_str(name)} AND ST_DWithin(s.position, {point}, 1)\n"
+            f"  )\n"
+            f"  RETURNING id"
         )
         print("), new_store AS (")
         print(
             "  INSERT INTO store (company, name, position, approved, created_by) "
-            f"SELECT id, {sql_str(name)}, "
-            f"ST_SetSRID(ST_MakePoint({lon}, {lat}), 4326)::geography, "
+            f"SELECT id, {sql_str(name)}, {point}, "
             "true, NULL FROM new_company RETURNING id"
         )
         print(")")
