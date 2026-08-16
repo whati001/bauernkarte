@@ -55,20 +55,21 @@ const USER_DOT_SIZE = 18;
 // first place.
 const CLUSTER_PIXEL_RADIUS = 56;
 
-// basemap.at — verified live against the public WMTS endpoint at
-// implementation time (design.md §8.3): {z}/{y}/{x} order (row before
-// col in the REST URL), EPSG:3857, 256px tiles. The layer advertises
-// zoom up to 20, but that resolution only actually exists for a handful
-// of dense city centers (checked: Vienna and Villach) — every other
-// tested location in Austria, including ordinary towns, 404s at zoom 20
-// and only has real tiles through zoom 19. Capping at 19 (re-verified
-// live, not just per city center — see the check above) is what keeps
-// the map from going blank/white the moment someone zooms all the way
-// in anywhere outside those few spots.
+// OpenStreetMap's own tile server. Standard {s}/{z}/{x}/{y} REST layout,
+// EPSG:3857, 256px tiles, {s} subdomain rotation ('abc') is Leaflet's
+// default so it needs no extra option here. Zoom 19 is the ceiling
+// tile.openstreetmap.org reliably renders everywhere (20 exists only for
+// isolated high-detail test areas) — same conservative cap the previous
+// basemap.at layer used, for the same reason (blank/white tiles past it).
+//
+// This is the shared/free tile server under OSM's usage policy
+// (https://operations.osmfoundation.org/policies/tiles/) — fine for dev
+// and light traffic, but real production load should move to a paid
+// provider or self-hosted tiles instead of hammering the free endpoint.
 const TILE_MAX_ZOOM = 19;
-const TILE_URL = "https://mapsneu.wien.gv.at/basemap/geolandbasemap/normal/google3857/{z}/{y}/{x}.png";
+const TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 const TILE_ATTRIBUTION =
-  'Datenquelle: <a href="https://basemap.at" target="_blank" rel="noopener">basemap.at</a>';
+  '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors';
 
 const map = L.map("map", { zoomControl: true }).setView(
   [AUSTRIA_CENTER.lat, AUSTRIA_CENTER.lon],
