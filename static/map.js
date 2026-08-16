@@ -32,6 +32,14 @@ import { mergePatch } from "/static/datastar.js";
 const AUSTRIA_CENTER = { lat: 47.5162, lon: 14.5501 };
 const DEFAULT_ZOOM = 14;
 const AUSTRIA_ZOOM = 8;
+// Padded a little past the actual border (46.37–49.02 lat, 9.53–17.16
+// lon) so edge-of-country stores/panning don't bump the hard stop right
+// at the border line. `maxBoundsViscosity: 1.0` below makes this a hard
+// stop rather than the default rubber-banding.
+const AUSTRIA_BOUNDS = [
+  [46.2, 9.3],
+  [49.2, 17.3],
+];
 
 // Marker sizing (total rendered diameter, including the white border —
 // see .map-pin-dot/.map-pin-dot.selected in app.css, kept in sync here
@@ -59,8 +67,9 @@ const CLUSTER_PIXEL_RADIUS = 56;
 // EPSG:3857, 256px tiles, {s} subdomain rotation ('abc') is Leaflet's
 // default so it needs no extra option here. Zoom 19 is the ceiling
 // tile.openstreetmap.org reliably renders everywhere (20 exists only for
-// isolated high-detail test areas) — same conservative cap the previous
-// basemap.at layer used, for the same reason (blank/white tiles past it).
+// isolated high-detail test areas). (A CARTO Voyager variant was tried
+// here briefly to drop the natural=peak labels on alpine ridges — kept
+// this plain style instead, by request.)
 //
 // This is the shared/free tile server under OSM's usage policy
 // (https://operations.osmfoundation.org/policies/tiles/) — fine for dev
@@ -71,10 +80,12 @@ const TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 const TILE_ATTRIBUTION =
   '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors';
 
-const map = L.map("map", { zoomControl: true }).setView(
-  [AUSTRIA_CENTER.lat, AUSTRIA_CENTER.lon],
-  AUSTRIA_ZOOM,
-);
+const map = L.map("map", {
+  zoomControl: true,
+  maxBounds: AUSTRIA_BOUNDS,
+  maxBoundsViscosity: 1.0,
+  minZoom: AUSTRIA_ZOOM,
+}).setView([AUSTRIA_CENTER.lat, AUSTRIA_CENTER.lon], AUSTRIA_ZOOM);
 L.tileLayer(TILE_URL, { attribution: TILE_ATTRIBUTION, maxZoom: TILE_MAX_ZOOM }).addTo(map);
 
 // ---- geolocation ----
