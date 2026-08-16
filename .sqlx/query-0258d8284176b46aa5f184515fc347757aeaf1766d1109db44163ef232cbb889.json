@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select id from rating where store_product = $1 and rating_type = $2 and created_by = $3",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "0258d8284176b46aa5f184515fc347757aeaf1766d1109db44163ef232cbb889"
+}

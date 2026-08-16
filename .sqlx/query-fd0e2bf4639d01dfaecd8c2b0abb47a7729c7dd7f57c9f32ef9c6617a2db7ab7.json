@@ -1,0 +1,86 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update product\n           set category = $2, name = $3, description = $4, modified_by = $5, modified = now()\n           where id = $1\n           returning id, category, name, description, icon, approved, deleted,\n                     created_by, modified_by, created, modified",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "category",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "icon",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "approved",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
+        "name": "deleted",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_by",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 8,
+        "name": "modified_by",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 9,
+        "name": "created",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "modified",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8",
+        "Text",
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "fd0e2bf4639d01dfaecd8c2b0abb47a7729c7dd7f57c9f32ef9c6617a2db7ab7"
+}

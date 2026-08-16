@@ -1,0 +1,79 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "insert into company (name, description, homepage, approved, created_by, modified_by)\n           values ($1, $2, $3, false, $4, $4)\n           returning id, name, description, homepage, approved, deleted,\n                     created_by, modified_by, created, modified",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "homepage",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "approved",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 5,
+        "name": "deleted",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
+        "name": "created_by",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 7,
+        "name": "modified_by",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 8,
+        "name": "created",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "modified",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "e4bccfcf19f2ed81cbd7ddbed12aa28e05d737e6c06baf7a64f737bac4e728a6"
+}

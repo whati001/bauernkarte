@@ -1,9 +1,8 @@
-# Was hat der Bauer
+# BauernKarte
 
-Map-first store/product/rating finder. See `design.md` and
-`openspec/changes/product-finder-mvp/` for the full design and spec.
-Admin operations (approve/reject/revert/restore — there's no admin UI in
-v1) are in `RUNBOOK.md`.
+Map-first store/product/rating finder. See `design.md` for the full
+design and spec. Admin operations (approve/reject/revert/restore —
+there's no admin UI in v1) are in `RUNBOOK.md`.
 
 ## Local development
 
@@ -27,7 +26,7 @@ The server listens on `BIND_ADDR` (default `0.0.0.0:3000`).
 | `SESSION_SECRET` | no | — | not currently read (tower-sessions manages cookie signing internally); reserved |
 | `SECURE_COOKIES` | no | `true` | set `false` for local HTTP dev — otherwise the session cookie's `Secure` flag makes login silently fail without TLS |
 | `BIND_ADDR` | no | `0.0.0.0:3000` | |
-| `RUST_LOG` | no | — | tracing filter, e.g. `product_finder=debug` |
+| `RUST_LOG` | no | — | tracing filter, e.g. `bauernkarte=debug` |
 
 ### Migrations
 

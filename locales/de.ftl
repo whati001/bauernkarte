@@ -3,7 +3,7 @@
 # the templates that use them.
 
 ## Navbar
-nav-brand = Was hat der Bauer
+nav-brand = BauernKarte
 nav-tagline = Lokal kaufen, Bauern stärken
 nav-login = Login
 nav-logout = Logout

@@ -1,0 +1,61 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        select\n            s.id,\n            s.name,\n            ST_Y(s.position::geometry) as \"lat!\",\n            ST_X(s.position::geometry) as \"lon!\",\n            case when $1::float8 is null or $2::float8 is null then null\n                 else ST_Distance(s.position, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography)\n            end as \"distance_m?\",\n            top.products as \"products!: Json<Vec<ProductSummary>>\",\n            cnt.product_total as \"product_total!\"\n        from store s\n        left join lateral (\n            select coalesce(\n                jsonb_agg(\n                    jsonb_build_object('name', ranked.name, 'icon', ranked.icon, 'rating_count', ranked.rating_count)\n                    order by ranked.rating_count desc, ranked.name asc\n                ),\n                '[]'\n            ) as products\n            from (\n                select p.name, p.icon, count(r.id) as rating_count\n                from store_product sp\n                join product p on p.id = sp.product and p.approved and not p.deleted\n                left join rating r on r.store_product = sp.id\n                where sp.store = s.id and sp.approved and not sp.deleted\n                  and ($3::bigint is null or p.id = $3)\n                  and ($4::bigint is null or p.category = $4)\n                group by p.id, p.name, p.icon\n                order by count(r.id) desc, p.name asc\n                limit 5\n            ) ranked\n        ) top on true\n        left join lateral (\n            select count(distinct p.id) as product_total\n            from store_product sp\n            join product p on p.id = sp.product and p.approved and not p.deleted\n            where sp.store = s.id and sp.approved and not sp.deleted\n              and ($3::bigint is null or p.id = $3)\n              and ($4::bigint is null or p.category = $4)\n        ) cnt on true\n        where s.approved and not s.deleted\n          and exists (\n                select 1 from store_product sp\n                join product p on p.id = sp.product and p.approved and not p.deleted\n                where sp.store = s.id and sp.approved and not sp.deleted\n                  and ($3::bigint is null or p.id = $3)\n                  and ($4::bigint is null or p.category = $4)\n              )\n        order by \"distance_m?\" asc nulls last, s.name asc\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "lat!",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 3,
+        "name": "lon!",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 4,
+        "name": "distance_m?",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 5,
+        "name": "products!: Json<Vec<ProductSummary>>",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 6,
+        "name": "product_total!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Float8",
+        "Float8",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "da73af1fb99f0231e9790f8100a98d40f02abce2b1ec0a7c2d060ff2a2b9ba45"
+}

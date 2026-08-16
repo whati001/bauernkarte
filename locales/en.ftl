@@ -3,7 +3,7 @@
 # silently falling back key-by-key.
 
 ## Navbar
-nav-brand = Was hat der Bauer
+nav-brand = BauernKarte
 nav-tagline = Buy local, support farmers
 nav-login = Login
 nav-logout = Logout

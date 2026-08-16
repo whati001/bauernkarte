@@ -68,7 +68,7 @@ pub async fn index(State(state): State<AppState>, OptionalUser(user): OptionalUs
     let signals = base_signals(AUSTRIA_LAT, AUSTRIA_LON, None, user.is_some());
     let nav_products = db::product::list_top_rated(&state.pool, NAV_PRODUCT_LIMIT).await?;
     Ok(full_page(
-        "Was hat der Bauer",
+        "BauernKarte",
         user.map(|u| u.name),
         &signals,
         sidebar_html,
@@ -91,7 +91,7 @@ pub async fn store_page(
 ) -> AppResult<axum::response::Response> {
     let viewer_id = user.as_ref().map(|u| u.id);
     let detail = load_detail_or_404(&state, store_id, viewer_id).await?;
-    let title = format!("{} – Was hat der Bauer", detail.store_name);
+    let title = format!("{} – BauernKarte", detail.store_name);
     let sidebar_html = render_detail_panel(&detail, user.is_some());
     // Unfiltered, matching the signal defaults below ($categoryId/
     // $productId both "") — a store detail deep link carries no search

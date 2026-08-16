@@ -1,0 +1,86 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "insert into image (store_product, image, mime_type, description, approved, created_by, modified_by)\n           values ($1, $2, $3, $4, false, $5, $5)\n           returning id, store_product, image, mime_type, description, approved, deleted,\n                     created_by, modified_by, created, modified",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "store_product",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "image",
+        "type_info": "Bytea"
+      },
+      {
+        "ordinal": 3,
+        "name": "mime_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "approved",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
+        "name": "deleted",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_by",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 8,
+        "name": "modified_by",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 9,
+        "name": "created",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "modified",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Bytea",
+        "Text",
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "7c77c4336fafcbb201f80e45067e5187519b5db97f08e5f389f9a6014e6b1564"
+}

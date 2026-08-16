@@ -305,6 +305,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "bauernkarte"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "argon2",
+ "askama",
+ "axum",
+ "dotenvy",
+ "fluent-templates",
+ "futures-util",
+ "image",
+ "rand 0.10.2",
+ "rust_decimal",
+ "rust_decimal_macros",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.20",
+ "time",
+ "tokio",
+ "tower",
+ "tower-http",
+ "tower-sessions",
+ "tower-sessions-sqlx-store",
+ "tower_governor",
+ "tracing",
+ "tracing-subscriber",
+ "unic-langid",
+]
+
+[[package]]
 name = "bit_field"
 version = "0.10.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2117,37 +2148,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "985e7ec9bb745e6ce6535b544d84d6cd6f7ad8bd711c398938ae983b91a766d9"
 dependencies = [
  "unicode-ident",
-]
-
-[[package]]
-name = "product_finder"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "argon2",
- "askama",
- "axum",
- "dotenvy",
- "fluent-templates",
- "futures-util",
- "image",
- "rand 0.10.2",
- "rust_decimal",
- "rust_decimal_macros",
- "serde",
- "serde_json",
- "sqlx",
- "thiserror 2.0.20",
- "time",
- "tokio",
- "tower",
- "tower-http",
- "tower-sessions",
- "tower-sessions-sqlx-store",
- "tower_governor",
- "tracing",
- "tracing-subscriber",
- "unic-langid",
 ]
 
 [[package]]

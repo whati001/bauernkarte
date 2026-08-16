@@ -1,0 +1,79 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "insert into store_product (store, product, seasonal_months, approved, created_by, modified_by)\n           values ($1, $2, $3, false, $4, $4)\n           returning id, store, product,\n                     seasonal_months as \"seasonal_months: Json<Vec<i16>>\",\n                     approved, deleted, created_by, modified_by, created, modified",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "store",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "product",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 3,
+        "name": "seasonal_months: Json<Vec<i16>>",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 4,
+        "name": "approved",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 5,
+        "name": "deleted",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
+        "name": "created_by",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 7,
+        "name": "modified_by",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 8,
+        "name": "created",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "modified",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8",
+        "Jsonb",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "88d8403252d67f433164a4fd80d99ddef419a30e5cce151ed3ba63647685f0ee"
+}

@@ -163,7 +163,7 @@ async fn main() -> anyhow::Result<()> {
         // handlers individually: consistent fields (method, path, status,
         // latency) on every request, and new routes get it for free.
         // Defaults would already do this at DEBUG; bumped to INFO here so
-        // `RUST_LOG=product_finder=info` alone (a plausible prod setting)
+        // `RUST_LOG=bauernkarte=info` alone (a plausible prod setting)
         // still shows per-request activity, not just this crate's own
         // explicit business-event logs below. Response classification
         // (`ServerErrorsAsFailures`, tower-http's default) treats only

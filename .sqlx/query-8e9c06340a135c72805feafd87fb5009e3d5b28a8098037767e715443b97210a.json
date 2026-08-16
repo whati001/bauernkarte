@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "insert into rating (store_product, rating_type, created_by)\n           values ($1, $2, $3)\n           on conflict (store_product, created_by, rating_type) do nothing",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "8e9c06340a135c72805feafd87fb5009e3d5b28a8098037767e715443b97210a"
+}

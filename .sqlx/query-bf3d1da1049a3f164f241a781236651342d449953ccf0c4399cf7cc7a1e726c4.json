@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select rt.id as rating_type_id, rt.name as rating_type_name, count(r.id) as \"count!\"\n           from rating_type rt\n           left join rating r on r.rating_type = rt.id and r.store_product = $1\n           group by rt.id, rt.name\n           having count(r.id) > 0\n           order by rt.id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "rating_type_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "rating_type_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "count!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "bf3d1da1049a3f164f241a781236651342d449953ccf0c4399cf7cc7a1e726c4"
+}

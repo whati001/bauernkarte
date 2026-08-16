@@ -1,0 +1,93 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "insert into store (company, name, position, openinghours, approved, created_by, modified_by)\n           values ($1, $2, ST_SetSRID(ST_MakePoint($4, $3), 4326)::geography, $5, false, $6, $6)\n           returning id, company, name,\n                     openinghours as \"openinghours: Json<Vec<crate::models::DayHours>>\",\n                     ST_Y(position::geometry) as \"lat!\", ST_X(position::geometry) as \"lon!\",\n                     approved, deleted, created_by, modified_by, created, modified",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "company",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "openinghours: Json<Vec<crate::models::DayHours>>",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 4,
+        "name": "lat!",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 5,
+        "name": "lon!",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 6,
+        "name": "approved",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 7,
+        "name": "deleted",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 8,
+        "name": "created_by",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 9,
+        "name": "modified_by",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 10,
+        "name": "created",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 11,
+        "name": "modified",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text",
+        "Float8",
+        "Float8",
+        "Jsonb",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      null,
+      null,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "a9e30039a602eae5c60f66450162f74770d7bdcc64bebf3577776762c65b5da1"
+}

@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select exists(\n             select 1 from rating r\n             join rating_type rt on rt.id = r.rating_type and rt.name = 'UP'\n             where r.store_product = $1 and r.created_by = $2\n           ) as \"exists!\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "exists!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "b7b1a781b0d1f79edbfc46ab4c7f9be90d96d713d673eb46f57259565851cf8f"
+}

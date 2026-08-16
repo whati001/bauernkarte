@@ -31,7 +31,6 @@ Guidance for Claude Code when working in this repository.
 - `templates/` — Askama HTML templates, mirrors handler structure
 - `migrations/` — `sqlx migrate` up/down SQL, applied in filename order
 - `locales/` — Fluent translation files
-- `openspec/` — design changes and specs (see `openspec/changes/`)
 
 See `README.md` for local dev setup and `RUNBOOK.md` for admin operations.
 

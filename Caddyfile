@@ -1,0 +1,12 @@
+# Reverse proxy for the `app` service (docker-compose.yml). Caddy handles
+# automatic HTTPS on its own: it obtains and renews the cert via
+# Let's Encrypt (ACME HTTP-01, needs port 80 reachable from the internet
+# for the challenge), and redirects plain HTTP to HTTPS on 443 — no
+# certbot/cron/manual renewal step needed.
+{
+	email andreaskarner@outlook.com
+}
+
+bauernkarte.rehka.dev {
+	reverse_proxy app:3000
+}

@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select sp.id, p.name as product_name, s.name as store_name\n           from store_product sp\n           join product p on p.id = sp.product\n           join store s on s.id = sp.store\n           where sp.created_by = $1 and not sp.approved and not sp.deleted",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "product_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "store_name",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "8312d6aa288b980d87dc95c9e7f8c7c9e2cff52c7d134fe4165a4532445abd71"
+}

@@ -1,0 +1,75 @@
+# Three-service stack: `db` (Postgres + PostGIS), `app` (this repo,
+# built via `Dockerfile`), and `caddy` (TLS-terminating reverse proxy,
+# `Caddyfile`) — for hosting on the Raspberry Pi at bauernkarte.rehka.dev.
+# For local dev without containers, see `README.md`/`bootstrap.md`
+# instead — that setup uses a standalone podman container on host
+# networking (port 5433) and is unrelated to this compose network.
+#
+# Usage: `docker compose up --build` (or `podman-compose up --build`)
+#
+# Values below are hardcoded rather than `${VAR:-default}`-from-`.env`
+# on purpose: compose auto-loads `.env` from this directory for
+# variable interpolation, and that's the *same file* README.md/
+# bootstrap.md have you create for local (non-container) `cargo run`
+# dev — its dev-only values (SECURE_COOKIES=false, a debug RUST_LOG)
+# would otherwise silently leak into this stack. Edit the values below
+# directly instead. The db credentials are dev-only placeholders —
+# swap them for real secrets management before deploying anywhere
+# reachable.
+
+services:
+  db:
+    image: docker.io/postgis/postgis:16-3.4
+    environment:
+      POSTGRES_USER: bauernkarte
+      POSTGRES_PASSWORD: dev
+      POSTGRES_DB: bauernkarte
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # Exposed on the host only for ad-hoc `psql`/debugging access; the
+    # `app` service reaches it via the compose network regardless.
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bauernkarte -d bauernkarte"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    environment:
+      DATABASE_URL: postgres://bauernkarte:dev@db:5432/bauernkarte
+      # `true` because `caddy` terminates TLS in front of this service —
+      # the session cookie's `Secure` flag is correct here since the
+      # browser always reaches the app over HTTPS. Set `false` only if
+      # you're bypassing caddy for local testing (see README).
+      SECURE_COOKIES: "true"
+      RUST_LOG: bauernkarte=info,tower_http=info
+    # No host port publish: only `caddy` is reachable from outside this
+    # compose network, so all traffic goes through TLS + the reverse
+    # proxy. Add back `ports: ["3000:3000"]` temporarily to hit the app
+    # directly while debugging.
+    depends_on:
+      db:
+        condition: service_healthy
+
+  caddy:
+    image: docker.io/library/caddy:2-alpine
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Persists the ACME account + issued certs across restarts —
+      # without this, every `up` would re-request a cert and risk
+      # Let's Encrypt's rate limits.
+      - caddy_data:/data
+      - caddy_config:/config
+    ports:
+      - "80:80"   # ACME HTTP-01 challenge + HTTP->HTTPS redirect
+      - "443:443"
+    depends_on:
+      - app
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:
