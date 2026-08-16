@@ -75,6 +75,20 @@ detail-rating-label = Bewertung
 detail-photos = Fotos
 detail-other-stores = Weitere Geschäfte dieser Firma
 detail-get-directions = Route berechnen
+detail-company = Firma
+detail-store = Geschäft
+detail-products = Produkte
+detail-season = Saison
+detail-category = Kategorie
+detail-product-count = { $count ->
+    [one] { $count } Produkt
+   *[other] { $count } Produkte
+  }
+detail-image-count = { $count ->
+    [0] Keine Fotos
+    [one] { $count } Foto
+   *[other] { $count } Fotos
+  }
 detail-hero-art-alt = Illustration eines Bauernhofs mit den angebotenen Produkten
 opening-hours-closed = Geschlossen
 

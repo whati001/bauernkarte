@@ -203,6 +203,11 @@ pub struct StoreProductDetail {
     pub product_name: String,
     pub product_description: Option<String>,
     pub product_icon: Option<String>,
+    /// The product's category, one cell of the detail view's per-product
+    /// spec grid. Never null — `product.category` is a NOT NULL FK into
+    /// the fixed admin-managed taxonomy.
+    pub category_name: String,
+    pub category_icon: Option<String>,
     /// `None` = available all year, see `StoreProduct::seasonal_months`.
     pub seasonal_months: Option<Vec<i16>>,
     pub ratings: Vec<RatingCount>,

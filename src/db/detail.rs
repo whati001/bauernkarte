@@ -26,6 +26,8 @@ struct StoreProductRow {
     product_name: String,
     product_description: Option<String>,
     product_icon: Option<String>,
+    category_name: String,
+    category_icon: Option<String>,
     seasonal_months: Option<Json<Vec<i16>>>,
 }
 
@@ -55,11 +57,17 @@ pub async fn get_store_detail(
 
     let store_products = sqlx::query_as!(
         StoreProductRow,
+        // `category` is a NOT NULL FK on product into a fixed
+        // admin-managed taxonomy, so this join can't drop a row and the
+        // name is never null — hence the plain inner join and the `!`
+        // override on the name.
         r#"select sp.id as "store_product_id!", p.id as "product_id!", p.name as "product_name!",
                   p.description as product_description, p.icon as product_icon,
+                  cat.name as "category_name!", cat.icon as category_icon,
                   sp.seasonal_months as "seasonal_months: Json<Vec<i16>>"
            from store_product sp
            join product p on p.id = sp.product and p.approved and not p.deleted
+           join category cat on cat.id = p.category
            where sp.store = $1 and sp.approved and not sp.deleted
            order by p.name"#,
         store_id
@@ -81,6 +89,8 @@ pub async fn get_store_detail(
             product_name: row.product_name,
             product_description: row.product_description,
             product_icon: row.product_icon,
+            category_name: row.category_name,
+            category_icon: row.category_icon,
             seasonal_months: row.seasonal_months.map(|j| j.0),
             ratings,
             viewer_has_rated_up,

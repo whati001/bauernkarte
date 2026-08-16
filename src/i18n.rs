@@ -127,6 +127,24 @@ pub fn translate_with_args(locale: Locale, key: &str, args: &HashMap<String, Str
     LOCALES.lookup_with_args(&locale.langid(), key, &fluent_args)
 }
 
+/// A message with a single `{ $count }` placeholder that also selects a
+/// plural form (`detail-product-count`, `detail-image-count`).
+///
+/// Separate from `translate_with_args` on purpose: that one maps every
+/// argument to `FluentValue::String`, and Fluent's plural selectors only
+/// fire for a *numeric* value — a stringly-typed "1" silently falls
+/// through to the `*[other]` arm, which German then gets wrong
+/// ("1 Produkte").
+pub fn translate_with_count(locale: Locale, key: &str, count: i64) -> String {
+    let mut args: HashMap<std::borrow::Cow<'static, str>, fluent_templates::fluent_bundle::FluentValue<'static>> =
+        HashMap::new();
+    args.insert(
+        std::borrow::Cow::Borrowed("count"),
+        fluent_templates::fluent_bundle::FluentValue::from(count),
+    );
+    LOCALES.lookup_with_args(&locale.langid(), key, &args)
+}
+
 /// The `{{ "key"|t }}` template filter. Reads `"locale"` out of whatever
 /// `Values` the current `render_with_values()` call supplied; falls back
 /// to German if none was provided (e.g. a template rendered directly via
@@ -142,6 +160,27 @@ pub fn t(key: &str, values: &dyn Values) -> askama::Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The two count messages use Fluent plural selectors, which only
+    /// fire for a numeric argument — `translate_with_args` would stringify
+    /// the count and silently always pick `*[other]` ("1 Produkte").
+    /// These aren't in `ALL_KEYS` above because a bare `lookup` of a
+    /// message with a selector doesn't exercise the thing worth checking.
+    #[test]
+    fn count_messages_select_the_right_plural() {
+        for locale in [Locale::De, Locale::En] {
+            for key in ["detail-product-count", "detail-image-count"] {
+                let one = translate_with_count(locale, key, 1);
+                let many = translate_with_count(locale, key, 3);
+                assert!(one.contains('1'), "{key}/{locale:?} dropped the count: {one}");
+                assert!(many.contains('3'), "{key}/{locale:?} dropped the count: {many}");
+                assert_ne!(one, many, "{key}/{locale:?} used one form for both counts");
+            }
+        }
+        // The zero case is spelled out in words rather than "0 Fotos".
+        assert_eq!(translate_with_count(Locale::En, "detail-image-count", 0), "No photos");
+        assert_eq!(translate_with_count(Locale::De, "detail-image-count", 0), "Keine Fotos");
+    }
 
     /// Fails loudly at test time (not silently at render time) if the
     /// two catalogs drift — Fluent's own fallback would otherwise just
@@ -199,6 +238,9 @@ mod tests {
         "detail-edit-product", "detail-edit-product-title",
         "detail-edit-seasonality", "detail-edit-seasonality-title",
         "detail-remove-offer", "detail-remove-offer-title",
+        "detail-company", "detail-store", "detail-products", "detail-season",
+        "detail-category", "detail-location", "detail-rating-label", "detail-photos",
+        "detail-other-stores", "detail-get-directions",
         "confirmation-image-pending",
         "map-sidebar-collapse", "map-sidebar-expand",
         "language-de", "language-en",

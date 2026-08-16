@@ -75,6 +75,20 @@ detail-rating-label = Rating
 detail-photos = Photos
 detail-other-stores = More stores from this company
 detail-get-directions = Get directions
+detail-company = Company
+detail-store = Store
+detail-products = Products
+detail-season = Season
+detail-category = Category
+detail-product-count = { $count ->
+    [one] { $count } product
+   *[other] { $count } products
+  }
+detail-image-count = { $count ->
+    [0] No photos
+    [one] { $count } photo
+   *[other] { $count } photos
+  }
 detail-hero-art-alt = Illustration of a farm with the products on offer
 opening-hours-closed = Closed
 

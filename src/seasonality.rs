@@ -16,14 +16,6 @@ pub struct MonthRow {
     pub key: &'static str,
     pub label: String,
     pub available: bool,
-    /// `Some(label)` exactly when this month opens or closes a
-    /// consecutive run of available months (a single-month run gets it
-    /// once, since it's both) — the detail-view bar prints this under
-    /// the dot instead of labeling all 12 months, so "available all
-    /// year" reads as "Jan..Dez" and two separate runs read as e.g.
-    /// "Jan..Jun" / "Sep..Dez" rather than twelve individual labels.
-    /// `None` for every other month (interior to a run, or unavailable).
-    pub boundary_label: Option<String>,
 }
 
 /// (month number, form signal-name key, i18n label key). `key` is
@@ -90,12 +82,6 @@ pub fn month_rows(seasonal_months: Option<&[i16]>) -> Vec<MonthRow> {
         Some(months) => months.contains(&MONTHS[i].0),
     });
 
-    let mut boundary_label: [Option<String>; 12] = std::array::from_fn(|_| None);
-    for (start, end) in available_blocks(&available) {
-        boundary_label[start] = Some(labels[start].clone());
-        boundary_label[end] = Some(labels[end].clone());
-    }
-
     MONTHS
         .iter()
         .enumerate()
@@ -103,7 +89,6 @@ pub fn month_rows(seasonal_months: Option<&[i16]>) -> Vec<MonthRow> {
             key,
             label: labels[i].clone(),
             available: available[i],
-            boundary_label: boundary_label[i].clone(),
         })
         .collect()
 }

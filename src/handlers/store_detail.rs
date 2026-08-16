@@ -62,15 +62,22 @@ struct StoreProductView {
     product_name: String,
     product_description: Option<String>,
     product_icon: Option<String>,
+    category_name: String,
+    category_icon: Option<String>,
     /// Always 12 rows (`seasonality::month_rows`) — the store-detail
     /// month bar shows every month regardless of whether the listing
     /// restricts any of them.
     seasonal_months: Vec<seasonality::MonthRow>,
-    /// "Jan..Jun, Sep..Dez"-style plain text for the bar's `aria-label` —
-    /// see `seasonality::season_summary`'s doc comment.
+    /// "Jan..Jun, Sep..Dez"-style plain text, used both as the bar's
+    /// `aria-label` and, in the spec grid, as its visible value — see
+    /// `seasonality::season_summary`'s doc comment.
     season_summary: String,
     ratings: Vec<RatingCount>,
     viewer_has_rated_up: bool,
+    /// Pre-pluralised "3 Fotos" for the spec grid's images cell — built
+    /// here rather than in the template because the `|t` filter can't
+    /// pass Fluent arguments (see `i18n::translate_with_count`).
+    image_count_label: String,
     selected: bool,
 }
 
@@ -90,6 +97,10 @@ struct SidebarDetailTemplate {
     company_description: Option<String>,
     company_homepage: Option<String>,
     products: Vec<StoreProductView>,
+    /// Pre-pluralised "2 Produkte" for the store card's footer — see
+    /// `StoreProductView::image_count_label` on why it isn't done in the
+    /// template.
+    product_count_label: String,
     /// The store's first uploaded photo, used as the header image.
     /// `None` falls back to `hero_art`.
     hero_image_id: Option<i64>,
@@ -112,7 +123,8 @@ pub fn render_detail_panel_with_selection(
     logged_in: bool,
     selected_store_product_id: Option<i64>,
 ) -> String {
-    let products = detail
+    let locale = crate::i18n::current_locale();
+    let products: Vec<StoreProductView> = detail
         .products
         .iter()
         .map(|p| StoreProductView {
@@ -121,10 +133,17 @@ pub fn render_detail_panel_with_selection(
             product_name: p.product_name.clone(),
             product_description: p.product_description.clone(),
             product_icon: p.product_icon.clone(),
+            category_name: p.category_name.clone(),
+            category_icon: p.category_icon.clone(),
             seasonal_months: seasonality::month_rows(p.seasonal_months.as_deref()),
             season_summary: seasonality::season_summary(p.seasonal_months.as_deref()),
             ratings: p.ratings.clone(),
             viewer_has_rated_up: p.viewer_has_rated_up,
+            image_count_label: crate::i18n::translate_with_count(
+                locale,
+                "detail-image-count",
+                p.images.len() as i64,
+            ),
             selected: selected_store_product_id == Some(p.store_product_id),
         })
         .collect();
@@ -171,6 +190,11 @@ pub fn render_detail_panel_with_selection(
         company_name: detail.company_name.clone(),
         company_description: detail.company_description.clone(),
         company_homepage: detail.company_homepage.clone(),
+        product_count_label: crate::i18n::translate_with_count(
+            locale,
+            "detail-product-count",
+            products.len() as i64,
+        ),
         products,
         hero_image_id: photos.first().map(|i| i.id),
         hero_art,

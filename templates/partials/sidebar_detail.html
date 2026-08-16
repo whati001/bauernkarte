@@ -7,45 +7,63 @@
   {% include "partials/store_hero.html" %}
 
   <div class="panel-stack">
-    <!-- Who runs this — company identity and how to reach them. -->
-    <section class="panel-card company-block">
-      <div class="block-heading">
-        <h2>{% include "icons/building-2.svg" %} {{ company_name }}</h2>
+    <!-- Company and store are each titled by *what they are* ("Firma",
+         "Geschäft") with the entity's own name set below as the card's
+         real heading — rather than the name doubling as the section
+         title. Two cards deep in a panel, "Wimmer Hofladen" twice over
+         gave no clue which one was the business and which the shop. -->
+    <section class="panel-card entity-card company-block">
+      <div class="section-head">
+        <h2 class="section-label">{% include "icons/building-2.svg" %} {{ "detail-company"|t }}</h2>
         {% if logged_in %}
-        <a href="#" class="icon-btn" aria-label="{{ "detail-edit-company"|t }}" title="{{ "detail-edit-company"|t }}"
-           data-on:click__prevent="@get('/company/{{ company_id }}/edit?store_id={{ store_id }}')">{% include "icons/edit-3.svg" %}</a>
+        <!-- Visible label is just "Bearbeiten": the card it sits in
+             already says which entity this is, and the full phrase
+             doesn't fit beside the title at sidebar width in German.
+             aria-label keeps the unambiguous wording for a screen
+             reader, which announces the button out of that context. -->
+        <button class="btn-quiet" aria-label="{{ "detail-edit-company"|t }}" title="{{ "detail-edit-company"|t }}"
+                data-on:click="@get('/company/{{ company_id }}/edit?store_id={{ store_id }}')">
+          {% include "icons/edit-3.svg" %} {{ "action-edit"|t }}
+        </button>
         {% endif %}
       </div>
-      {% if let Some(desc) = company_description %}<p>{{ desc }}</p>{% endif %}
-      <dl class="detail-facts">
-        <div class="detail-fact">
-          <dt>{% include "icons/map-pin.svg" %} {{ "detail-location"|t }}</dt>
-          <dd>{{ lat }}, {{ lon }}</dd>
+      <p class="entity-name">{{ company_name }}</p>
+      {% if let Some(desc) = company_description %}<p class="entity-desc">{{ desc }}</p>{% endif %}
+      {% if let Some(hp) = company_homepage %}
+      <div class="fact-row">
+        {% include "icons/globe.svg" %}
+        <div class="fact-body">
+          <span class="fact-label">{{ "company-form-homepage"|t }}</span>
+          <a href="{{ hp }}" target="_blank" rel="noopener">{{ hp }}</a>
         </div>
-        {% if let Some(hp) = company_homepage %}
-        <div class="detail-fact">
-          <dt>{% include "icons/building-2.svg" %} {{ "company-form-homepage"|t }}</dt>
-          <dd><a href="{{ hp }}" target="_blank" rel="noopener">{{ hp }}</a></dd>
-        </div>
-        {% endif %}
-      </dl>
+      </div>
+      {% endif %}
     </section>
 
-    <!-- This particular shop: its name and when it's open. -->
-    <section class="panel-card store-block">
-      <div class="block-heading">
-        <h3>{% include "icons/store.svg" %} {{ store_name }}</h3>
+    <section class="panel-card entity-card store-block">
+      <div class="section-head">
+        <h3 class="section-label">{% include "icons/store.svg" %} {{ "detail-store"|t }}</h3>
         {% if logged_in %}
         <span class="action-row">
-          <a href="#" class="icon-btn" aria-label="{{ "detail-edit-store"|t }}" title="{{ "detail-edit-store"|t }}"
-             data-on:click__prevent="@get('/store/{{ store_id }}/edit')">{% include "icons/edit-3.svg" %}</a>
+          <button class="btn-quiet" aria-label="{{ "detail-edit-store"|t }}" title="{{ "detail-edit-store"|t }}"
+                  data-on:click="@get('/store/{{ store_id }}/edit')">
+            {% include "icons/edit-3.svg" %} {{ "action-edit"|t }}
+          </button>
           <a href="#" class="icon-btn danger" aria-label="{{ "detail-delete-store"|t }}" title="{{ "detail-delete-store"|t }}"
              data-on:click__prevent="@delete('/store/{{ store_id }}')">{% include "icons/trash-2.svg" %}</a>
         </span>
         {% endif %}
       </div>
+      <p class="entity-name">{{ store_name }}</p>
+      <div class="fact-row">
+        {% include "icons/map-pin.svg" %}
+        <div class="fact-body">
+          <span class="fact-label">{{ "detail-location"|t }}</span>
+          <span>{{ lat }}, {{ lon }}</span>
+        </div>
+      </div>
       {% if let Some(week) = opening_hours %}
-      <p class="detail-fact-label">{{ "store-form-opening-hours"|t }}</p>
+      <p class="fact-label standalone">{{ "store-form-opening-hours"|t }}</p>
       <div class="opening-hours-display">
         {% for d in week %}
         <div class="opening-hours-display-row">
@@ -59,75 +77,112 @@
         {% endfor %}
       </div>
       {% endif %}
-      {% if logged_in %}
-      <a class="add-link" href="#" data-on:click__prevent="@get('/store/{{ store_id }}/product/new')">{% include "icons/circle-plus.svg" %} {{ "detail-add-product"|t }}</a>
-      {% endif %}
+      <!-- Product count doubles as the heading for what follows, so the
+           store card hands off to the product list instead of ending on
+           a bare field. -->
+      <div class="card-footer">
+        <strong class="footer-count">{{ product_count_label }}</strong>
+        {% if logged_in %}
+        <button class="primary" data-on:click="@get('/store/{{ store_id }}/product/new')">
+          {% include "icons/circle-plus.svg" %} {{ "detail-add-product"|t }}
+        </button>
+        {% endif %}
+      </div>
     </section>
 
-    <!-- One row per product: big glyph, name, then the two labelled
-         facts a shopper actually compares on (when it's available, how
-         it's rated). -->
+    {% if !products.is_empty() %}
+    <h3 class="stack-heading">{{ "detail-products"|t }}</h3>
+    {% endif %}
+
+    <!-- One card per offering: the glyph gets a tinted disc so it reads
+         as the card's picture (there's rarely a real photo), and the
+         four things a shopper compares on — season, rating, photos,
+         category — sit in a bordered 2x2 grid rather than as a run of
+         stacked label/value pairs. -->
     {% for p in products %}
-    <section class="panel-card product{% if p.selected %} selected{% endif %}">
-      <div class="block-heading product-head">
-        <span class="product-glyph" aria-hidden="true">{% if let Some(icon) = p.product_icon %}{{ icon }}{% else %}📦{% endif %}</span>
-        <h4>{{ p.product_name }}</h4>
-        {% if logged_in %}
+    <section class="panel-card product-card{% if p.selected %} selected{% endif %}">
+      <div class="product-figure">
+        <span class="product-disc" aria-hidden="true">{% if let Some(icon) = p.product_icon %}{{ icon }}{% else %}📦{% endif %}</span>
+        <h4 class="product-name">{{ p.product_name }}</h4>
+      </div>
+      {% if let Some(desc) = p.product_description %}<p class="entity-desc">{{ desc }}</p>{% endif %}
+
+      <div class="spec-grid">
+        <div class="spec">
+          <div class="spec-title">{% include "icons/leaf.svg" %} {{ "detail-season"|t }}</div>
+          <div class="spec-value">{{ p.season_summary }}</div>
+          <!-- Green dot = available that month, muted = not — always all
+               12 columns (seasonality::month_rows), not just the "on"
+               ones, so it reads left-to-right as a literal
+               January..December timeline. The spec cell is too narrow
+               for per-dot labels, so the summary text above the bar
+               names the range instead, and the `aria-label` carries the
+               same "Jan..Jun, Sep..Dez" phrase for screen readers. -->
+          <div class="season-bar season-bar-mini" role="img" aria-label="{{ p.season_summary }}" title="{{ p.season_summary }}">
+            {% for m in p.seasonal_months %}
+            <span class="season-dot{% if m.available %} available{% endif %}"></span>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="spec">
+          <div class="spec-title">{% include "icons/heart.svg" %} {{ "detail-rating-label"|t }}</div>
+          <div class="spec-value">
+            {% for r in p.ratings %}
+            <span class="rating-badge">{% include "icons/heart.svg" %} {{ r.count }}</span>
+            {% endfor %}
+            {% if p.ratings.is_empty() %}<span class="spec-empty">—</span>{% endif %}
+          </div>
+        </div>
+        <div class="spec">
+          <div class="spec-title">{% include "icons/image.svg" %} {{ "detail-photos"|t }}</div>
+          <div class="spec-value">{{ p.image_count_label }}</div>
+        </div>
+        <div class="spec">
+          <div class="spec-title">{% include "icons/tag.svg" %} {{ "detail-category"|t }}</div>
+          <div class="spec-value">
+            {% if let Some(icon) = p.category_icon %}<span aria-hidden="true">{{ icon }}</span> {% endif %}{{ p.category_name }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Every control in here is for signed-in users, so the whole
+           ruled-off bar goes rather than leaving an empty strip. -->
+      {% if logged_in %}
+      <div class="card-footer">
+        {% if p.viewer_has_rated_up %}
+        <button class="rated" data-on:click="@delete('/store-product/{{ p.store_product_id }}/rating')">
+          {% include "icons/heart.svg" %} {{ "detail-unrate"|t }}
+        </button>
+        {% else %}
+        <button data-on:click="@post('/store-product/{{ p.store_product_id }}/rating')">
+          {% include "icons/heart.svg" %} {{ "detail-rate"|t }}
+        </button>
+        {% endif %}
         <span class="action-row">
           <a href="#" class="icon-btn" aria-label="{{ "detail-edit-product"|t }}" title="{{ "detail-edit-product-title"|t }}"
              data-on:click__prevent="@get('/product/{{ p.product_id }}/edit')">{% include "icons/edit-3.svg" %}</a>
           <a href="#" class="icon-btn" aria-label="{{ "detail-edit-seasonality"|t }}" title="{{ "detail-edit-seasonality-title"|t }}"
-             data-on:click__prevent="@get('/store-product/{{ p.store_product_id }}/edit')">📅</a>
+             data-on:click__prevent="@get('/store-product/{{ p.store_product_id }}/edit')">{% include "icons/leaf.svg" %}</a>
+          <a href="#" class="icon-btn" aria-label="{{ "detail-add-image"|t }}" title="{{ "detail-add-image"|t }}"
+             data-on:click__prevent="@get('/store-product/{{ p.store_product_id }}/image/new')">{% include "icons/image.svg" %}</a>
           <a href="#" class="icon-btn danger" aria-label="{{ "detail-remove-offer"|t }}" title="{{ "detail-remove-offer-title"|t }}"
              data-on:click__prevent="@delete('/store-product/{{ p.store_product_id }}')">{% include "icons/trash-2.svg" %}</a>
         </span>
-        {% endif %}
       </div>
-      {% if let Some(desc) = p.product_description %}<p>{{ desc }}</p>{% endif %}
-
-      <p class="detail-fact-label">{% include "icons/leaf.svg" %} {{ "detail-seasonal-availability"|t }}</p>
-      <!-- Green dot = available that month, muted = not — always all 12
-           columns (seasonality::month_rows), not just the "on" ones, so
-           it reads left-to-right as a literal January..December
-           timeline. A label only prints under a dot that opens or
-           closes a run (seasonality::MonthRow::boundary_label), so
-           "available all year" shows just "Jan" and "Dez" rather than
-           twelve stacked names — the `aria-label` carries the same
-           "Jan..Jun, Sep..Dez"-style summary as one phrase for screen
-           readers instead of the labels being read dot-by-dot. -->
-      <div class="season-bar" role="img" aria-label="{{ p.season_summary }}" title="{{ p.season_summary }}">
-        {% for m in p.seasonal_months %}
-        <div class="season-col">
-          <span class="season-dot{% if m.available %} available{% endif %}"></span>
-          {% if let Some(lbl) = m.boundary_label %}<span class="season-label">{{ lbl }}</span>{% endif %}
-        </div>
-        {% endfor %}
-      </div>
-
-      <p class="detail-fact-label">{% include "icons/heart.svg" %} {{ "detail-rating-label"|t }}</p>
-      <div class="rating-row">
-        {% for r in p.ratings %}
-        <span class="rating-badge">{% include "icons/heart.svg" %} {{ r.count }}</span>
-        {% endfor %}
-        {% if logged_in %}
-          {% if p.viewer_has_rated_up %}
-          <button class="rated" data-on:click="@delete('/store-product/{{ p.store_product_id }}/rating')">
-            {% include "icons/heart.svg" %} {{ "detail-unrate"|t }}
-          </button>
-          {% else %}
-          <button class="primary" data-on:click="@post('/store-product/{{ p.store_product_id }}/rating')">
-            {% include "icons/heart.svg" %} {{ "detail-rate"|t }}
-          </button>
-          {% endif %}
-        {% endif %}
-      </div>
-      {% if logged_in %}
-      <a class="add-link" href="#" data-on:click__prevent="@get('/store-product/{{ p.store_product_id }}/image/new')">{% include "icons/image.svg" %} {{ "detail-add-image"|t }}</a>
       {% endif %}
     </section>
     {% endfor %}
     {% if products.is_empty() %}
     <section class="panel-card"><p>{{ "detail-no-products"|t }}</p></section>
+    {% endif %}
+
+    <!-- Closes the product list the way the store card opened it. Dashed
+         and unfilled so it reads as an empty slot to fill rather than as
+         another product. -->
+    {% if logged_in %}
+    <button class="add-tile" data-on:click="@get('/store/{{ store_id }}/product/new')">
+      {% include "icons/circle-plus.svg" %} {{ "detail-add-product"|t }}
+    </button>
     {% endif %}
 
     <!-- Store-wide, not per listing — a shop with one photo on each of

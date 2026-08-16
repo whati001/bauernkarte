@@ -60,6 +60,35 @@ Within a card, a repeated sub-entity (each product in the store form)
 gets a `3px solid var(--accent)` rule down its left edge rather than a
 nested card — nesting cards inside cards reads as noise.
 
+### Parts a card is built from
+
+- `.section-head` — the header row: `.section-label` (icon + what this
+  card *is*) on the left, its edit action on the right. Used where the
+  card describes a named entity, so the name doesn't have to double as
+  the title: `Firma` / `Geschäft` label, `.entity-name` below it. Two
+  cards for a shop named after its company are otherwise the same word
+  twice with nothing saying which is which.
+- `.fact-row` — one labelled fact: accent icon, then `.fact-label`
+  stacked over the value.
+- `.card-footer` — the card's closing bar, ruled off with a top border,
+  holding that card's own action so it lands somewhere predictable
+  instead of trailing whatever content came last. Drop the whole bar
+  when its contents are all sign-in-gated; an empty ruled strip is worse
+  than no strip.
+- `.spec-grid` / `.spec` — a 2×2 block of short labelled facts sharing
+  hairline dividers (the store detail's season/rating/photos/category).
+  At sidebar width four separate cards would be nearly all border.
+- `.btn-quiet` — accent-outlined secondary action, for a card whose
+  primary is (or could be) the one filled `button.primary`.
+- `.add-tile` — full-width dashed "add another" affordance closing a
+  list. Dashed and unfilled so it reads as an empty slot, not an item.
+- `.stack-heading` — titles a run of sibling cards in a `.panel-stack`
+  (e.g. "Produkte" over the product cards).
+
+Card actions carry a short visible label (`Bearbeiten`) plus the full
+phrase as `aria-label`/`title`: the card already supplies the noun, and
+the long German form doesn't fit beside a title at sidebar width.
+
 ## Illustrated fallbacks
 
 Where a photo would go but none exists, draw one — don't ship an empty

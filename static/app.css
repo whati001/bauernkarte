@@ -827,9 +827,7 @@ a:hover { text-decoration: underline; }
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
 }
-.panel-card > h3,
-.panel-card > .block-heading > h2,
-.panel-card > .block-heading > h3 {
+.panel-card > h3 {
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -841,9 +839,7 @@ a:hover { text-decoration: underline; }
 /* The single-control groups use the heading *as* the field's label
    rather than repeating the word underneath it. */
 .panel-card > h3 label { display: contents; cursor: pointer; }
-.panel-card > h3 .icon,
-.panel-card > .block-heading .icon { color: var(--accent); }
-.panel-card > .block-heading { margin-bottom: var(--space-3); }
+.panel-card > h3 .icon { color: var(--accent); }
 .panel-card > *:last-child { margin-bottom: 0; }
 .panel-card .field:last-child { margin-bottom: 0; }
 /* Nothing to title — just the error slot and the submit button. */
@@ -949,27 +945,21 @@ a:hover { text-decoration: underline; }
 }
 .season-caption .icon { color: var(--text-muted); }
 
-/* Seasonality month bar (sidebar_detail.html) — always 12 columns,
-   January first through December last, a small dot per month (green =
-   available) with a name printed only under the dot that opens/closes a
-   run of available months (seasonality::MonthRow::boundary_label) — an
-   unrestricted listing reads as "Jan..Dez", two separate runs as e.g.
-   "Jan..Jun" / "Sep..Dez", instead of every month being labeled.
+/* Seasonality month bar (sidebar_detail.html) — always 12 dots,
+   January first through December last, green = available. The months
+   aren't named here: the bar lives in a ~140px spec cell, and the
+   .spec-value line above it already gives the range in words
+   ("Jan..Jun, Sep..Dez", seasonality::season_summary), which is also
+   what the bar carries as its aria-label.
    `display: flex`, not a `1fr`-column grid — a grid stretches the 12
-   columns across the sidebar's full width, so despite a small `gap` the
-   6px dots themselves end up far apart (each one centered in its own
-   ~25px+ column). Flex sizes each column to its own content instead, so
-   the `gap` is the *only* space between dots. */
+   columns across the cell's full width, so despite a small `gap` the
+   6px dots themselves end up far apart (each centered in its own much
+   wider column). Flex sizes each to its own content instead, so the
+   `gap` is the *only* space between dots. */
 .season-bar {
   display: flex;
   gap: 3px;
   margin: var(--space-2) 0 var(--space-3);
-}
-.season-col {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1px;
 }
 .season-dot {
   width: 6px;
@@ -979,12 +969,7 @@ a:hover { text-decoration: underline; }
   border: 1px solid var(--border);
 }
 .season-dot.available { background: var(--accent); border-color: var(--accent); }
-.season-label {
-  font-size: 9px;
-  line-height: 1;
-  color: var(--text-muted);
-  white-space: nowrap;
-}
+.season-bar-mini { margin: var(--space-2) 0 0; }
 
 /* Map click-to-place location picker (store_form.html + map.js) */
 .location-picker-status {
@@ -1171,31 +1156,99 @@ a.icon-btn.danger:hover, button.icon-btn.danger:hover { background: var(--critic
 }
 .back-link:hover { color: var(--text-primary); background: none; }
 
-.block-heading {
+/* A card's header row: what the card *is* on the left, its edit action
+   on the right. The entity's own name is a separate line below
+   (.entity-name) rather than being the title itself — with company and
+   store stacked, a shop named after its business showed the same words
+   twice with nothing saying which card was which. */
+.section-head {
+  display: flex;
+  /* Not `center`: if a long translation pushes the action group onto a
+     second line, centring floats the title against a two-line block and
+     it stops lining up with anything. */
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-3);
+}
+/* The title sits on the same optical line as the button beside it,
+   which is taller (--touch-target). */
+.section-head .section-label { min-height: var(--touch-target); align-items: center; }
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.section-label .icon { color: var(--accent); }
+
+.entity-name {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text-primary);
+}
+.entity-desc { margin: 0 0 var(--space-3); color: var(--text-secondary); }
+
+/* One labelled fact: accent icon, then label stacked over value. */
+.fact-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+.fact-row > .icon { color: var(--accent); margin-top: 2px; }
+.fact-body { min-width: 0; word-break: break-word; }
+.fact-label {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+/* Same label, heading a block that has no icon column of its own. */
+.fact-label.standalone { margin: var(--space-4) 0 var(--space-1); }
+
+/* A card's closing bar: ruled off, holding that card's own action, so
+   the action lands somewhere predictable instead of trailing whatever
+   content happened to come last. */
+.card-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
 }
-.block-heading h2, .block-heading h3, .block-heading h4 { display: flex; align-items: center; gap: var(--space-2); margin: 0; }
-.block-heading .icon { color: var(--accent); }
+.footer-count { font-size: var(--font-size-md); font-weight: 700; }
 
-
-.maps-link {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  font-weight: 600;
+/* Titles the run of product cards below it. Those are siblings in
+   .panel-stack, not children of one card, so this heading is one too —
+   the negative bottom margin pulls it against the first of them against
+   the stack's own gap. */
+.stack-heading {
+  margin: var(--space-2) 0 calc(-1 * var(--space-2));
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
-.add-link {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  margin-top: var(--space-2);
+/* The secondary action on a card whose primary is (or could be) the one
+   filled accent button — accent text and outline on the card surface,
+   so "edit" never competes with "add product" for the eye. */
+.btn-quiet {
+  padding: 0 var(--space-3);
+  color: var(--accent);
+  background: var(--surface);
+  border-color: var(--accent);
 }
+.btn-quiet:hover { background: var(--accent-wash); }
 
 /* ============================================================
    Store detail (sidebar_detail.html)
@@ -1231,40 +1284,62 @@ a.icon-btn.danger:hover, button.icon-btn.danger:hover { background: var(--critic
   filter: drop-shadow(0 2px 3px rgba(11, 11, 11, 0.25));
 }
 
-/* Label above a fact, so "when is it available" and "how is it rated"
-   are named rather than left as a bare bar of dots or badges. */
-.detail-fact-label {
-  margin: var(--space-3) 0 var(--space-1);
+/* The product's glyph is the card's picture: most listings have no
+   photo, and a bare emoji on a white card reads as a *failed* image
+   rather than a deliberate one, so it's backed by a tinted disc. */
+.product-figure {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.product-disc {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  border-radius: var(--radius-full);
+  background: var(--accent-wash);
+  font-size: 2rem;
+  line-height: 1;
+}
+.product-name {
+  margin: 0;
+  min-width: 0;
+  font-size: var(--font-size-md);
+  font-weight: 700;
+}
+
+/* The four facts a shopper actually compares on, in one bordered block.
+   Hairline dividers rather than four separate cards: at sidebar width
+   nested cards would be almost entirely border and padding. */
+.spec-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.spec { padding: var(--space-3); min-width: 0; }
+.spec:nth-child(odd) { border-right: 1px solid var(--border); }
+.spec:nth-child(-n + 2) { border-bottom: 1px solid var(--border); }
+.spec-title {
   display: flex;
   align-items: center;
   gap: var(--space-1);
+  margin-bottom: var(--space-2);
   font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--text-secondary);
 }
-.detail-fact-label .icon { color: var(--text-muted); }
-
-.detail-facts { margin: var(--space-3) 0 0; display: flex; flex-direction: column; gap: var(--space-3); }
-.detail-fact dt {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
+.spec-title .icon { color: var(--text-muted); }
+.spec-value {
   font-size: var(--font-size-sm);
-  font-weight: 600;
-  color: var(--text-secondary);
+  color: var(--text-primary);
+  word-break: break-word;
 }
-.detail-fact dt .icon { color: var(--accent); }
-.detail-fact dd { margin: 2px 0 0; color: var(--text-primary); word-break: break-word; }
-
-/* Products are `.panel-card`s in their own right (one per offering) —
-   this only supplies the gap between them. */
-.products { display: flex; flex-direction: column; gap: var(--space-4); }
-
-/* The glyph leads the row and is the thing you scan for, so it's set
-   far larger than the inline emoji used in chips and options. */
-.product-head { gap: var(--space-3); }
-.product-glyph { font-size: 2.25rem; line-height: 1; flex-shrink: 0; }
-.product-head h4 { flex: 1; min-width: 0; }
+.spec-empty { color: var(--text-muted); }
 
 /* Horizontal strip rather than a grid: photo count varies wildly
    between shops, and a strip is the one layout that looks deliberate
@@ -1320,7 +1395,22 @@ a.icon-btn.danger:hover, button.icon-btn.danger:hover { background: var(--critic
 }
 .directions-btn:hover { text-decoration: none; filter: brightness(1.08); }
 
-.rating-row { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; margin: var(--space-2) 0; }
+/* Closes the product list the way the store card's footer opened it.
+   Dashed and unfilled so it reads as an empty slot to fill rather than
+   as one more product card. */
+.add-tile {
+  width: 100%;
+  padding: var(--space-4);
+  color: var(--accent);
+  background: transparent;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: var(--font-size-base);
+  gap: var(--space-2);
+}
+.add-tile:hover { background: var(--accent-wash); border-color: var(--accent); }
+
 .rating-badge {
   display: inline-flex;
   align-items: center;
