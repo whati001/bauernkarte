@@ -44,11 +44,11 @@ ENV_FILE = REPO_ROOT / ".env"
 ENV_EXAMPLE = REPO_ROOT / ".env.example"
 SEED_SCRIPT = REPO_ROOT / "scripts" / "seed_osm_farm_shops.py"
 
-CONTAINER_NAME = "product_finder_db"
+CONTAINER_NAME = "bauernkarte_db"
 DB_IMAGE = "docker.io/postgis/postgis:16-3.4"
-DB_USER = "product_finder"
+DB_USER = "bauernkarte"
 DB_PASSWORD = "dev"
-DB_NAME = "product_finder"
+DB_NAME = "bauernkarte"
 # Host networking (rootless podman, no docker daemon in this env) means
 # this port is the *host's* port, so it's set away from Postgres's
 # default 5432 to avoid clashing with any other local Postgres.
@@ -184,12 +184,13 @@ def do_stores():
     """Seed the db with OpenStreetMap shop=farm data (design.md's public
     reference data, see scripts/seed_osm_farm_shops.py's own docstring
     for the field mapping/provenance). Requires `app` to have already
-    set up and migrated the container — this doesn't do that itself, so
-    a fresh environment should use `all` instead."""
+    written `.env` and migrated whatever database its `DATABASE_URL`
+    points at — this doesn't do that itself, so a fresh environment
+    should use `all` instead."""
     require("podman", None, "install podman (see the `app` subcommand).")
-    if not container_running():
+    if not ENV_FILE.exists():
         raise click.ClickException(
-            f"{CONTAINER_NAME} isn't running — run `bootstrap.py app` "
+            f"{ENV_FILE.name} is missing — run `bootstrap.py app` "
             "(or `bootstrap.py all`) first."
         )
     if not SEED_SCRIPT.exists():
@@ -213,10 +214,18 @@ def do_stores():
     if seed.stderr:
         click.echo(seed.stderr.strip())
 
-    click.echo(f"applying seed SQL against {CONTAINER_NAME}...")
+    # Applied through DATABASE_URL (same source of truth as
+    # `run_migrations`) rather than `podman exec` into CONTAINER_NAME, so
+    # this seeds whichever database the app itself talks to — the
+    # standalone container `app` creates, or the docker-compose `db`
+    # service if that's what .env points at. `psql` isn't a host
+    # dependency here: DB_IMAGE is already pulled and ships one, so a
+    # throwaway `--network host` container acts as the client.
+    database_url = database_url_from_env_file()
+    click.echo(f"applying seed SQL against {database_url}...")
     run(
-        ["podman", "exec", "-i", CONTAINER_NAME, "psql",
-         "-U", DB_USER, "-d", DB_NAME, "-v", "ON_ERROR_STOP=1"],
+        ["podman", "run", "--rm", "-i", "--network", "host", DB_IMAGE,
+         "psql", database_url, "-v", "ON_ERROR_STOP=1", "-q"],
         input=seed.stdout, text=True,
     )
     click.echo("stores seeded.")

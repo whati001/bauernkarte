@@ -725,7 +725,10 @@ a:hover { text-decoration: underline; }
 
 @media (max-width: 900px) {
   #layout { flex-direction: column; }
-  /* A fixed 45/55 split, not "shrink #sidebar to its content up to some
+  /* A fixed 60/40 split in the panel's favour — on a phone the sidebar is
+     where the actual content lives (results, detail, forms), so it gets
+     the larger share and the map stays a usable-but-secondary strip.
+     A fixed split, not "shrink #sidebar to its content up to some
      max-height": a percentage max-height would have to resolve against
      #layout's actual height (screen height minus the navbar, which
      itself isn't a fixed number — long user names / narrow screens can
@@ -740,7 +743,7 @@ a:hover { text-decoration: underline; }
      "sometimes the map scrolls, sometimes the whole page does".  */
   #sidebar {
     width: 100%;
-    flex: 0 0 45%;
+    flex: 0 0 60%;
     min-height: 0;
     order: 2;
     border-right: none;
@@ -750,7 +753,7 @@ a:hover { text-decoration: underline; }
   #map { order: 1; }
   /* Sidebar and map stack vertically here, so the vertical boundary the
      desktop rule slides along doesn't exist — the control column just
-     keeps the map's top-left corner, the map now being the top 55%. */
+     keeps the map's top-left corner, the map now being the top 40%. */
   .map-fab { left: var(--space-3); }
   #layout.sidebar-collapsed #sidebar { flex-basis: 0; border-top: none; }
   /* Stacked layout: the panel spans the full width and its *height* is

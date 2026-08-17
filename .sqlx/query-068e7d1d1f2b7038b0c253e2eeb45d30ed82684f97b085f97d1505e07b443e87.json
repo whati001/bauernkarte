@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select sp.id as \"store_product_id!\", p.id as \"product_id!\", p.name as \"product_name!\",\n                  p.description as product_description, p.icon as product_icon,\n                  cat.name as \"category_name!\", cat.icon as category_icon,\n                  sp.seasonal_months as \"seasonal_months: Json<Vec<i16>>\"\n           from store_product sp\n           join product p on p.id = sp.product and p.approved and not p.deleted\n           join category cat on cat.id = p.category\n           where sp.store = $1 and sp.approved and not sp.deleted\n           order by p.name",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "store_product_id!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "product_id!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "product_name!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "product_description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "product_icon",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "category_name!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "category_icon",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "seasonal_months: Json<Vec<i16>>",
+        "type_info": "Jsonb"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "068e7d1d1f2b7038b0c253e2eeb45d30ed82684f97b085f97d1505e07b443e87"
+}
