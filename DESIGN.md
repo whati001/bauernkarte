@@ -183,7 +183,9 @@ SVGs — native `<option>` elements can only render text.
   anonymous visitor has no toggle — one login button and the language
   switch fit at every width, and hiding the app's only call to action
   would be a downgrade.
-- `≤900px` — sidebar and map stack vertically (45/55 split).
+- `≤900px` — sidebar and map stack vertically (45/55 split); in
+  `/admin` the rail stops being a column and becomes a wrapping row
+  above the content.
 - `≤700px` — the navbar's global search box is hidden; the sidebar's own
   filters remain the full-featured path.
 - `≤640px` — the brand tagline is hidden.
@@ -196,19 +198,77 @@ disclosure, for the same reason: opening it must not move the map.
 ## Admin area
 
 `/admin` is a second shell (`templates/admin/layout.html`), not a sidebar
-panel: no map, so the split is a 248px rail of sections and the work
+panel: there's no map, so the split is a rail of sections and the work
 itself. It reuses the same tokens, `.panel-card` and `.btn` as everything
-else — moderation is part of the product, not a separate tool — and the
-rail's selected item is the same filled-accent treatment as every other
-"this is on" control.
+else — moderation is part of the product, not a separate tool.
 
-Two rules specific to it:
+### Shell
 
-- **Pending counts are `--warning`, not `--accent`.** They mark work
-  waiting, which is a different thing from "selected".
+- `.admin-body` — the `<body>` class. The map layout pins `html`/`body`
+  to `100dvh` with `overflow: hidden` so the map can own touch gestures;
+  a moderation queue is a document and has to scroll, so this (with
+  `html:has(.admin-body)`) undoes exactly that.
+- `.admin-shell` — `grid-template-columns: 248px 1fr`. Collapses to one
+  column at `≤900px`, where the rail becomes a wrapping row.
+- `.admin-rail` — `--shell` background, `position: sticky`, so the
+  sections stay reachable down a long queue. `.admin-rail-title` labels
+  it, `.admin-rail-sep` rules off `.admin-rail-back` at the bottom.
+- `.admin-rail-item` — a section link. Selected is
+  `[aria-current="page"]`, in the same filled-accent shape as every other
+  "this is on" control in the app.
+- `.admin-content` — the work pane. `min-width: 0`, so a wide table
+  scrolls inside its own box instead of pushing the grid wider.
+- The map's global search is hidden here (`.admin-body .nav-search`): it
+  filters the map, and there is no map — a control that appears to do
+  nothing is worse than an absent one.
+
+### Work queues
+
+- `.admin-head` — section title plus a sentence saying what the section
+  *is*. Every queue has one; five near-identical lists need telling
+  apart, and "Angebote" vs "Produkte" is exactly the distinction a
+  newcomer gets wrong.
+- `.admin-tabs` / `.admin-tab` — the operations available on that entity
+  (offen / Änderungen / gelöscht), selected via `[aria-selected="true"]`
+  with an accent underline. `.admin-tab .n` is the count beside the
+  label, `tabular-nums`.
+- `.admin-rows` / `.admin-row` — one card per item: `.admin-row-main`
+  (title, `.admin-row-meta` for who and when) and `.admin-row-actions`
+  on the right. Each action is its own `<form>` POST, so the group lays
+  out *forms*, not buttons.
+- `.admin-diff` — one `.admin-diff-row` per changed field: label, old
+  value struck through, arrow, new value. The strike-through carries the
+  direction so the arrow is decoration, not the only cue.
+- `.admin-table-wrap` / `.admin-table` — the users table. Wide content
+  scrolls in its own container; `.acts-group` wraps the row's action
+  forms rather than forcing the table wider.
+- `.admin-empty` — dashed "nothing to do here", the counterpart to the
+  illustrated fallbacks above. A queue is empty most of the time, so
+  empty is a normal state and should look deliberate.
+
+### Rules specific to this area
+
+- **Pending counts (`.admin-count`) are `--warning`, not `--accent`.**
+  They mark work waiting, which is a different thing from "selected". On
+  the selected rail item the badge inverts to sit on the accent fill.
+- **`.admin-pill` states map to the meaning table above:** `.new` is
+  `--accent-wash`, `.edit` is `--warning-wash` (pending review),
+  `.del` is `--critical-wash` (destructive/removed). `.role-admin` is the
+  filled-accent "on" shape; `.role-user` is a neutral `--surface-2` chip,
+  because ordinary is not a state worth highlighting.
 - **Only the map side is Datastar.** The admin area is plain forms and
-  redirects; the map is SSE-driven because a reload would lose the
-  viewport, and nothing here has that constraint.
+  redirects. The map is SSE-driven because a reload would throw away the
+  viewport; nothing here has that constraint, and full-page POSTs get
+  working back/forward and refresh-safety for free.
+- **Prefix admin classes with `admin-`.** Not cosmetic: the mockup for
+  this area had a `.admin` layout class and a `.pill.admin` role chip,
+  and the role chip inherited the layout's `min-height: 660px` — a 660px
+  tall pill. The word "admin" now describes a great many things in this
+  codebase; a bare `.admin` is a collision waiting to happen.
+- **The helmet (`.nav-link.nav-admin`) sits outside `.nav-menu`.** It
+  stays visible at every width instead of folding into the collapsed
+  menu — it's the control an admin reaches for repeatedly and it costs
+  one 44px square.
 
 ## Checklist for new UI
 
