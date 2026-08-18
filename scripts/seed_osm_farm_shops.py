@@ -38,8 +38,9 @@ Everything is inserted `approved = true, created_by = NULL` — this is
 curated reference data being seeded directly, not a simulated user
 submission subject to moderation (same treatment as the `category` seed).
 
-The generated SQL is idempotent: products are `ON CONFLICT (name) DO
-NOTHING`, and each shop's company/store/store_product insert is guarded
+The generated SQL is idempotent: products upsert on their name (filling
+in a missing icon and changing nothing else), and each shop's
+company/store/store_product insert is guarded
 on "no store of this name within 1m of this point" already existing. An
 earlier version guarded only the products, so a second run silently
 duplicated every shop — see the guard's own comment below for why that
@@ -120,6 +121,62 @@ PRODUCT_MAP = {
     "jam": ("Marmelade", "Sonstiges"),
     "pumpkin_seed_oil": ("Kürbiskernöl", "Sonstiges"),
     "fish": ("Fisch", "Sonstiges"),
+}
+
+
+# Emoji shown next to each product in the UI. Lives here because this
+# script is what creates these rows: the `product_icon` migration seeded
+# icons with a one-shot UPDATE, and every product below is inserted
+# *after* migrations run, so those rows arrived with `icon` NULL and the
+# whole catalog rendered as the neutral package fallback. The migration
+# `product_icon_backfill` repairs databases already in that state; this
+# table is what keeps new ones out of it.
+#
+# A name missing here is not an error — `icon` is nullable and the
+# templates fall back to a package, which is the intended treatment for
+# products submitted through the app.
+PRODUCT_ICONS = {
+    "Äpfel": "🍎",
+    "Obst": "🍇",
+    "Gemüse": "🥦",
+    "Kartoffeln": "🥔",
+    "Erdbeeren": "🍓",
+    "Kirschen": "🍒",
+    "Kräuter": "🌿",
+    "Kürbiskerne": "🎃",
+    "Kürbiskernöl": "🛢️",
+    "Eier": "🥚",
+    "Käse": "🧀",
+    "Milch": "🥛",
+    "Milchprodukte": "🥛",
+    "Joghurt": "🥣",
+    "Butter": "🧈",
+    "Buttermilch": "🥛",
+    "Topfen": "🥣",
+    "Fleisch": "🥩",
+    "Rindfleisch": "🐄",
+    "Schweinefleisch": "🐷",
+    "Speck": "🥓",
+    "Wurst": "🌭",
+    "Schinken": "🍖",
+    "Hühnerfleisch": "🍗",
+    "Brot": "🍞",
+    "Backwaren": "🥐",
+    "Honig": "🍯",
+    "Wein": "🍷",
+    "Saft": "🧃",
+    "Sirup": "🧴",
+    "Tee": "🍵",
+    "Likör": "🥃",
+    "Nudeln": "🍝",
+    "Getreide": "🌾",
+    "Gewürze": "🧂",
+    "Algen": "🌊",
+    "Blumen": "💐",
+    "Christbaum": "🎄",
+    "Suppen": "🍲",
+    "Marmelade": "🫙",
+    "Fisch": "🐟",
 }
 
 
@@ -216,14 +273,27 @@ def main():
 
     if all_products:
         print("-- Product catalog referenced by the shops below.")
-        print("INSERT INTO product (category, name, approved, created_by) VALUES")
+        print("INSERT INTO product (category, name, icon, approved, created_by) VALUES")
         rows = []
         for name, category in sorted(all_products.items()):
             rows.append(
                 f"  ((SELECT id FROM category WHERE name = {sql_str(category)}), "
-                f"{sql_str(name)}, true, NULL)"
+                f"{sql_str(name)}, {sql_str(PRODUCT_ICONS.get(name))}, true, NULL)"
             )
-        print(",\n".join(rows) + "\nON CONFLICT (name) DO NOTHING;")
+        # `WHERE NOT deleted` is required, not decorative: `product_name_key`
+        # is a *partial* unique index (so a deleted product's name can be
+        # reused), and Postgres rejects an ON CONFLICT target that doesn't
+        # match the index predicate with "there is no unique or exclusion
+        # constraint matching the ON CONFLICT specification".
+        #
+        # DO UPDATE rather than DO NOTHING so re-running this repairs a
+        # catalog seeded before icons existed. The guard keeps it to that:
+        # a product that already has an icon is left alone, so a hand-set
+        # one is never overwritten.
+        print(",\n".join(rows))
+        print("ON CONFLICT (name) WHERE NOT deleted DO UPDATE")
+        print("  SET icon = EXCLUDED.icon")
+        print("  WHERE product.icon IS NULL;")
         print()
 
     print("-- Companies + stores, one pair per named shop=farm location.")
