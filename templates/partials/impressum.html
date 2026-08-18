@@ -1,0 +1,79 @@
+{#- Impressum, rendered from the single `site_info` row (editable under
+    /admin/site-info). Every optional field is omitted when blank rather
+    than shown with an empty value — a legal page listing "UID:" with
+    nothing after it looks like a bug, and for a private operator there
+    genuinely is no UID.
+
+    Same fragment for both delivery paths: the full page at /impressum
+    and the SSE panel the footer link swaps in, exactly as store detail
+    does. -#}
+<div class="sidebar-panel">
+  <div class="detail-header">
+    <button class="back-link" data-on:click="@get('/api/store/back')">{% include "icons/chevron-left.svg" %} {{ "action-back-to-search"|t }}</button>
+  </div>
+  <h2>{% include "icons/building-2.svg" %} {{ "impressum-heading"|t }}</h2>
+
+  {% if !info.is_configured() %}
+  {#- Honest empty state. The alternative — placeholder contact details
+      seeded by the migration — would be legally worse than a blank page,
+      because it would look filled in. -#}
+  <div class="form-error">{% include "icons/triangle-alert.svg" %} {{ "impressum-unconfigured"|t }}</div>
+  {% else %}
+  <div class="panel-stack">
+    <section class="panel-card">
+      <h3>{% include "icons/user.svg" %} {{ "impressum-operator"|t }}</h3>
+      <address class="impressum-address">
+        <span class="impressum-name">{{ info.operator_name }}</span>
+        {% if !info.street.is_empty() %}<span>{{ info.street }}</span>{% endif %}
+        {% if !info.postal_city().is_empty() %}<span>{{ info.postal_city() }}</span>{% endif %}
+        {% if !info.country.is_empty() %}<span>{{ info.country }}</span>{% endif %}
+      </address>
+    </section>
+
+    {% if !info.email.is_empty() || !info.phone.is_empty() %}
+    <section class="panel-card">
+      <h3>{% include "icons/mail.svg" %} {{ "impressum-contact"|t }}</h3>
+      {% if !info.email.is_empty() %}
+      <div class="fact-row">
+        <span class="fact-label">{{ "auth-email"|t }}</span>
+        <a href="mailto:{{ info.email }}">{{ info.email }}</a>
+      </div>
+      {% endif %}
+      {% if !info.phone.is_empty() %}
+      <div class="fact-row">
+        <span class="fact-label">{{ "impressum-phone"|t }}</span>
+        <a href="tel:{{ info.phone }}">{{ info.phone }}</a>
+      </div>
+      {% endif %}
+    </section>
+    {% endif %}
+
+    {% if !info.vat_id.is_empty() || !info.register_number.is_empty() || !info.responsible.is_empty() %}
+    <section class="panel-card">
+      <h3>{% include "icons/tag.svg" %} {{ "impressum-legal"|t }}</h3>
+      {% if !info.vat_id.is_empty() %}
+      <div class="fact-row"><span class="fact-label">{{ "impressum-vat-id"|t }}</span>{{ info.vat_id }}</div>
+      {% endif %}
+      {% if !info.register_number.is_empty() %}
+      <div class="fact-row"><span class="fact-label">{{ "impressum-register"|t }}</span>{{ info.register_number }}</div>
+      {% endif %}
+      {% if !info.responsible.is_empty() %}
+      <div class="fact-row"><span class="fact-label">{{ "impressum-responsible"|t }}</span>{{ info.responsible }}</div>
+      {% endif %}
+    </section>
+    {% endif %}
+
+    {% if !info.purpose.is_empty() %}
+    <section class="panel-card">
+      <h3>{% include "icons/leaf.svg" %} {{ "impressum-purpose"|t }}</h3>
+      <p>{{ info.purpose }}</p>
+    </section>
+    {% endif %}
+
+    <section class="panel-card">
+      <h3>{% include "icons/map-pin.svg" %} {{ "impressum-data-heading"|t }}</h3>
+      <p>{{ "impressum-data-osm"|t }}</p>
+    </section>
+  </div>
+  {% endif %}
+</div>

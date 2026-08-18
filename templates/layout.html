@@ -47,7 +47,18 @@
        there map.js drives the open/closed state off whichever panel
        #sidebar holds — see `syncSidebarLifecycle`. -->
   <div id="layout"{% if sidebar_collapsed %} class="sidebar-collapsed"{% endif %}>
-    <div id="sidebar">{{ sidebar_html|safe }}</div>
+    {#- #sidebar's children are replaced wholesale by ~30 different
+        `patch-elements #sidebar inner` responses, so anything that must
+        outlive a panel swap cannot live inside it. The column wrapper is
+        what the footer hangs off: #sidebar keeps the scrolling and the
+        patching, the column owns the width, the border and the collapse
+        transition. -#}
+    <div id="sidebar-column">
+      <div id="sidebar">{{ sidebar_html|safe }}</div>
+      <footer id="sidebar-footer">
+        <a href="/impressum" data-on:click__prevent="@get('/api/impressum')">{{ "impressum-link"|t }}</a>
+      </footer>
+    </div>
     <!-- Lives outside #sidebar on purpose — see map_data.html's own doc
          comment (handlers::search::MapDataTemplate) for why: nested
          inside the swappable sidebar content, the map's pins and

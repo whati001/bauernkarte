@@ -324,7 +324,7 @@ function wireLocationPicker() {
 
 function setSidebarCollapsed(collapsed) {
   const layout = document.getElementById("layout");
-  const sidebar = document.getElementById("sidebar");
+  const sidebar = document.getElementById("sidebar-column");
   const openBtn = document.getElementById("sidebar-open");
   if (!layout || !sidebar) return;
   if (layout.classList.contains("sidebar-collapsed") === collapsed) return;
@@ -335,10 +335,11 @@ function setSidebarCollapsed(collapsed) {
     openBtn.setAttribute("title", label);
   }
   // Leaflet doesn't see a CSS-only container resize (no native window
-  // "resize" event fires just because #sidebar's width changed) — nudge
-  // it once #sidebar's own width transition has actually finished, so it
-  // redraws tiles at the map's real, final size instead of a
-  // mid-transition one.
+  // "resize" event fires just because the panel's width changed) — nudge
+  // it once the width transition has actually finished, so it redraws
+  // tiles at the map's real, final size instead of a mid-transition one.
+  // The transition lives on #sidebar-column, not #sidebar: the column is
+  // the flex item that actually resizes.
   sidebar.addEventListener("transitionend", () => map.invalidateSize(), { once: true });
 }
 
@@ -358,7 +359,7 @@ const SIDEBAR_WIDTH_KEY = "pf-sidebar-width";
 /// toggle does: a CSS-only container resize fires no window "resize".
 function applySidebarWidth(px) {
   const layout = document.getElementById("layout");
-  const sidebar = document.getElementById("sidebar");
+  const sidebar = document.getElementById("sidebar-column");
   if (!layout || !sidebar) return;
   if (px === SIDEBAR_WIDTHS[1]) {
     layout.style.removeProperty("--sidebar-width");

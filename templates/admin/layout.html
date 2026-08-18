@@ -52,6 +52,14 @@
       </a>
       {% endfor %}
 
+      {#- Configuration rather than a queue, so it sits below the
+          moderation sections with the separator between them. -#}
+      <a class="admin-rail-item" href="/admin/site-info"
+         {% if section == "site-info" %}aria-current="page"{% endif %}>
+        {% include "icons/building-2.svg" %}
+        {{ "admin-nav-site-info"|t }}
+      </a>
+
       <div class="admin-rail-sep"></div>
       <a class="admin-rail-item admin-rail-back" href="/">
         {% include "icons/chevron-left.svg" %}

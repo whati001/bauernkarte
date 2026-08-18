@@ -544,6 +544,100 @@ async fn guard_self_or_last_admin(
     Ok(None)
 }
 
+// ---------------------------------------------------------------------
+// Site info (the Impressum's contents)
+// ---------------------------------------------------------------------
+
+#[derive(Template)]
+#[template(path = "admin/site_info.html")]
+struct SiteInfoTemplate {
+    info: db::site_info::SiteInfo,
+}
+
+#[derive(Deserialize)]
+pub struct SiteInfoQuery {
+    #[serde(default)]
+    ok: Option<String>,
+}
+
+pub async fn site_info(
+    State(state): State<AppState>,
+    AdminUser(admin): AdminUser,
+    Query(q): Query<SiteInfoQuery>,
+) -> AppResult<Response> {
+    let locale = i18n::current_locale();
+    let info = db::site_info::get(&state.pool).await?;
+    let content = render(SiteInfoTemplate { info });
+    let flash = q
+        .ok
+        .filter(|key| key == "admin-site-info-saved")
+        .map(|key| i18n::translate(locale, &key));
+    shell(
+        &state,
+        &admin,
+        &i18n::translate(locale, "admin-nav-site-info"),
+        "site-info",
+        content,
+        flash,
+        None,
+    )
+    .await
+}
+
+/// Every field is optional and free-form on purpose: an Impressum's
+/// contents are whatever the operator is legally required to state, and
+/// that differs by country and by whether they're a business. The one
+/// thing the app cares about is `operator_name`, and only to decide
+/// whether the public page has anything worth showing.
+#[derive(Deserialize)]
+pub struct SiteInfoForm {
+    #[serde(default)]
+    operator_name: String,
+    #[serde(default)]
+    street: String,
+    #[serde(default)]
+    postal_code: String,
+    #[serde(default)]
+    city: String,
+    #[serde(default)]
+    country: String,
+    #[serde(default)]
+    email: String,
+    #[serde(default)]
+    phone: String,
+    #[serde(default)]
+    vat_id: String,
+    #[serde(default)]
+    register_number: String,
+    #[serde(default)]
+    responsible: String,
+    #[serde(default)]
+    purpose: String,
+}
+
+pub async fn save_site_info(
+    State(state): State<AppState>,
+    AdminUser(admin): AdminUser,
+    Form(form): Form<SiteInfoForm>,
+) -> AppResult<Response> {
+    let info = db::site_info::SiteInfo {
+        operator_name: form.operator_name,
+        street: form.street,
+        postal_code: form.postal_code,
+        city: form.city,
+        country: form.country,
+        email: form.email,
+        phone: form.phone,
+        vat_id: form.vat_id,
+        register_number: form.register_number,
+        responsible: form.responsible,
+        purpose: form.purpose,
+    };
+    db::site_info::update(&state.pool, &info, admin.id).await?;
+    tracing::info!(admin_id = %admin.id, "site info updated");
+    Ok(Redirect::to("/admin/site-info?ok=admin-site-info-saved").into_response())
+}
+
 /// `/admin` with no section — land on the first queue that has work, or
 /// on users if everything is clear.
 pub async fn index(

@@ -50,7 +50,9 @@ call in `main.rs`.
 
 Admins get a helmet button in the navbar leading to `/admin`: a full-page
 moderation UI (no map) with a section per moderated table — companies,
-stores, products, offers, images — plus user management. Each section has
+stores, products, offers, images — plus user management and **Seiteninfo**,
+which holds the operator/contact details rendered at `/impressum` (linked
+from the sidebar footer). Each section has
 **Offen** / **Änderungen** / **Gelöscht** tabs covering approve, reject,
 revert and restore. See `RUNBOOK.md`.
 

@@ -89,6 +89,28 @@ Card actions carry a short visible label (`Bearbeiten`) plus the full
 phrase as `aria-label`/`title`: the card already supplies the noun, and
 the long German form doesn't fit beside a title at sidebar width.
 
+## Sidebar footer
+
+The panel column is `#sidebar-column`: a flex column holding `#sidebar`
+(scrolling, swappable) above `#sidebar-footer` (pinned). The wrapper
+exists because roughly thirty handlers answer with
+`patch-elements #sidebar inner`, which replaces *all* of `#sidebar`'s
+children — anything that has to outlive a panel swap cannot live inside
+it. The column owns the width, the right border and the collapse
+transition, so `map.js` waits on *its* `transitionend` before calling
+`map.invalidateSize()`.
+
+The footer's link is deliberately **not** the app's link treatment: body
+text colours (`--text-muted`, firming to `--text-primary` on hover) and
+no underline in either state. An Impressum is a legal footnote, and
+accent green would give it the same visual weight as "Neues Geschäft".
+It's the one place in the app where an `<a>` doesn't look like an `<a>`,
+and that's the point.
+
+The whole footer hides with `.sidebar-collapsed` — there is no sliver of
+panel left to hang it off. The page also has a real URL (`/impressum`),
+so the notice stays reachable when the panel is shut.
+
 ## Illustrated fallbacks
 
 Where a photo would go but none exists, draw one — don't ship an empty
@@ -315,6 +337,12 @@ else — moderation is part of the product, not a separate tool.
   and the role chip inherited the layout's `min-height: 660px` — a 660px
   tall pill. The word "admin" now describes a great many things in this
   codebase; a bare `.admin` is a collision waiting to happen.
+- **Configuration sits below the queues, past the separator.**
+  "Seiteninfo" edits the single `site_info` row behind `/impressum` — one
+  form, no approve/reject, because it's settings an admin owns rather
+  than a submission someone else made. `.admin-field-row` puts two short
+  fields (postcode + city) on one line and collapses to one column at
+  `≤640px`.
 - **The helmet (`.nav-link.nav-admin`) sits outside `.nav-menu`.** It
   stays visible at every width instead of folding into the collapsed
   menu — it's the control an admin reaches for repeatedly and it costs

@@ -1,0 +1,80 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select operator_name, street, postal_code, city, country,\n                  email, phone, vat_id, register_number, responsible, purpose\n           from site_info where id = 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "operator_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "street",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "postal_code",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "city",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "country",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "email",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "phone",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "vat_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "register_number",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "responsible",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "purpose",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "730be018afa766ab76e6d9df2d2820a7354f743c9c8e37660ea7b89cf9eb37e7"
+}

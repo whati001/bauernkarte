@@ -278,3 +278,30 @@ admin-users-error-password = The password does not meet the policy.
 admin-users-error-self = You cannot change your own account here.
 admin-users-error-seed = The provisioned admin account is the way back into the system and stays as it is.
 admin-users-error-last-admin = That is the last admin — nobody could reach this area afterwards.
+
+## Impressum
+impressum-link = Legal notice
+impressum-heading = Legal notice
+impressum-unconfigured = The legal notice hasn't been filled in yet. An admin can complete it under "Site info".
+impressum-operator = Operator
+impressum-contact = Contact
+impressum-phone = Phone
+impressum-legal = Legal details
+impressum-vat-id = VAT ID
+impressum-register = Company register number
+impressum-responsible = Responsible for the content
+impressum-purpose = Editorial purpose
+impressum-data-heading = Map data
+impressum-data-osm = The map and part of the store data come from OpenStreetMap and its contributors, published under the Open Database License (ODbL).
+
+## Admin area — site info
+admin-nav-site-info = Site info
+admin-site-info-blurb = The contact details shown on the legal notice page. Empty fields are left off it.
+admin-site-info-operator = Operator name
+admin-site-info-street = Street and number
+admin-site-info-postal = Postcode
+admin-site-info-city = City
+admin-site-info-country = Country
+admin-site-info-optional = Everything here is optional — a private operator has no VAT ID and no register entry.
+admin-site-info-purpose = What this website is for
+admin-site-info-saved = Site info saved.

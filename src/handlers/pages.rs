@@ -32,7 +32,7 @@ pub const NAV_PRODUCT_LIMIT: i64 = 12;
 /// (`SearchQuery::origin`); the other two both mean `lat`/`lon` hold the
 /// Austria-centroid fallback, which is fine for centring the map but is
 /// not the visitor's position, so the list stays alphabetical.
-fn base_signals(lat: f64, lon: f64, geo_available: Option<bool>, logged_in: bool) -> serde_json::Value {
+pub(crate) fn base_signals(lat: f64, lon: f64, geo_available: Option<bool>, logged_in: bool) -> serde_json::Value {
     json!({
         "categoryId": "", "productId": "",
         "lat": lat, "lon": lon, "geoAvailable": geo_available,

@@ -2,6 +2,7 @@ pub mod account;
 pub mod admin;
 pub mod company;
 pub mod image;
+pub mod impressum;
 pub mod locale;
 pub mod pages;
 pub mod product;

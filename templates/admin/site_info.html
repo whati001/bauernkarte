@@ -1,0 +1,83 @@
+{#- The contact details behind /impressum. One form over the single
+    `site_info` row — no queue, no approve/reject: this is configuration
+    an admin owns, not a submission someone else made. -#}
+<div class="admin-head">
+  <div>
+    <h2>{{ "admin-nav-site-info"|t }}</h2>
+    <p>{{ "admin-site-info-blurb"|t }}</p>
+  </div>
+</div>
+
+<form method="post" action="/admin/site-info">
+  <div class="panel-stack">
+    <section class="panel-card">
+      <h3>{% include "icons/user.svg" %} {{ "impressum-operator"|t }}</h3>
+      <div class="field">
+        <label for="si-operator">{{ "admin-site-info-operator"|t }}</label>
+        <input id="si-operator" type="text" name="operator_name" value="{{ info.operator_name }}"
+               maxlength="200" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="si-street">{{ "admin-site-info-street"|t }}</label>
+        <input id="si-street" type="text" name="street" value="{{ info.street }}" maxlength="200" autocomplete="off">
+      </div>
+      <div class="admin-field-row">
+        <div class="field">
+          <label for="si-postal">{{ "admin-site-info-postal"|t }}</label>
+          <input id="si-postal" type="text" name="postal_code" value="{{ info.postal_code }}" maxlength="20" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="si-city">{{ "admin-site-info-city"|t }}</label>
+          <input id="si-city" type="text" name="city" value="{{ info.city }}" maxlength="120" autocomplete="off">
+        </div>
+      </div>
+      <div class="field">
+        <label for="si-country">{{ "admin-site-info-country"|t }}</label>
+        <input id="si-country" type="text" name="country" value="{{ info.country }}" maxlength="120" autocomplete="off">
+      </div>
+    </section>
+
+    <section class="panel-card">
+      <h3>{% include "icons/mail.svg" %} {{ "impressum-contact"|t }}</h3>
+      <div class="field">
+        <label for="si-email">{{ "auth-email"|t }}</label>
+        <input id="si-email" type="email" name="email" value="{{ info.email }}" maxlength="254" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="si-phone">{{ "impressum-phone"|t }}</label>
+        <input id="si-phone" type="tel" name="phone" value="{{ info.phone }}" maxlength="60" autocomplete="off">
+      </div>
+    </section>
+
+    <section class="panel-card">
+      <h3>{% include "icons/tag.svg" %} {{ "impressum-legal"|t }}</h3>
+      {#- All optional: a private operator has no UID and no Firmenbuch
+          entry, and a blank field is simply left off the public page. -#}
+      <p class="field-hint">{{ "admin-site-info-optional"|t }}</p>
+      <div class="field">
+        <label for="si-vat">{{ "impressum-vat-id"|t }}</label>
+        <input id="si-vat" type="text" name="vat_id" value="{{ info.vat_id }}" maxlength="60" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="si-register">{{ "impressum-register"|t }}</label>
+        <input id="si-register" type="text" name="register_number" value="{{ info.register_number }}" maxlength="120" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="si-responsible">{{ "impressum-responsible"|t }}</label>
+        <input id="si-responsible" type="text" name="responsible" value="{{ info.responsible }}" maxlength="200" autocomplete="off">
+      </div>
+    </section>
+
+    <section class="panel-card">
+      <h3>{% include "icons/leaf.svg" %} {{ "impressum-purpose"|t }}</h3>
+      <div class="field">
+        <label for="si-purpose">{{ "admin-site-info-purpose"|t }}</label>
+        <textarea id="si-purpose" name="purpose" rows="4" maxlength="2000">{{ info.purpose }}</textarea>
+      </div>
+    </section>
+
+    <section class="panel-card panel-card-actions">
+      <button class="btn primary" type="submit">{% include "icons/circle-check.svg" %} {{ "action-save"|t }}</button>
+    </section>
+  </div>
+</form>

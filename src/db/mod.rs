@@ -7,6 +7,7 @@ pub mod moderation;
 pub mod pending;
 pub mod product;
 pub mod rating;
+pub mod site_info;
 pub mod store;
 pub mod store_product;
 pub mod user;

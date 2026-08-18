@@ -681,17 +681,28 @@ a:hover { text-decoration: underline; }
   overflow: hidden;
 }
 
-#sidebar {
+/* The column is the flex item: it owns the width, the border and the
+   collapse transition, so the footer below #sidebar sits inside all
+   three. #sidebar itself is now only the scrolling, swappable part. */
+#sidebar-column {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   width: var(--sidebar-width);
+  border-right: 1px solid var(--border);
+  background: var(--shell);
+  transition: width 0.15s var(--ease);
+}
+
+#sidebar {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   /* Stops this list's own scroll from "chaining" into a rubber-band
      bounce on whatever's behind it once it hits the top/bottom — mainly
      matters on mobile, where #sidebar is the one genuinely scrollable
      region left (see the html/body comment above). */
   overscroll-behavior-y: contain;
-  border-right: 1px solid var(--border);
-  background: var(--shell);
-  transition: width 0.15s var(--ease);
 }
 .sidebar-panel { padding: var(--space-4); }
 /* The search panel's filter card and its results list are siblings
@@ -808,7 +819,7 @@ a:hover { text-decoration: underline; }
 .leaflet-touch .leaflet-control-zoom-in,
 .leaflet-touch .leaflet-control-zoom-out { font-size: 20px; }
 
-#layout.sidebar-collapsed #sidebar { width: 0; overflow: hidden; border-right: none; }
+#layout.sidebar-collapsed #sidebar-column { width: 0; overflow: hidden; border-right: none; }
 /* Nothing to widen while the panel is closed — the button would set a
    width you can't see the effect of. The controls under it shift up to
    close the gap. */
@@ -833,7 +844,7 @@ a:hover { text-decoration: underline; }
      on every device, with zero risk of the sidebar+map overflowing
      into a second, page-level scroll region — which is what caused
      "sometimes the map scrolls, sometimes the whole page does".  */
-  #sidebar {
+  #sidebar-column {
     width: 100%;
     flex: 0 0 60%;
     min-height: 0;
@@ -847,7 +858,7 @@ a:hover { text-decoration: underline; }
      desktop rule slides along doesn't exist — the control column just
      keeps the map's top-left corner, the map now being the top 40%. */
   .map-fab { left: var(--space-3); }
-  #layout.sidebar-collapsed #sidebar { flex-basis: 0; border-top: none; }
+  #layout.sidebar-collapsed #sidebar-column { flex-basis: 0; border-top: none; }
   /* Stacked layout: the panel spans the full width and its *height* is
      what's split, so a width control has nothing to act on. */
   #sidebar-width { display: none; }
@@ -2090,3 +2101,42 @@ html:has(.admin-body) { height: auto; overflow: auto; }
    to do nothing. Its suggestion dropdown lives inside it, so hiding the
    wrapper takes the empty panel with it. */
 .admin-body .nav-search { display: none; }
+
+/* Sidebar footer — the Impressum link, pinned under the scrolling panel.
+   Outside #sidebar (see layout.html) so the ~30 `patch-elements #sidebar
+   inner` responses can't take it with them. */
+#sidebar-footer {
+  flex: none;
+  padding: var(--space-2) var(--space-4)
+           calc(var(--space-2) + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border);
+  background: var(--shell);
+  font-size: var(--font-size-sm);
+}
+/* Deliberately not the app's link treatment: a legal footnote is not a
+   call to action, and the accent green would give it the same weight as
+   "Neues Geschäft". Body text colours, no underline — it reads as the
+   fine print it is, and only firms up on hover. */
+#sidebar-footer a {
+  color: var(--text-muted);
+  text-decoration: none;
+}
+#sidebar-footer a:hover {
+  color: var(--text-primary);
+  text-decoration: none;
+}
+#layout.sidebar-collapsed #sidebar-footer { display: none; }
+
+/* Impressum address block: one line per element, so a postal address
+   reads as an address rather than as a run-on sentence. */
+.impressum-address { font-style: normal; display: flex; flex-direction: column; gap: 2px; }
+.impressum-address .impressum-name { font-weight: 600; color: var(--text-primary); }
+.impressum-address span { color: var(--text-secondary); }
+
+/* Two short fields sharing a row (postcode + city). Collapses to one
+   column below the stacked breakpoint, where the sidebar is full width
+   but a phone still isn't wide. */
+.admin-field-row { display: grid; grid-template-columns: minmax(6rem, 1fr) 2fr; gap: var(--space-3); }
+@media (max-width: 640px) {
+  .admin-field-row { grid-template-columns: 1fr; }
+}

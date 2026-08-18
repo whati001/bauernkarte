@@ -278,3 +278,30 @@ admin-users-error-password = Das Passwort erfüllt die Richtlinie nicht.
 admin-users-error-self = Das eigene Konto lässt sich hier nicht ändern.
 admin-users-error-seed = Das eingerichtete Admin-Konto ist der Weg zurück ins System und bleibt unverändert.
 admin-users-error-last-admin = Das ist der letzte Admin — sonst kommt niemand mehr in diesen Bereich.
+
+## Impressum
+impressum-link = Impressum
+impressum-heading = Impressum
+impressum-unconfigured = Das Impressum ist noch nicht hinterlegt. Ein Admin kann es unter „Seiteninfo" ausfüllen.
+impressum-operator = Medieninhaber und Betreiber
+impressum-contact = Kontakt
+impressum-phone = Telefon
+impressum-legal = Rechtliche Angaben
+impressum-vat-id = UID-Nummer
+impressum-register = Firmenbuchnummer
+impressum-responsible = Verantwortlich für den Inhalt
+impressum-purpose = Blattlinie
+impressum-data-heading = Kartendaten
+impressum-data-osm = Kartendarstellung und ein Teil der Geschäftsdaten stammen von OpenStreetMap und dessen Mitwirkenden, veröffentlicht unter der Open Database License (ODbL).
+
+## Adminbereich — Seiteninfo
+admin-nav-site-info = Seiteninfo
+admin-site-info-blurb = Die Kontaktdaten, die auf der Impressum-Seite stehen. Leere Felder werden dort weggelassen.
+admin-site-info-operator = Name des Betreibers
+admin-site-info-street = Straße und Hausnummer
+admin-site-info-postal = PLZ
+admin-site-info-city = Ort
+admin-site-info-country = Land
+admin-site-info-optional = Alles hier ist optional — ohne Gewerbe gibt es weder UID noch Firmenbucheintrag.
+admin-site-info-purpose = Grundlegende Ausrichtung der Website
+admin-site-info-saved = Seiteninfo gespeichert.

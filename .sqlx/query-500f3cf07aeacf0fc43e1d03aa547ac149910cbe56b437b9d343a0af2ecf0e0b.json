@@ -1,0 +1,25 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update site_info set\n               operator_name = $1, street = $2, postal_code = $3, city = $4,\n               country = $5, email = $6, phone = $7, vat_id = $8,\n               register_number = $9, responsible = $10, purpose = $11,\n               modified_by = $12, modified = now()\n           where id = 1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "500f3cf07aeacf0fc43e1d03aa547ac149910cbe56b437b9d343a0af2ecf0e0b"
+}

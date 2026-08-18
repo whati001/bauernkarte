@@ -157,12 +157,17 @@ async fn main() -> anyhow::Result<()> {
         .route("/product/{id}/edit", get(handlers::product::edit_product_form))
         .route("/store-product/{id}/image/new", get(handlers::image::new_form))
         .route("/image/{id}", get(handlers::image::show))
+        .route("/impressum", get(handlers::impressum::page))
+        .route("/api/impressum", get(handlers::impressum::panel))
         .route("/locale/{code}", get(handlers::locale::switch))
         // Admin area. Every handler behind these takes `AdminUser`, which
         // 404s for everyone else — the routes exist for all visitors, the
         // pages don't.
         .route("/admin", get(handlers::admin::index))
         .route("/admin/users", get(handlers::admin::users))
+        // Before the `/admin/{slug}` queue route, or "site-info" would be
+        // taken for an entity slug and 404 on the way to `Entity::from_slug`.
+        .route("/admin/site-info", get(handlers::admin::site_info).post(handlers::admin::save_site_info))
         .route("/admin/users/new", post(handlers::admin::create_user))
         .route("/admin/users/{id}/admin", post(handlers::admin::set_admin))
         .route("/admin/users/{id}/delete", post(handlers::admin::delete_user))
