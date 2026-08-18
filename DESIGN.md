@@ -202,6 +202,37 @@ panel: there's no map, so the split is a rail of sections and the work
 itself. It reuses the same tokens, `.panel-card` and `.btn` as everything
 else — moderation is part of the product, not a separate tool.
 
+```html
+<body class="admin-body">
+  {{ navbar }}                       <!-- the shared partial, unchanged -->
+  <div class="admin-shell">
+    <nav class="admin-rail">
+      <span class="admin-rail-title">Verwaltung</span>
+      <a class="admin-rail-item" aria-current="page" href="/admin/stores">
+        {% include "icons/store.svg" %} Geschäfte
+        <span class="admin-count">3</span>
+      </a>
+      <div class="admin-rail-sep"></div>
+      <a class="admin-rail-item admin-rail-back" href="/">…</a>
+    </nav>
+    <main class="admin-content">
+      <div class="admin-head"><h2>…</h2><p>…</p></div>
+      <div class="admin-tabs">…</div>
+      <div class="admin-rows">
+        <article class="admin-row">
+          <div class="admin-row-main">
+            <div class="admin-row-title"><strong>…</strong>
+              <span class="admin-pill new">Neu</span></div>
+            <div class="admin-row-meta"><span>…</span><time>…</time></div>
+          </div>
+          <div class="admin-row-actions"><form method="post">…</form></div>
+        </article>
+      </div>
+    </main>
+  </div>
+</body>
+```
+
 ### Shell
 
 - `.admin-body` — the `<body>` class. The map layout pins `html`/`body`
@@ -232,16 +263,35 @@ else — moderation is part of the product, not a separate tool.
   (offen / Änderungen / gelöscht), selected via `[aria-selected="true"]`
   with an accent underline. `.admin-tab .n` is the count beside the
   label, `tabular-nums`.
-- `.admin-rows` / `.admin-row` — one card per item: `.admin-row-main`
-  (title, `.admin-row-meta` for who and when) and `.admin-row-actions`
-  on the right. Each action is its own `<form>` POST, so the group lays
-  out *forms*, not buttons.
-- `.admin-diff` — one `.admin-diff-row` per changed field: label, old
-  value struck through, arrow, new value. The strike-through carries the
-  direction so the arrow is decoration, not the only cue.
+- `.admin-rows` / `.admin-row` — one card per item, in two columns:
+  `.admin-row-main` and `.admin-row-actions`. Inside main,
+  `.admin-row-title` is the name plus its state pill, and
+  `.admin-row-meta` is the muted context line — subtitle, who submitted
+  it, and a `<time>` in `tabular-nums` so dates line up down the list.
+  Each action is its own `<form>` POST, so the actions group lays out
+  *forms*, not buttons.
+- `.admin-diff` — one `.admin-diff-row` per changed field, built from
+  `.admin-diff-field` (the column name, muted, fixed `8rem` so the
+  values align), `.admin-diff-old` (muted and struck through),
+  `.admin-diff-arrow` and `.admin-diff-new` (primary, medium weight).
+  The strike-through carries the direction on its own, so the arrow is
+  `aria-hidden` decoration rather than the only cue. Only fields that
+  actually changed appear — `id` and the moderation flags are filtered
+  out, or every row would be mostly "approved: false → false".
 - `.admin-table-wrap` / `.admin-table` — the users table. Wide content
   scrolls in its own container; `.acts-group` wraps the row's action
   forms rather than forcing the table wider.
+- `.admin-user-name` / `.admin-user-mail` — the two-line identity cell in
+  the users table: name in medium weight over the address, muted and
+  small. Two columns for one person reads as two facts; stacked, it reads
+  as one.
+- `.admin-confirm-note` — the critical-coloured line that appears under a
+  row's actions once a destructive action is armed, saying what will be
+  lost. The confirmation is a second page state, not a JS `confirm()`:
+  a dialog blocks the page and browsers can suppress it.
+- `.admin-inline-form` — a create form sitting in a `.panel-card` above
+  the table it adds to, rather than on a page of its own. Only worth it
+  where the form is short enough not to bury the list.
 - `.admin-empty` — dashed "nothing to do here", the counterpart to the
   illustrated fallbacks above. A queue is empty most of the time, so
   empty is a normal state and should look deliberate.
