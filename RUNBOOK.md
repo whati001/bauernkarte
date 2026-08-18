@@ -1,78 +1,92 @@
-# Admin runbook (v1 — no admin UI)
+# Admin runbook
 
-v1 has no in-app moderation interface. Every admin action below is a
-direct SQL statement run against the Postgres database. This is a
-deliberate design decision (design.md, content-moderation capability),
-not a placeholder for a missing feature.
+Moderation now has a UI: sign in as an admin and use the helmet in the
+navbar, or go to `/admin` directly. It covers everything this file used
+to describe as hand-run SQL — approving, rejecting, reverting an edit and
+restoring a deleted row — for all five moderated tables, plus account
+management.
 
-## Approve a pending submission
+The SQL is kept below for the cases the UI deliberately doesn't cover,
+and for when the app itself won't start.
 
-New `company`/`store`/`product`/`store_product`/`image` rows are created
-with `approved = false` and are invisible to the public until approved:
+## The admin account
 
-```sql
-update store set approved = true where id = <id>;
-update company set approved = true where id = <id>;
-update product set approved = true where id = <id>;
-update store_product set approved = true where id = <id>;
-update image set approved = true where id = <id>;
-```
+`bauernkarte@rehka.dev` is created by a migration with no usable
+password. The first server start that finds it that way sets the password
+from `ADMIN_PASSWORD` in `.env`, and never touches it again — so a
+password changed later through **Konto** survives restarts even with
+`ADMIN_PASSWORD` still set. A migration can't do this itself: it is
+static SQL with no access to `.env` and no way to run Argon2, and a hash
+committed to the repository would be a published password.
 
-Find what's pending:
-
-```sql
-select id, name, created_by, created from store where not approved and not deleted order by created;
--- same shape for company, product; store_product/image need a join to be legible:
-select sp.id, p.name as product, s.name as store, sp.price, sp.created_by, sp.created
-from store_product sp join product p on p.id = sp.product join store s on s.id = sp.store
-where not sp.approved and not sp.deleted order by sp.created;
-```
-
-## Reject a pending submission
-
-There's no separate "rejected" state — rejecting just means it never
-gets approved. To actually remove it (e.g. spam), delete it directly:
+To reset a forgotten admin password, clear the hash and restart:
 
 ```sql
-delete from store where id = <id> and not approved;
+update "user" set pwd_hash = '' where email = 'bauernkarte@rehka.dev';
 ```
 
-(Same pattern for the other four tables. Only ever delete rows that are
-still `not approved` this way — an *approved* row should go through the
-soft-delete path below instead, so it stays recoverable via `edit_log`.)
-
-## Revert a bad edit
-
-Every catalog edit (any logged-in user, any of the five entity types) is
-logged to `edit_log` with the full row before and after:
+Grant admin rights to someone else in the UI (**Benutzer → Zum Admin
+machen**), or directly:
 
 ```sql
-select * from edit_log where entity_type = 'store' and entity_id = <id> order by changed desc;
+update "user" set admin = true where email = '<address>';
 ```
 
-`old_value` is the JSON snapshot from before the edit. To revert, apply
-its fields back by hand, e.g. for a `store`:
+The UI refuses to demote or delete your own account, and refuses to touch
+`bauernkarte@rehka.dev` at all, so there is always a way back in.
+
+## What the UI does
+
+| Action | Effect |
+|---|---|
+| **Freigeben** | `approved = true` — the entry becomes publicly visible |
+| **Ablehnen** | `deleted = true`. A *soft* delete, so it is still in **Gelöscht** and can be restored |
+| **Zurücknehmen** | Re-applies an `edit_log` entry's `old_value` through the normal edit path, and logs the revert itself — a revert can be reverted |
+| **Wiederherstellen** | `deleted = false` |
+
+Every one of these writes an `edit_log` row, so "who approved this" has an
+answer.
+
+Rejecting is a soft delete rather than the `delete from …` this file used
+to recommend, for two reasons. The catalog's foreign keys are all
+`NO ACTION`, so hard-deleting a store that already has an offer fails
+outright:
+
+```
+ERROR: update or delete on table "store" violates foreign key constraint
+       "store_product_store_fkey" on table "store_product"
+```
+
+And a rejected row that still exists can be un-rejected. Nothing the
+admin UI does is irreversible, with one exception: deleting a *user*.
+
+## Deleting a user
+
+`created_by`/`modified_by` are `ON DELETE SET NULL`, so an account's
+submissions stay in the catalog and only lose their author. That cannot
+be undone, which is why the UI shows the number of affected entries and
+asks for a second click.
+
+## Purging for real
+
+The UI never hard-deletes catalog rows. To actually remove spam, delete
+children first — the foreign keys are `NO ACTION`:
 
 ```sql
-update store
-set name = 'Old Name', openinghours = 'Old Hours' -- etc, from old_value
-where id = <id>;
+delete from image         where store_product in (select id from store_product where store = <id>);
+delete from store_product where store = <id>;
+delete from store         where id = <id> and not approved;
 ```
 
-There's no automated "restore this JSON blob" tool in v1 — this is a
-manual, one-row-at-a-time operation, done deliberately given the current
-scale.
+## Restoring a product whose name was taken
 
-## Restore a soft-deleted row
-
-Deletes are soft (`deleted = true`), never destructive:
+`product_name_key` only covers non-deleted rows, so a deleted product's
+name is free to be reused. If it has been, restoring collides and the UI
+says so rather than failing. Rename the live row first:
 
 ```sql
-update store set deleted = false where id = <id>;
+update product set name = '<new name>' where id = <live id>;
 ```
-
-(Same for `company`, `product`, `store_product`, `image`.) Check
-`edit_log` (`action = 'delete'`) first to see who deleted it and when.
 
 ## Session cleanup
 

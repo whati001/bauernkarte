@@ -20,6 +20,9 @@ pub struct User {
     #[serde(skip)]
     pub pwd_hash: String,
     pub verified: bool,
+    /// Grants the moderation UI under `/admin`. Set by another admin, or
+    /// by the seed migration for the bootstrap account.
+    pub admin: bool,
     pub created: OffsetDateTime,
     pub modified: OffsetDateTime,
 }

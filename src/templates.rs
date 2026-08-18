@@ -68,6 +68,11 @@ pub fn render_confirmation(message: &str) -> String {
 #[template(path = "partials/navbar.html")]
 struct NavbarTemplate {
     user_name: Option<String>,
+    /// Shows the helmet button that leads into `/admin`. Passed in rather
+    /// than looked up here so the navbar stays a pure render step, and so
+    /// the map side (which already has the `User`) doesn't pay for a
+    /// second query.
+    is_admin: bool,
     current_locale: &'static str,
     /// Always the *empty* dropdown — `#nav-suggestions` only has to exist
     /// in the DOM for `GET /api/search/suggest` to patch it by id.
@@ -83,9 +88,14 @@ struct NavbarTemplate {
 /// navbar just to flip the login state — the row lives inside `#navbar`,
 /// so a `patch-elements #navbar` built without it would silently delete
 /// the row on login/logout.
-pub fn render_navbar(user_name: Option<String>, products: Vec<RankedProduct>) -> String {
+/// Takes the whole `User` rather than just the name: the navbar now shows
+/// two things about the viewer — what they're called, and whether they get
+/// the moderation helmet — and passing the row is what keeps those from
+/// drifting apart at a call site that remembers one and forgets the other.
+pub fn render_navbar(user: Option<&crate::models::User>, products: Vec<RankedProduct>) -> String {
     render(NavbarTemplate {
-        user_name,
+        user_name: user.map(|u| u.name.clone()),
+        is_admin: user.is_some_and(|u| u.admin),
         current_locale: i18n::current_locale().code(),
         suggestions_html: crate::handlers::search::render_empty_suggestions(),
         nav_products: products,
@@ -123,14 +133,14 @@ struct LayoutTemplate {
 /// purpose is the panel's contents.
 pub fn full_page(
     title: &str,
-    user_name: Option<String>,
+    user: Option<&crate::models::User>,
     signals: &Value,
     sidebar_html: String,
     map_data_html: String,
     sidebar_collapsed: bool,
     nav_products: Vec<RankedProduct>,
 ) -> Html<String> {
-    let navbar_html = render_navbar(user_name, nav_products);
+    let navbar_html = render_navbar(user, nav_products);
     let page = LayoutTemplate {
         title: title.to_string(),
         current_locale: i18n::current_locale().code(),

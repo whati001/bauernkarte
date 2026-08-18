@@ -46,6 +46,19 @@ two in sync (`./bootstrap.py env --force` regenerates the file).
 process startup by `tower-sessions-sqlx-store`'s own `PostgresStore::migrate()`
 call in `main.rs`.
 
+## Admin area
+
+Admins get a helmet button in the navbar leading to `/admin`: a full-page
+moderation UI (no map) with a section per moderated table — companies,
+stores, products, offers, images — plus user management. Each section has
+**Offen** / **Änderungen** / **Gelöscht** tabs covering approve, reject,
+revert and restore. See `RUNBOOK.md`.
+
+`bauernkarte@rehka.dev` is seeded by a migration without a password; the
+first startup sets it from `ADMIN_PASSWORD` in `.env` and never touches
+it again, so changing it in-app sticks. Everything under `/admin`
+requires the `admin` flag and 404s otherwise.
+
 ## Progressive web app
 
 The app is installable from the browser ("Add to home screen" / the

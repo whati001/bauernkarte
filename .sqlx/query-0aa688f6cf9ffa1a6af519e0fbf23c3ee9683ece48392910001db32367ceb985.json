@@ -1,0 +1,50 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select u.id, u.name, u.email::text as \"email!\", u.admin, u.created,\n                  (  (select count(*) from company       where created_by = u.id)\n                   + (select count(*) from store         where created_by = u.id)\n                   + (select count(*) from product       where created_by = u.id)\n                   + (select count(*) from store_product where created_by = u.id)\n                   + (select count(*) from image         where created_by = u.id)\n                  ) as \"contributions!\"\n           from \"user\" u\n           order by u.admin desc, lower(u.name)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "email!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "admin",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "created",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 5,
+        "name": "contributions!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      null,
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "0aa688f6cf9ffa1a6af519e0fbf23c3ee9683ece48392910001db32367ceb985"
+}

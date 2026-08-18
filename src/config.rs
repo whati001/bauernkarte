@@ -10,6 +10,13 @@ pub struct Config {
     /// (see design.md's non-functional decisions on the dev/prod split).
     pub secure_cookies: bool,
     pub bind_addr: String,
+    /// Password for the seeded `bauernkarte@rehka.dev` account, applied
+    /// **once**, on the first startup that finds the account without a
+    /// usable hash (see `auth::admin_seed`). Left unset in an
+    /// environment where the password has already been set — it is not
+    /// re-applied, so a change made through /account sticks across
+    /// restarts.
+    pub admin_password: Option<String>,
 }
 
 impl Config {
@@ -29,10 +36,13 @@ impl Config {
         let bind_addr =
             std::env::var("BIND_ADDR").unwrap_or_else(|_| "0.0.0.0:3000".to_string());
 
+        let admin_password = std::env::var("ADMIN_PASSWORD").ok().filter(|v| !v.is_empty());
+
         Ok(Self {
             database_url,
             secure_cookies,
             bind_addr,
+            admin_password,
         })
     }
 }

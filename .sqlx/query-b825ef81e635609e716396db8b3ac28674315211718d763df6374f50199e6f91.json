@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update \"user\" set pwd_hash = $2, modified = now()\n           where email = $1 and pwd_hash = ''",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        {
+          "Custom": {
+            "name": "citext",
+            "kind": "Simple"
+          }
+        },
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b825ef81e635609e716396db8b3ac28674315211718d763df6374f50199e6f91"
+}

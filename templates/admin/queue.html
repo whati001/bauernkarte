@@ -1,0 +1,98 @@
+{#- One moderated entity: the four runbook operations as tabs over the
+    same list shape. `tab` decides which of the three collections below
+    is non-empty — the handler only loads the one being shown, so a busy
+    "all" tab costs nothing while looking at "pending". -#}
+<div class="admin-head">
+  <div>
+    <h2>{{ heading }}</h2>
+    <p>{{ blurb }}</p>
+  </div>
+</div>
+
+<div class="admin-tabs" role="tablist">
+  {% for t in tabs %}
+  <a class="admin-tab" role="tab" href="/admin/{{ slug }}?tab={{ t.key }}"
+     aria-selected="{% if t.key == tab %}true{% else %}false{% endif %}">
+    {{ t.label }} <span class="n">{{ t.count }}</span>
+  </a>
+  {% endfor %}
+</div>
+
+{% if !rows.is_empty() %}
+<div class="admin-rows">
+  {% for row in rows %}
+  <article class="admin-row">
+    <div class="admin-row-main">
+      <div class="admin-row-title">
+        <strong>{{ row.title }}</strong>
+        {% if tab == "pending" %}<span class="admin-pill new">{{ "admin-pill-new"|t }}</span>{% endif %}
+        {% if tab == "deleted" %}<span class="admin-pill del">{{ "admin-pill-deleted"|t }}</span>{% endif %}
+      </div>
+      <div class="admin-row-meta">
+        {% if let Some(subtitle) = row.subtitle %}<span>{{ subtitle }}</span>{% endif %}
+        {% if let Some(author) = row.author %}<span>{{ author }}</span>{% endif %}
+        <time datetime="{{ row.at_iso }}">{{ row.at_human }}</time>
+      </div>
+    </div>
+    <div class="admin-row-actions">
+      {% if let Some(path) = row.view_path %}
+      <a class="btn sm" href="{{ path }}">{{ "admin-action-view"|t }}</a>
+      {% endif %}
+      {% if tab == "pending" %}
+      <form method="post" action="/admin/{{ slug }}/{{ row.id }}/reject">
+        <button class="btn sm danger" type="submit">{{ "admin-action-reject"|t }}</button>
+      </form>
+      <form method="post" action="/admin/{{ slug }}/{{ row.id }}/approve">
+        <button class="btn sm primary" type="submit">{{ "admin-action-approve"|t }}</button>
+      </form>
+      {% endif %}
+      {% if tab == "deleted" %}
+      <form method="post" action="/admin/{{ slug }}/{{ row.id }}/restore">
+        <button class="btn sm primary" type="submit">{{ "admin-action-restore"|t }}</button>
+      </form>
+      {% endif %}
+    </div>
+  </article>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if !changes.is_empty() %}
+<div class="admin-rows">
+  {% for change in changes %}
+  <article class="admin-row">
+    <div class="admin-row-main">
+      <div class="admin-row-title">
+        <strong>{{ change.title }}</strong>
+        <span class="admin-pill edit">{{ "admin-pill-edited"|t }}</span>
+      </div>
+      <div class="admin-row-meta">
+        {% if let Some(author) = change.author %}<span>{{ author }}</span>{% endif %}
+        <time datetime="{{ change.at_iso }}">{{ change.at_human }}</time>
+      </div>
+      {% if !change.diff.is_empty() %}
+      <div class="admin-diff">
+        {% for d in change.diff %}
+        <div class="admin-diff-row">
+          <span class="admin-diff-field">{{ d.field }}</span>
+          <span class="admin-diff-old">{{ d.old }}</span>
+          <span class="admin-diff-arrow" aria-hidden="true">→</span>
+          <span class="admin-diff-new">{{ d.new }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    <div class="admin-row-actions">
+      <form method="post" action="/admin/{{ slug }}/revert/{{ change.log_id }}">
+        <button class="btn sm danger" type="submit">{{ "admin-action-revert"|t }}</button>
+      </form>
+    </div>
+  </article>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if rows.is_empty() && changes.is_empty() %}
+<p class="admin-empty">{{ "admin-queue-empty"|t }}</p>
+{% endif %}

@@ -193,6 +193,23 @@ The navbar must stay one row down to 360px. Every pixel it grows comes
 off the map. The collapsed menu is an *overlay*, not a push-down
 disclosure, for the same reason: opening it must not move the map.
 
+## Admin area
+
+`/admin` is a second shell (`templates/admin/layout.html`), not a sidebar
+panel: no map, so the split is a 248px rail of sections and the work
+itself. It reuses the same tokens, `.panel-card` and `.btn` as everything
+else — moderation is part of the product, not a separate tool — and the
+rail's selected item is the same filled-accent treatment as every other
+"this is on" control.
+
+Two rules specific to it:
+
+- **Pending counts are `--warning`, not `--accent`.** They mark work
+  waiting, which is a different thing from "selected".
+- **Only the map side is Datastar.** The admin area is plain forms and
+  redirects; the map is SSE-driven because a reload would lose the
+  viewport, and nothing here has that constraint.
+
 ## Checklist for new UI
 
 1. Group it into `.panel-card`s, one per concern.

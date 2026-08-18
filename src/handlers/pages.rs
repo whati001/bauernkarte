@@ -76,7 +76,7 @@ pub async fn index(State(state): State<AppState>, OptionalUser(user): OptionalUs
     let nav_products = db::product::list_top_rated(&state.pool, NAV_PRODUCT_LIMIT).await?;
     Ok(full_page(
         "BauernKarte",
-        user.map(|u| u.name),
+        user.as_ref(),
         &signals,
         sidebar_html,
         map_data_html,
@@ -114,7 +114,7 @@ pub async fn store_page(
     let signals = base_signals(detail.lat, detail.lon, None, user.is_some());
     let nav_products = db::product::list_top_rated(&state.pool, NAV_PRODUCT_LIMIT).await?;
     Ok(
-        full_page(&title, user.map(|u| u.name), &signals, sidebar_html, map_data_html, false, nav_products)
+        full_page(&title, user.as_ref(), &signals, sidebar_html, map_data_html, false, nav_products)
             .into_response(),
     )
 }

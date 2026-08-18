@@ -66,6 +66,7 @@ DEFAULTS = {
     "DB_PORT": "5434",
     "APP_PORT": "3000",
     "BIND_ADDR": "0.0.0.0:3000",
+    "ADMIN_PASSWORD": "bitte-hier-aendern-2026",
     "SECURE_COOKIES": "false",
     "RUST_LOG": "bauernkarte=debug,tower_http=debug",
 }
@@ -93,6 +94,13 @@ DB_PORT={DB_PORT}
 # migrate run`, `cargo sqlx prepare` and a host-side `cargo run`.
 # Re-run `./bootstrap.py env --force` after changing any DB_* value.
 DATABASE_URL={DATABASE_URL}
+
+# --- admin -------------------------------------------------------------
+# Password for the seeded admin account (bauernkarte@rehka.dev). Applied
+# once, on the first startup that finds the account without a password —
+# a change made later through the app is not overwritten. Must satisfy
+# the same policy as any other password (see the register form).
+ADMIN_PASSWORD={ADMIN_PASSWORD}
 
 # --- app ---------------------------------------------------------------
 # Host port the `app` container publishes (container-side it's always

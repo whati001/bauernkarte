@@ -1,0 +1,44 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select i.id, coalesce(i.description, p.name) as \"title!\",\n                      s.name as \"subtitle?\", u.name as \"author?\", i.modified as \"at!\"\n               from image i\n               join store_product sp on sp.id = i.store_product\n               join product p on p.id = sp.product\n               join store s on s.id = sp.store\n               left join \"user\" u on u.id = i.modified_by\n               where i.deleted order by i.modified desc",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "title!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "subtitle?",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "author?",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "at!",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      null,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "0c3ef970eca9d74288c50500938a1a9b4e05a53dd1ffd4f093aced7f9bc657c8"
+}

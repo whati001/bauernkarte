@@ -1,3 +1,4 @@
+pub mod admin_seed;
 pub mod password;
 
 use axum::{extract::FromRequestParts, http::request::Parts};
@@ -42,6 +43,25 @@ impl FromRequestParts<AppState> for CurrentUser {
             .await?
             .ok_or(AppError::Unauthorized)?;
         Ok(CurrentUser(user))
+    }
+}
+
+/// Admin-only extractor, for everything under `/admin`.
+///
+/// Rejects with `NotFound` rather than `Unauthorized` on purpose: a
+/// logged-in non-admin who guesses `/admin/users` learns nothing about
+/// whether the route exists, and a 403 on a moderation URL is itself an
+/// invitation. An anonymous visitor gets the same, for the same reason.
+pub struct AdminUser(pub User);
+
+impl FromRequestParts<AppState> for AdminUser {
+    type Rejection = AppError;
+
+    async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, Self::Rejection> {
+        match CurrentUser::from_request_parts(parts, state).await {
+            Ok(CurrentUser(user)) if user.admin => Ok(AdminUser(user)),
+            _ => Err(AppError::NotFound),
+        }
     }
 }
 

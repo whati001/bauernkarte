@@ -54,6 +54,14 @@
              toggle instead of wrapping #navbar onto a second and third
              row and eating the map. See the `nav-collapse` block in
              app.css, which is what actually flips between the two. -->
+        {% if is_admin %}
+        <!-- Moderation entry point. Outside .nav-menu on purpose: it stays
+             visible at every width rather than folding into the collapsed
+             menu, because it's the one control an admin reaches for
+             repeatedly and it costs a single 44px square. -->
+        <a class="nav-link nav-admin" href="/admin"
+           aria-label="{{ "admin-title"|t }}" title="{{ "admin-title"|t }}">{% include "icons/hard-hat.svg" %}</a>
+        {% endif %}
         <button type="button" class="nav-toggle" id="nav-toggle"
                 aria-controls="nav-menu"
                 aria-label="{{ "nav-menu-toggle"|t }}" title="{{ "nav-menu-toggle"|t }}"

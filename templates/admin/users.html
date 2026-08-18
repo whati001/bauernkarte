@@ -1,0 +1,96 @@
+{#- User management. The one section that isn't a moderation queue, and
+    the one place in the admin area with an irreversible action: deleting
+    an account is a real DELETE. `created_by` is ON DELETE SET NULL, so
+    the person's submissions stay in the catalog and lose their author —
+    which is why the count is in the table, next to the button. -#}
+<div class="admin-head">
+  <div>
+    <h2>{{ "admin-users-heading"|t }}</h2>
+    <p>{{ "admin-users-blurb"|t }}</p>
+  </div>
+</div>
+
+<section class="panel-card">
+  <h3>{% include "icons/circle-plus.svg" %} {{ "admin-users-new"|t }}</h3>
+  <form method="post" action="/admin/users/new" class="admin-inline-form">
+    <div class="field">
+      <label for="new-user-name">{{ "auth-name"|t }}</label>
+      <input id="new-user-name" type="text" name="name" autocomplete="off" required>
+    </div>
+    <div class="field">
+      <label for="new-user-email">{{ "auth-email"|t }}</label>
+      <input id="new-user-email" type="email" name="email" autocomplete="off" required>
+    </div>
+    <div class="field">
+      <label for="new-user-password">{{ "auth-password"|t }}</label>
+      <input id="new-user-password" type="password" name="password" autocomplete="new-password"
+             minlength="12" maxlength="128" required>
+    </div>
+    <div class="field checkbox-field">
+      <label><input type="checkbox" name="admin" value="1"> {{ "admin-users-is-admin"|t }}</label>
+    </div>
+    <button class="btn primary" type="submit">{{ "admin-users-create"|t }}</button>
+  </form>
+</section>
+
+<div class="admin-table-wrap">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th scope="col">{{ "auth-name"|t }}</th>
+        <th scope="col">{{ "admin-users-role"|t }}</th>
+        <th scope="col" class="num">{{ "admin-users-contributions"|t }}</th>
+        <th scope="col" class="num">{{ "admin-users-registered"|t }}</th>
+        <th scope="col"><span class="sr-only">{{ "admin-users-actions"|t }}</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td>
+          <div class="admin-user-name">{{ u.name }}</div>
+          <div class="admin-user-mail">{{ u.email }}</div>
+        </td>
+        <td>
+          {% if u.admin %}
+          <span class="admin-pill role-admin">{{ "admin-users-admin"|t }}</span>
+          {% else %}
+          <span class="admin-pill role-user">{{ "admin-users-member"|t }}</span>
+          {% endif %}
+        </td>
+        <td class="num">{{ u.contributions }}</td>
+        <td class="num">{{ u.created_human }}</td>
+        <td class="acts">
+          <div class="acts-group">
+            {% if u.can_toggle_admin %}
+            <form method="post" action="/admin/users/{{ u.id }}/admin">
+              <input type="hidden" name="admin" value="{% if u.admin %}0{% else %}1{% endif %}">
+              <button class="btn sm" type="submit">
+                {% if u.admin %}{{ "admin-users-revoke-admin"|t }}{% else %}{{ "admin-users-grant-admin"|t }}{% endif %}
+              </button>
+            </form>
+            {% endif %}
+            {% if u.can_delete %}
+            {#- Two-step: the first click loads the same page with this
+                row expanded into a confirmation, so a mis-click can't
+                delete an account. No JS confirm() — a dialog would block
+                the page and can be suppressed by the browser. -#}
+            {% if u.confirming_delete %}
+            <form method="post" action="/admin/users/{{ u.id }}/delete">
+              <button class="btn sm danger" type="submit">{{ "admin-users-delete-confirm"|t }}</button>
+            </form>
+            <a class="btn sm" href="/admin/users">{{ "action-cancel"|t }}</a>
+            {% else %}
+            <a class="btn sm danger" href="/admin/users?confirm={{ u.id }}">{{ "admin-users-delete"|t }}</a>
+            {% endif %}
+            {% endif %}
+          </div>
+          {% if u.confirming_delete %}
+          <p class="admin-confirm-note">{{ u.delete_warning }}</p>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

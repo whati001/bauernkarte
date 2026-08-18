@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select l.id as \"log_id!\", l.old_value as \"old_value!\", l.new_value,\n                  u.name as \"author?\", l.changed as \"at!\"\n           from edit_log l left join \"user\" u on u.id = l.changed_by\n           where l.entity_type = $1 and l.action = 'update'\n           order by l.changed desc limit 50",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "log_id!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "old_value!",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 2,
+        "name": "new_value",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 3,
+        "name": "author?",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "at!",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "51eb70231e4fb48f2d14912676964824e557273cfa4bd5c3a6cba7beb6a2cae1"
+}

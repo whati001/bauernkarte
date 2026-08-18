@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select live.name from product deleted_row\n           join product live on live.name = deleted_row.name\n                            and live.id <> deleted_row.id and not live.deleted\n           where deleted_row.id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "name",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "7a5ebbf4e35ef5a707b300357616ef3e8aca09b4d3250b227fbf8fe78a28f2a4"
+}

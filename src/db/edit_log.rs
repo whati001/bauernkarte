@@ -11,6 +11,12 @@ use sqlx::PgPool;
 pub enum EditAction {
     Update,
     Delete,
+    /// The three below are admin-only, and exist so the moderation UI
+    /// leaves a trail of who acted on what — the migration that widened
+    /// `edit_log_action_check` is what makes them storable.
+    Approve,
+    Reject,
+    Restore,
 }
 
 impl EditAction {
@@ -18,6 +24,9 @@ impl EditAction {
         match self {
             EditAction::Update => "update",
             EditAction::Delete => "delete",
+            EditAction::Approve => "approve",
+            EditAction::Reject => "reject",
+            EditAction::Restore => "restore",
         }
     }
 }

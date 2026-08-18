@@ -1,0 +1,44 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select s.id, s.name as \"title!\", co.name as \"subtitle?\",\n                      u.name as \"author?\", s.modified as \"at!\"\n               from store s\n               join company co on co.id = s.company\n               left join \"user\" u on u.id = s.modified_by\n               where s.deleted order by s.modified desc",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "title!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "subtitle?",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "author?",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "at!",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "c80966e8ed919deca1170dcd56a3a9bfe5e1ca6042d722f92b6a28b412b309b3"
+}

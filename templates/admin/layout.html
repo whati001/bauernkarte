@@ -1,0 +1,73 @@
+{#- Full-page admin shell. Its own document, not the map layout: the
+    admin area has no map, no sidebar and no Datastar signal set, so
+    reusing layout.html would pull in Leaflet, map.js and a store search
+    that has nothing to act on. The navbar is the shared partial, so the
+    brand, the language switch and the helmet stay identical to the rest
+    of the app.
+
+    Plain forms and full-page navigation throughout, deliberately: the
+    map side is Datastar-driven because a search that reloads the page
+    would lose the map viewport. Nothing here has that problem, and a
+    POST-then-redirect is both simpler and more robust for actions that
+    change the database. -#}
+<!doctype html>
+<html lang="{{ current_locale }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{{ title }} — {{ "admin-title"|t }}</title>
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+  <link rel="manifest" href="/static/manifest.webmanifest">
+  <meta name="theme-color" content="#f5efe4" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#15120e" media="(prefers-color-scheme: dark)">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body class="admin-body">
+  {{ navbar_html|safe }}
+
+  <div class="admin-shell">
+    <nav class="admin-rail" aria-label="{{ "admin-nav-label"|t }}">
+      <span class="admin-rail-title">{{ "admin-title"|t }}</span>
+
+      <a class="admin-rail-item" href="/admin/users"
+         {% if section == "users" %}aria-current="page"{% endif %}>
+        {% include "icons/users.svg" %}
+        {{ "admin-nav-users"|t }}
+      </a>
+
+      {% for s in sections %}
+      <a class="admin-rail-item" href="/admin/{{ s.slug }}"
+         {% if section == s.slug %}aria-current="page"{% endif %}>
+        {#- One icon per section. Spelled out rather than looped because
+            `include` needs a literal path — and the five are exactly the
+            icons the rest of the app already uses for these things, so a
+            company reads the same here as on a store card. -#}
+        {% if s.slug == "companies" %}{% include "icons/building-2.svg" %}
+        {% else if s.slug == "stores" %}{% include "icons/store.svg" %}
+        {% else if s.slug == "products" %}{% include "icons/package.svg" %}
+        {% else if s.slug == "offers" %}{% include "icons/tag.svg" %}
+        {% else %}{% include "icons/image.svg" %}{% endif %}
+        {{ s.label }}
+        {% if s.pending > 0 %}<span class="admin-count">{{ s.pending }}</span>{% endif %}
+      </a>
+      {% endfor %}
+
+      <div class="admin-rail-sep"></div>
+      <a class="admin-rail-item admin-rail-back" href="/">
+        {% include "icons/chevron-left.svg" %}
+        {{ "admin-back-to-map"|t }}
+      </a>
+    </nav>
+
+    <main class="admin-content">
+      {% if let Some(msg) = flash %}
+      <div class="form-success">{% include "icons/circle-check.svg" %} {{ msg }}</div>
+      {% endif %}
+      {% if let Some(msg) = flash_error %}
+      <div class="form-error">{% include "icons/triangle-alert.svg" %} {{ msg }}</div>
+      {% endif %}
+      {{ content_html|safe }}
+    </main>
+  </div>
+</body>
+</html>

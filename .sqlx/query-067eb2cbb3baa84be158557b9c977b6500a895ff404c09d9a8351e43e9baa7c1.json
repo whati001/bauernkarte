@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "select id, name, email::text as \"email!\", pwd_hash, verified, created, modified\n           from \"user\" where id = $1",
+  "query": "select id, name, email::text as \"email!\", pwd_hash, verified, admin, created, modified\n           from \"user\" where email = $1",
   "describe": {
     "columns": [
       {
@@ -30,18 +30,28 @@
       },
       {
         "ordinal": 5,
+        "name": "admin",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
         "name": "created",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 6,
+        "ordinal": 7,
         "name": "modified",
         "type_info": "Timestamptz"
       }
     ],
     "parameters": {
       "Left": [
-        "Int8"
+        {
+          "Custom": {
+            "name": "citext",
+            "kind": "Simple"
+          }
+        }
       ]
     },
     "nullable": [
@@ -51,8 +61,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "21953a8bbc65b17148d98437c754d6b271d28b7e2f2ac581f14f00ef430a1268"
+  "hash": "067eb2cbb3baa84be158557b9c977b6500a895ff404c09d9a8351e43e9baa7c1"
 }

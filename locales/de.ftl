@@ -212,3 +212,69 @@ password-rule-length-error = Das Passwort muss mindestens 12 Zeichen haben.
 password-rule-too-long-error = Das Passwort darf höchstens 128 Zeichen haben.
 password-rule-not-common-error = Dieses Passwort wird zu häufig verwendet. Bitte wähle ein anderes.
 password-rule-not-personal-error = Das Passwort darf deinen Namen oder deine E-Mail-Adresse nicht enthalten.
+
+## Adminbereich
+admin-title = Adminbereich
+admin-nav-label = Adminbereiche
+admin-back-to-map = Zurück zur Karte
+admin-nav-users = Benutzer
+admin-nav-companies = Firmen
+admin-nav-stores = Geschäfte
+admin-nav-products = Produkte
+admin-nav-offers = Angebote
+admin-nav-images = Bilder
+
+admin-blurb-companies = Der Betrieb hinter einem Geschäft. Eine Firma kann mehrere Geschäfte haben, deshalb wird sie getrennt geprüft.
+admin-blurb-stores = Der Verkaufsort selbst, mit Position und Öffnungszeiten. Neue Einträge sind öffentlich unsichtbar, bis sie hier freigegeben werden.
+admin-blurb-products = Der gemeinsame Katalog. Ein Produkt existiert einmal und wird von beliebig vielen Geschäften angeboten.
+admin-blurb-offers = Die Verbindung „dieses Geschäft führt dieses Produkt“, samt Saison. Ein neues Angebot legt kein neues Produkt an.
+admin-blurb-images = Hochgeladene Produktbilder — das Einzige, was Besucher unverändert zu sehen bekommen.
+
+admin-tab-pending = Offen
+admin-tab-changes = Änderungen
+admin-tab-deleted = Gelöscht
+admin-queue-empty = Hier ist gerade nichts zu tun.
+
+admin-pill-new = Neu
+admin-pill-deleted = Gelöscht
+admin-pill-edited = Bearbeitet
+
+admin-action-view = Ansehen
+admin-action-approve = Freigeben
+admin-action-reject = Ablehnen
+admin-action-restore = Wiederherstellen
+admin-action-revert = Zurücknehmen
+
+admin-error-name-taken = Der Name ist inzwischen wieder vergeben. Benenne den bestehenden Eintrag um und versuche es erneut.
+
+## Adminbereich — Benutzer
+admin-users-heading = Benutzer
+admin-users-blurb = Anlegen, Adminrechte vergeben und Konten entfernen.
+admin-users-new = Benutzer anlegen
+admin-users-create = Anlegen
+admin-users-is-admin = Adminrechte geben
+admin-users-role = Rolle
+admin-users-contributions = Beiträge
+admin-users-registered = Registriert
+admin-users-actions = Aktionen
+admin-users-admin = Admin
+admin-users-member = Benutzer
+admin-users-grant-admin = Zum Admin machen
+admin-users-revoke-admin = Adminrechte entziehen
+admin-users-delete = Löschen
+admin-users-delete-confirm = Wirklich löschen
+admin-users-delete-warning =
+    { $count ->
+        [0] Dieses Konto hat keine Einträge. Löschen lässt sich nicht rückgängig machen.
+        [one] Ein Eintrag dieses Kontos bleibt bestehen, verliert aber den Urheber. Löschen lässt sich nicht rückgängig machen.
+       *[other] { $count } Einträge dieses Kontos bleiben bestehen, verlieren aber den Urheber. Löschen lässt sich nicht rückgängig machen.
+    }
+admin-users-created = Benutzer angelegt.
+admin-users-role-changed = Rolle geändert.
+admin-users-deleted = Benutzer gelöscht.
+admin-users-error-invalid = Name oder E-Mail-Adresse fehlt oder ist ungültig.
+admin-users-error-exists = Diese E-Mail-Adresse ist bereits registriert.
+admin-users-error-password = Das Passwort erfüllt die Richtlinie nicht.
+admin-users-error-self = Das eigene Konto lässt sich hier nicht ändern.
+admin-users-error-seed = Das eingerichtete Admin-Konto ist der Weg zurück ins System und bleibt unverändert.
+admin-users-error-last-admin = Das ist der letzte Admin — sonst kommt niemand mehr in diesen Bereich.

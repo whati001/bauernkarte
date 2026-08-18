@@ -203,7 +203,7 @@ pub async fn register(
     auth::log_in(&session, user.id).await.map_err(AppError::from)?;
     tracing::info!(user_id = %user.id, "user registered");
 
-    let navbar_html = crate::templates::render_navbar(Some(user.name.clone()), nav_products(&state).await?);
+    let navbar_html = crate::templates::render_navbar(Some(&user), nav_products(&state).await?);
     // Previously this only patched #navbar, leaving the now-stale
     // registration form on screen with no visible confirmation beyond
     // the navbar changing — easy to miss. Now also swaps #sidebar to a
@@ -248,7 +248,7 @@ pub async fn login(
     auth::log_in(&session, user.id).await.map_err(AppError::from)?;
     tracing::info!(user_id = %user.id, "user logged in");
 
-    let navbar_html = crate::templates::render_navbar(Some(user.name.clone()), nav_products(&state).await?);
+    let navbar_html = crate::templates::render_navbar(Some(&user), nav_products(&state).await?);
     let sidebar_html = crate::templates::render_confirmation(&t_arg("auth-welcome-back", &user.name));
     Ok(Sse::new(stream::iter(vec![
         Ok(patch_signals(&json!({ "loggedIn": true }))),
@@ -331,7 +331,7 @@ pub async fn update_profile(
         pending,
         success_message: Some(i18n::translate(i18n::current_locale(), "account-profile-saved")),
     });
-    let navbar_html = crate::templates::render_navbar(Some(updated.name.clone()), nav_products(&state).await?);
+    let navbar_html = crate::templates::render_navbar(Some(&updated), nav_products(&state).await?);
     Ok(Sse::new(stream::iter(vec![
         Ok(patch_elements_at("#sidebar", "inner", &html)),
         Ok(patch_elements_at("#navbar", "outer", &navbar_html)),

@@ -1,4 +1,5 @@
 pub mod account;
+pub mod admin;
 pub mod company;
 pub mod image;
 pub mod locale;

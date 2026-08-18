@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select entity_id as \"entity_id!\", old_value as \"old_value!\"\n           from edit_log where id = $1 and entity_type = $2 and action = 'update'",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "entity_id!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "old_value!",
+        "type_info": "Jsonb"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "12b4667d77ada3af827c704ccb6b47e0be4eb18ffa12fac30b83c7bcea09040b"
+}

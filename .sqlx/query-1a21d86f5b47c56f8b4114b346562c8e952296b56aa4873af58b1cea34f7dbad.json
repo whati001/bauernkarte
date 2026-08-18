@@ -1,0 +1,44 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select c.id, c.name as \"title!\", null as \"subtitle?\",\n                      u.name as \"author?\", c.created as \"at!\"\n               from company c left join \"user\" u on u.id = c.created_by\n               where not c.approved and not c.deleted order by c.created",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "title!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "subtitle?",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "author?",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "at!",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      null,
+      false,
+      false
+    ]
+  },
+  "hash": "1a21d86f5b47c56f8b4114b346562c8e952296b56aa4873af58b1cea34f7dbad"
+}

@@ -3,6 +3,7 @@ pub mod company;
 pub mod detail;
 pub mod edit_log;
 pub mod image;
+pub mod moderation;
 pub mod pending;
 pub mod product;
 pub mod rating;

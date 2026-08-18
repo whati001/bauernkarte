@@ -212,3 +212,69 @@ password-rule-length-error = The password must be at least 12 characters long.
 password-rule-too-long-error = The password must be at most 128 characters long.
 password-rule-not-common-error = That password is used too commonly. Please choose a different one.
 password-rule-not-personal-error = The password must not contain your name or email address.
+
+## Admin area
+admin-title = Admin area
+admin-nav-label = Admin sections
+admin-back-to-map = Back to the map
+admin-nav-users = Users
+admin-nav-companies = Companies
+admin-nav-stores = Stores
+admin-nav-products = Products
+admin-nav-offers = Offers
+admin-nav-images = Images
+
+admin-blurb-companies = The business behind a store. One company can run several stores, which is why it is reviewed separately.
+admin-blurb-stores = The place itself, with its position and opening hours. New entries stay invisible to the public until approved here.
+admin-blurb-products = The shared catalog. A product exists once and is offered by any number of stores.
+admin-blurb-offers = The link "this store sells this product", with its season. A new offer does not create a new product.
+admin-blurb-images = Uploaded product photos — the one thing visitors see exactly as submitted.
+
+admin-tab-pending = Pending
+admin-tab-changes = Changes
+admin-tab-deleted = Deleted
+admin-queue-empty = Nothing to do here right now.
+
+admin-pill-new = New
+admin-pill-deleted = Deleted
+admin-pill-edited = Edited
+
+admin-action-view = View
+admin-action-approve = Approve
+admin-action-reject = Reject
+admin-action-restore = Restore
+admin-action-revert = Revert
+
+admin-error-name-taken = That name is in use again. Rename the existing entry and try once more.
+
+## Admin area — users
+admin-users-heading = Users
+admin-users-blurb = Create accounts, grant admin rights, and remove accounts.
+admin-users-new = Create user
+admin-users-create = Create
+admin-users-is-admin = Grant admin rights
+admin-users-role = Role
+admin-users-contributions = Contributions
+admin-users-registered = Registered
+admin-users-actions = Actions
+admin-users-admin = Admin
+admin-users-member = User
+admin-users-grant-admin = Make admin
+admin-users-revoke-admin = Revoke admin
+admin-users-delete = Delete
+admin-users-delete-confirm = Yes, delete
+admin-users-delete-warning =
+    { $count ->
+        [0] This account has no entries. Deleting cannot be undone.
+        [one] One entry by this account stays in the catalog but loses its author. Deleting cannot be undone.
+       *[other] { $count } entries by this account stay in the catalog but lose their author. Deleting cannot be undone.
+    }
+admin-users-created = User created.
+admin-users-role-changed = Role changed.
+admin-users-deleted = User deleted.
+admin-users-error-invalid = The name or email address is missing or invalid.
+admin-users-error-exists = That email address is already registered.
+admin-users-error-password = The password does not meet the policy.
+admin-users-error-self = You cannot change your own account here.
+admin-users-error-seed = The provisioned admin account is the way back into the system and stays as it is.
+admin-users-error-last-admin = That is the last admin — nobody could reach this area afterwards.

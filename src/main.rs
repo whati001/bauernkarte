@@ -54,6 +54,11 @@ async fn main() -> anyhow::Result<()> {
     // tower-sessions-sqlx-store manages its own schema (a `tower_sessions`
     // Postgres schema + `session` table) — no hand-written migration for
     // it (task 2.9's decision).
+    // Gives the seeded admin account its password on the first startup
+    // that finds it without one — see auth/admin_seed.rs for why a
+    // migration can't do this itself.
+    auth::admin_seed::apply(&pool, config.admin_password.as_deref()).await?;
+
     let session_store = PostgresStore::new(pool.clone());
     session_store.migrate().await?;
     tracing::debug!("session store schema migrated");
@@ -153,6 +158,19 @@ async fn main() -> anyhow::Result<()> {
         .route("/store-product/{id}/image/new", get(handlers::image::new_form))
         .route("/image/{id}", get(handlers::image::show))
         .route("/locale/{code}", get(handlers::locale::switch))
+        // Admin area. Every handler behind these takes `AdminUser`, which
+        // 404s for everyone else — the routes exist for all visitors, the
+        // pages don't.
+        .route("/admin", get(handlers::admin::index))
+        .route("/admin/users", get(handlers::admin::users))
+        .route("/admin/users/new", post(handlers::admin::create_user))
+        .route("/admin/users/{id}/admin", post(handlers::admin::set_admin))
+        .route("/admin/users/{id}/delete", post(handlers::admin::delete_user))
+        .route("/admin/{slug}", get(handlers::admin::queue))
+        .route("/admin/{slug}/{id}/approve", post(handlers::admin::approve))
+        .route("/admin/{slug}/{id}/reject", post(handlers::admin::reject))
+        .route("/admin/{slug}/{id}/restore", post(handlers::admin::restore))
+        .route("/admin/{slug}/revert/{log_id}", post(handlers::admin::revert))
         .merge(rate_limited)
         .nest_service("/static", ServeDir::new("static"))
         // Served from the root, not from `/static/`, even though that's

@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "update \"user\" set name = $2, email = $3, modified = now()\n           where id = $1\n           returning id, name, email::text as \"email!\", pwd_hash, verified, created, modified",
+  "query": "update \"user\" set name = $2, email = $3, modified = now()\n           where id = $1\n           returning id, name, email::text as \"email!\", pwd_hash, verified, admin, created, modified",
   "describe": {
     "columns": [
       {
@@ -30,11 +30,16 @@
       },
       {
         "ordinal": 5,
+        "name": "admin",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
         "name": "created",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 6,
+        "ordinal": 7,
         "name": "modified",
         "type_info": "Timestamptz"
       }
@@ -58,8 +63,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "4d0fab68b34eb0b3dc9c2948d188fadef04bdcb17a2d3fe5dfa65a073371fd10"
+  "hash": "40d8603d560d4364f82c73916938c19d74b92548da9e82c3c80517965a9b565b"
 }
