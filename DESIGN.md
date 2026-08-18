@@ -89,6 +89,21 @@ Card actions carry a short visible label (`Bearbeiten`) plus the full
 phrase as `aria-label`/`title`: the card already supplies the noun, and
 the long German form doesn't fit beside a title at sidebar width.
 
+### The way out goes at the top
+
+Anywhere a view can be left — a store detail, a form, the account page,
+the Impressum, the admin rail — the back control is the **first** thing
+in it, as `.back-link` inside a `.detail-header`: chevron, then where it
+goes ("Zurück zur Suche", "Zurück zur Karte"). Muted
+(`--text-secondary`, firming to `--text-primary`), `font-weight: 600`,
+`--font-size-sm`, and a full `--touch-target` tall.
+
+Top, not bottom, and always the same treatment. A back link at the foot
+of a scrolling panel has to be scrolled to before it can be used, and one
+that changes shape between views stops being recognisable as the exit.
+It is deliberately *not* a `button.primary` or a rail item — leaving is
+never the action a screen is asking for.
+
 ## Sidebar footer
 
 The panel column is `#sidebar-column`: a flex column holding `#sidebar`
@@ -229,13 +244,14 @@ else — moderation is part of the product, not a separate tool.
   {{ navbar }}                       <!-- the shared partial, unchanged -->
   <div class="admin-shell">
     <nav class="admin-rail">
+      <a class="admin-rail-back back-link" href="/">‹ Zurück zur Karte</a>
       <span class="admin-rail-title">Verwaltung</span>
       <a class="admin-rail-item" aria-current="page" href="/admin/stores">
         {% include "icons/store.svg" %} Geschäfte
         <span class="admin-count">3</span>
       </a>
       <div class="admin-rail-sep"></div>
-      <a class="admin-rail-item admin-rail-back" href="/">…</a>
+      <a class="admin-rail-item" href="/admin/site-info">…</a>
     </nav>
     <main class="admin-content">
       <div class="admin-head"><h2>…</h2><p>…</p></div>
@@ -267,11 +283,14 @@ else — moderation is part of the product, not a separate tool.
 - `.admin-shell` — `grid-template-columns: 248px 1fr`. Collapses to one
   column at `≤900px`, where the rail becomes a wrapping row.
 - `.admin-rail` — `--shell` background, full window height, so the tan
-  surface reaches the bottom edge and `.admin-rail-back` (pushed down by
-  `margin-top: auto`) sits at the foot of the window rather than under
-  the last link. `.admin-rail-title` labels it; `.admin-rail-sep` rules
-  the back link off from the sections. It carries `overflow-y: auto` of
+  surface reaches the bottom edge instead of stopping under the last
+  link. Order inside it: `.admin-rail-back` first (see "The way out goes
+  at the top"), then `.admin-rail-title`, the moderation sections, an
+  `.admin-rail-sep`, then configuration. It carries `overflow-y: auto` of
   its own for the short-window case, since the page can no longer scroll.
+- `.admin-rail-back` — the same `.back-link` every sidebar panel opens
+  with; the admin class only nudges the padding so its chevron lines up
+  with the section icons under it.
 - `.admin-rail-item` — a section link. Selected is
   `[aria-current="page"]`, in the same filled-accent shape as every other
   "this is on" control in the app.
@@ -346,12 +365,15 @@ else — moderation is part of the product, not a separate tool.
   and the role chip inherited the layout's `min-height: 660px` — a 660px
   tall pill. The word "admin" now describes a great many things in this
   codebase; a bare `.admin` is a collision waiting to happen.
-- **Configuration sits below the queues, past the separator.**
-  "Seiteninfo" edits the single `site_info` row behind `/impressum` — one
-  form, no approve/reject, because it's settings an admin owns rather
-  than a submission someone else made. `.admin-field-row` puts two short
-  fields (postcode + city) on one line and collapses to one column at
-  `≤640px`.
+- **`.admin-rail-sep` divides work from settings.** Above it, sections
+  with something waiting for you; below it, "Seiteninfo", which edits the
+  single `site_info` row behind `/impressum` — one form, no
+  approve/reject, because it's configuration an admin owns rather than a
+  submission someone else made. (The rule used to fence off the back link
+  at the foot of the rail; that link is now at the top, so the separator
+  marks the only boundary left that means anything.)
+  `.admin-field-row` puts two short fields (postcode + city) on one line
+  and collapses to one column at `≤640px`.
 - **The helmet (`.nav-link.nav-admin`) sits outside `.nav-menu`.** It
   stays visible at every width instead of folding into the collapsed
   menu — it's the control an admin reaches for repeatedly and it costs
@@ -366,3 +388,4 @@ else — moderation is part of the product, not a separate tool.
 5. Text goes in `locales/de.ftl` **and** `locales/en.ftl` — the startup
    check fails on drift.
 6. Icon-only controls get an `aria-label`.
+7. If the view can be left, the way out is a `.back-link` at the top.

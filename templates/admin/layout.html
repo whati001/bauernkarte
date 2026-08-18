@@ -27,6 +27,15 @@
 
   <div class="admin-shell">
     <nav class="admin-rail" aria-label="{{ "admin-nav-label"|t }}">
+      {#- Back link first, matching every sidebar panel in the app
+          (.detail-header > .back-link): the way out is at the top, not
+          buried under the section list. Same muted, chevron-led
+          treatment, so it reads as an exit rather than a seventh
+          section. -#}
+      <a class="admin-rail-back back-link" href="/">
+        {% include "icons/chevron-left.svg" %}
+        {{ "admin-back-to-map"|t }}
+      </a>
       <span class="admin-rail-title">{{ "admin-title"|t }}</span>
 
       <a class="admin-rail-item" href="/admin/users"
@@ -53,18 +62,18 @@
       {% endfor %}
 
       {#- Configuration rather than a queue, so it sits below the
-          moderation sections with the separator between them. -#}
+          moderation sections with a rule between them. The separator
+          divides "work waiting for you" from "settings you own" — it
+          used to sit at the foot of the rail fencing off the back link,
+          which is now at the top with the rest of the app's back links. -#}
+      <div class="admin-rail-sep"></div>
       <a class="admin-rail-item" href="/admin/site-info"
          {% if section == "site-info" %}aria-current="page"{% endif %}>
         {% include "icons/building-2.svg" %}
         {{ "admin-nav-site-info"|t }}
       </a>
 
-      <div class="admin-rail-sep"></div>
-      <a class="admin-rail-item admin-rail-back" href="/">
-        {% include "icons/chevron-left.svg" %}
-        {{ "admin-back-to-map"|t }}
-      </a>
+
     </nav>
 
     <main class="admin-content">

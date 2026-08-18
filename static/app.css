@@ -1912,7 +1912,14 @@ html:has(.admin-body) { height: 100dvh; overflow: hidden; }
   font-weight: 600;
 }
 .admin-rail-sep { height: 1px; margin: var(--space-3) var(--space-2); background: var(--border); }
-.admin-rail-back { margin-top: auto; }
+/* Reuses .back-link, the same control every sidebar panel opens with —
+   only the padding differs, to line its chevron up with the section
+   icons below it rather than with a panel's left edge. */
+.admin-rail-back {
+  padding-left: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+.admin-rail-back:hover { text-decoration: none; }
 
 /* Pending count. --warning, not --accent: it marks work waiting, which
    is a different thing from the accent's "this is selected/primary". */
@@ -2102,7 +2109,7 @@ html:has(.admin-body) { height: 100dvh; overflow: hidden; }
     overflow-y: visible;
   }
   .admin-rail-title, .admin-rail-sep { display: none; }
-  .admin-rail-back { margin-top: 0; }
+  .admin-rail-back { margin-bottom: 0; }
   .admin-count { margin-left: var(--space-1); }
   .admin-row { grid-template-columns: 1fr; }
   .admin-row-actions { justify-content: flex-start; }
