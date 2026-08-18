@@ -257,20 +257,29 @@ else — moderation is part of the product, not a separate tool.
 
 ### Shell
 
-- `.admin-body` — the `<body>` class. The map layout pins `html`/`body`
-  to `100dvh` with `overflow: hidden` so the map can own touch gestures;
-  a moderation queue is a document and has to scroll, so this (with
-  `html:has(.admin-body)`) undoes exactly that.
+- `.admin-body` — the `<body>` class. Pins `html`/`body` to `100dvh`
+  with `overflow: hidden`, the same fixed shell the map layout uses, for
+  a different reason: it's what lets the rail run the full height of the
+  window. As a scrolling document the rail was only as tall as its own
+  links, its surface stopped partway down with `--page-bg` showing
+  underneath, and the back link at its foot landed wherever that
+  happened to be.
 - `.admin-shell` — `grid-template-columns: 248px 1fr`. Collapses to one
   column at `≤900px`, where the rail becomes a wrapping row.
-- `.admin-rail` — `--shell` background, `position: sticky`, so the
-  sections stay reachable down a long queue. `.admin-rail-title` labels
-  it, `.admin-rail-sep` rules off `.admin-rail-back` at the bottom.
+- `.admin-rail` — `--shell` background, full window height, so the tan
+  surface reaches the bottom edge and `.admin-rail-back` (pushed down by
+  `margin-top: auto`) sits at the foot of the window rather than under
+  the last link. `.admin-rail-title` labels it; `.admin-rail-sep` rules
+  the back link off from the sections. It carries `overflow-y: auto` of
+  its own for the short-window case, since the page can no longer scroll.
 - `.admin-rail-item` — a section link. Selected is
   `[aria-current="page"]`, in the same filled-accent shape as every other
   "this is on" control in the app.
-- `.admin-content` — the work pane. `min-width: 0`, so a wide table
-  scrolls inside its own box instead of pushing the grid wider.
+- `.admin-content` — the work pane, and the one scrolling region on the
+  page, the way `#sidebar` is on the map. `min-width: 0` so a wide table
+  scrolls inside its own box instead of pushing the grid wider, and
+  `min-height: 0` so the grid can shrink enough to give it a scrollbar
+  at all.
 - The map's global search is hidden here (`.admin-body .nav-search`): it
   filters the map, and there is no map — a control that appears to do
   nothing is worse than an absent one.

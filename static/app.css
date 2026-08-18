@@ -1847,28 +1847,31 @@ button.rated:hover { filter: brightness(0.97); }
    two-column split is the rail and the work itself. It reuses the same
    tokens, .panel-card and .btn as the rest of the app on purpose —
    moderation is part of the product, not a separate tool. */
+/* Same fixed shell as the map layout, for a different reason: here it's
+   what lets the rail run the full height of the window. Left as a
+   scrolling document, the rail was only as tall as its own links and its
+   surface stopped partway down the page, with `--page-bg` showing
+   underneath — and the "Zurück zur Karte" link at its foot sat wherever
+   that happened to be rather than at the bottom.
+   The queue scrolls inside .admin-content instead. */
 .admin-body {
   display: flex;
   flex-direction: column;
-  /* The map layout pins html/body to 100dvh with overflow hidden so the
-     map can own the gestures. An admin queue is a document: it scrolls. */
-  height: auto;
-  min-height: 100dvh;
-  overflow: auto;
+  height: 100dvh;
+  overflow: hidden;
 }
-html:has(.admin-body) { height: auto; overflow: auto; }
+html:has(.admin-body) { height: 100dvh; overflow: hidden; }
 
 .admin-shell {
   display: grid;
   grid-template-columns: 248px 1fr;
   flex: 1;
+  /* Without this the grid refuses to shrink below its content and the
+     children never get a scrollbar of their own. */
   min-height: 0;
-  align-items: start;
 }
 
 .admin-rail {
-  position: sticky;
-  top: 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
@@ -1877,6 +1880,10 @@ html:has(.admin-body) { height: auto; overflow: auto; }
            calc(var(--space-3) + env(safe-area-inset-left));
   background: var(--shell);
   border-right: 1px solid var(--border);
+  /* Its own scrollbar, for the day the section list outgrows a short
+     window — the page itself can't scroll any more. */
+  overflow-y: auto;
+  min-height: 0;
 }
 .admin-rail-title {
   padding: 0 var(--space-2) var(--space-2);
@@ -1927,6 +1934,9 @@ html:has(.admin-body) { height: auto; overflow: auto; }
 }
 
 .admin-content {
+  /* The one scrolling region on the page, the way #sidebar is on the map. */
+  overflow-y: auto;
+  min-height: 0;
   padding: var(--space-5) calc(var(--space-5) + env(safe-area-inset-right))
            calc(var(--space-6) + env(safe-area-inset-bottom)) var(--space-5);
   min-width: 0;
@@ -2083,11 +2093,13 @@ html:has(.admin-body) { height: auto; overflow: auto; }
 @media (max-width: 900px) {
   .admin-shell { grid-template-columns: 1fr; }
   .admin-rail {
-    position: static;
     flex-direction: row;
     flex-wrap: wrap;
     border-right: none;
     border-bottom: 1px solid var(--border);
+    /* Stacked, the rail is a short auto-height row — it shouldn't be its
+       own scroll box, and the content below it takes the rest. */
+    overflow-y: visible;
   }
   .admin-rail-title, .admin-rail-sep { display: none; }
   .admin-rail-back { margin-top: 0; }
