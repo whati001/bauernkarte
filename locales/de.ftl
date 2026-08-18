@@ -45,7 +45,7 @@ auth-login-heading = Login
 auth-register-heading = Registrieren
 auth-email = E-Mail
 auth-password = Passwort
-auth-password-hint = Passwort (mind. 8 Zeichen)
+auth-password-hint = Passwort (mind. 12 Zeichen)
 auth-name = Name
 auth-no-account = Noch kein Konto?
 auth-have-account = Schon registriert?
@@ -56,7 +56,7 @@ auth-register-success = Willkommen, { $name }! Deine Registrierung war erfolgrei
 account-heading = Konto
 account-change-password = Passwort ändern
 account-current-password = Aktuelles Passwort
-account-new-password = Neues Passwort (mind. 8 Zeichen)
+account-new-password = Neues Passwort
 account-pending-heading = Meine Einträge (in Prüfung)
 account-pending-empty = Keine ausstehenden Einträge.
 account-profile-saved = Deine Kontodaten wurden gespeichert.
@@ -190,3 +190,25 @@ map-sidebar-width = Breite der Seitenleiste ändern
 ## Language
 language-de = Deutsch
 language-en = Englisch
+
+## Offline (PWA fallback page)
+offline-title = Keine Verbindung
+offline-body = BauernKarte braucht eine Internetverbindung, um Geschäfte und Produkte zu laden. Sobald du wieder online bist, funktioniert alles wie gewohnt.
+offline-retry = Erneut versuchen
+
+## Navbar — collapsed menu
+nav-menu-toggle = Menü öffnen oder schließen
+
+## Credential checklists (register + account forms)
+policy-rule-met = erfüllt
+policy-rule-unmet = noch nicht erfüllt
+email-rule-valid = Gültige E-Mail-Adresse
+password-rule-length = Mindestens 12 Zeichen
+password-rule-not-common = Kein häufig verwendetes Passwort
+password-rule-not-personal = Enthält nicht deinen Namen oder deine E-Mail-Adresse
+
+## Password policy — server-side rejection messages
+password-rule-length-error = Das Passwort muss mindestens 12 Zeichen haben.
+password-rule-too-long-error = Das Passwort darf höchstens 128 Zeichen haben.
+password-rule-not-common-error = Dieses Passwort wird zu häufig verwendet. Bitte wähle ein anderes.
+password-rule-not-personal-error = Das Passwort darf deinen Namen oder deine E-Mail-Adresse nicht enthalten.

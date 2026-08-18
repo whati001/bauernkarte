@@ -45,7 +45,7 @@ auth-login-heading = Login
 auth-register-heading = Register
 auth-email = Email
 auth-password = Password
-auth-password-hint = Password (min. 8 characters)
+auth-password-hint = Password (min. 12 characters)
 auth-name = Name
 auth-no-account = No account yet?
 auth-have-account = Already registered?
@@ -56,7 +56,7 @@ auth-register-success = Welcome, { $name }! Your registration was successful.
 account-heading = Account
 account-change-password = Change password
 account-current-password = Current password
-account-new-password = New password (min. 8 characters)
+account-new-password = New password
 account-pending-heading = My submissions (pending review)
 account-pending-empty = No pending submissions.
 account-profile-saved = Your account details were saved.
@@ -190,3 +190,25 @@ map-sidebar-width = Change sidebar width
 ## Language
 language-de = German
 language-en = English
+
+## Offline (PWA fallback page)
+offline-title = No connection
+offline-body = BauernKarte needs an internet connection to load stores and products. Everything works as usual again once you're back online.
+offline-retry = Try again
+
+## Navbar — collapsed menu
+nav-menu-toggle = Open or close menu
+
+## Credential checklists (register + account forms)
+policy-rule-met = met
+policy-rule-unmet = not met yet
+email-rule-valid = Valid email address
+password-rule-length = At least 12 characters
+password-rule-not-common = Not a commonly used password
+password-rule-not-personal = Doesn't contain your name or email address
+
+## Password policy — server-side rejection messages
+password-rule-length-error = The password must be at least 12 characters long.
+password-rule-too-long-error = The password must be at most 128 characters long.
+password-rule-not-common-error = That password is used too commonly. Please choose a different one.
+password-rule-not-personal-error = The password must not contain your name or email address.

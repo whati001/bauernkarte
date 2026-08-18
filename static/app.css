@@ -508,11 +508,21 @@ a:hover { text-decoration: underline; }
 .product-more-icon { display: inline-flex; color: var(--text-secondary); }
 .product-more-icon .icon { width: 1em; height: 1em; vertical-align: 0; }
 
+/* Anchor for the collapsed .nav-menu dropdown below. `flex-wrap` is
+   gone on purpose: wrapping is exactly the failure this collapses
+   instead of — see the nav-collapse block further down. */
 .nav-actions {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--space-1);
-  flex-wrap: wrap;
+}
+/* Expanded, this is the same inline row .nav-actions used to be; the
+   collapsed treatment lives in the nav-collapse block below. */
+.nav-menu {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
 }
 .nav-user-name {
   color: var(--text-secondary);
@@ -522,6 +532,88 @@ a:hover { text-decoration: underline; }
 }
 @media (min-width: 480px) {
   .nav-user-name { display: inline; }
+}
+
+/* The collapse toggle (Bootstrap's "navbar-toggler" in spirit). Hidden
+   until the row stops fitting — the rule that shows it is in the
+   nav-collapse block below, so this only describes what it looks like. */
+.nav-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch-target);
+  min-height: var(--touch-target);
+  padding: 0;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+}
+.nav-toggle:hover { background: var(--shell-2); color: var(--text-primary); }
+/* Open reads like every other "on" control in this app: filled accent,
+   accent-contrast glyph (DESIGN.md's single selected treatment). */
+.nav-toggle[aria-expanded="true"] {
+  color: var(--accent-contrast);
+  background: var(--accent);
+}
+.nav-toggle[aria-expanded="true"]:hover {
+  color: var(--accent-contrast);
+  background: var(--accent);
+  filter: brightness(1.08);
+}
+
+/* Collapsed navbar. Logged in, the row is brand + search + Konto + Neues
+   Geschäft + Logout + the visitor's name + the language switch; measured
+   in German (the longer catalog) that needs ~1100px, and under it the
+   actions used to wrap #navbar onto two and even three rows — every one
+   of those pixels comes off the map, which is the thing the app is. So
+   below the breakpoint they fold into a dropdown behind .nav-toggle and
+   #navbar keeps its one-row height at every width.
+
+   Anonymous visitors have no toggle to begin with (see navbar.html):
+   one login button and the language switch fit on the row down to
+   360px, and burying the app's only call to action behind a menu to
+   solve a problem it doesn't have would be a straight downgrade. */
+@media (max-width: 1100px) {
+  .nav-toggle { display: inline-flex; }
+
+  .nav-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + var(--space-2));
+    right: 0;
+    z-index: 1100;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-1);
+    min-width: 13rem;
+    padding: var(--space-1);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+  }
+  .nav-menu.open { display: flex; }
+
+  /* The name heads the menu instead of being one more tappable row —
+     shown unconditionally here, overriding the ≥480px rule above, since
+     in a dropdown there's room for it at any screen width. */
+  .nav-menu .nav-user-name {
+    display: block;
+    padding: var(--space-2);
+    margin-bottom: var(--space-1);
+    border-bottom: 1px solid var(--border);
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+  /* Left-aligned full-width rows: a menu, not a toolbar. */
+  .nav-menu .nav-link { justify-content: flex-start; }
+  /* The switch is a pair of chips, so it gets the menu's full width and
+     splits it rather than hugging the left edge at half size. */
+  .nav-menu .lang-switch {
+    margin: var(--space-1) var(--space-1) 0;
+  }
+  .nav-menu .lang-link { flex: 1; }
 }
 
 .nav-link {
@@ -1597,4 +1689,142 @@ button.rated:hover { filter: brightness(0.97); }
      style, so only the type is set here. */
   font-size: 16px;
   line-height: 1;
+}
+
+/* ============================================================
+   Installed app (PWA)
+   ============================================================ */
+/* Installed to a home screen the app runs in `display: standalone` —
+   no browser chrome, and `viewport-fit=cover` in layout.html's viewport
+   meta deliberately lets the page extend under a phone's status bar and
+   home indicator so the map fills the screen edge to edge. These insets
+   are what keeps the *content* out from under them. `env()` resolves to
+   0 wherever there's no cutout, which is every desktop browser and every
+   ordinary browser tab, so all of this is inert until it's needed —
+   that's why it isn't behind a `display-mode: standalone` media query.
+
+   Only the navbar (the topmost row) and the sidebar (the only scrollable
+   region, and the bottom one on the stacked mobile layout) need it; the
+   map is happy running under both edges, and the floating .map-fab
+   column sits below the navbar already. */
+#navbar {
+  padding-top: calc(var(--space-2) + env(safe-area-inset-top));
+  padding-left: calc(var(--space-4) + env(safe-area-inset-left));
+  padding-right: calc(var(--space-4) + env(safe-area-inset-right));
+}
+@media (max-width: 400px) {
+  #navbar {
+    padding-left: calc(var(--space-2) + env(safe-area-inset-left));
+    padding-right: calc(var(--space-2) + env(safe-area-inset-right));
+  }
+}
+/* Added to the panel's own bottom padding rather than set on #sidebar:
+   the inset has to sit inside the scroll container, or scrolling to the
+   end of a long result list still parks the last card under the home
+   indicator. Every sidebar partial's root is a .sidebar-panel, so this
+   reaches all of them. */
+.sidebar-panel { padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom)); }
+
+/* The offline fallback (templates/offline.html, served by the service
+   worker when a navigation can't reach the network). Deliberately
+   nothing like the rest of the app: no navbar, no map, no panel — one
+   centred card, so it reads as "the app couldn't load" rather than as a
+   broken version of the app. */
+.offline-page {
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  background: var(--shell);
+}
+.offline-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-3);
+  max-width: 26rem;
+  padding: var(--space-6) var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+.offline-card .icon { width: 2rem; height: 2rem; color: var(--warning); }
+.offline-card h1 { margin: 0; font-size: var(--font-size-lg); }
+.offline-card p { margin: 0; }
+/* `button.primary`'s fill is an element selector, so an <a> can't
+   inherit it — same restatement as .directions-btn above. */
+.offline-card .btn {
+  min-height: var(--touch-target);
+  padding-inline: var(--space-4);
+  color: var(--accent-contrast);
+  background: var(--accent);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+.offline-card .btn:hover { text-decoration: none; filter: brightness(1.08); }
+
+/* ============================================================
+   Credential checklists
+   ============================================================ */
+/* The rows under the email and password fields on the register and
+   account forms (templates/partials/credential_policy.html), lit up live
+   by static/credential-policy.js as the value satisfies each rule.
+
+   Only *satisfied* rows are highlighted. An unsatisfied row stays muted
+   rather than turning red: until the visitor has finished typing, a rule
+   they haven't reached yet isn't an error, and --critical is reserved
+   for destructive actions (DESIGN.md's colour table). The list reads as
+   a set of targets filling in, not as a form full of mistakes. */
+.policy-list {
+  list-style: none;
+  /* Sits inside .field, directly under the input it describes — so a
+     small gap below the box, and none above the next field's own
+     margin. (.field-hint's negative top margin is for the opposite
+     position, after the field.) */
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.policy-rule {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+.policy-rule.met { color: var(--accent); font-weight: 500; }
+
+/* Both state icons ship in the markup and CSS picks one, so the script
+   never has to build an SVG (or know which theme it's in). */
+.policy-icon { display: inline-flex; }
+.policy-rule .policy-icon-met,
+.policy-rule.met .policy-icon-unmet { display: none; }
+.policy-rule.met .policy-icon-met { display: inline-flex; }
+.policy-rule .policy-icon .icon { width: 1em; height: 1em; }
+
+/* Same trick for the screen-reader state: both labels are rendered
+   (translated, by Fluent) and the matching one is the only one exposed.
+   No aria-live — a rule flipping on every keystroke would talk over the
+   typing rather than help it; the state is read out when the field's
+   description is. */
+.policy-rule .policy-state-met,
+.policy-rule.met .policy-state-unmet { display: none; }
+.policy-rule.met .policy-state-met { display: inline; }
+
+/* Visually hidden but still announced. The clip-rect form rather than
+   `display: none`, which would take it out of the accessibility tree
+   along with everything else. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

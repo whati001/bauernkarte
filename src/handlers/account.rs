@@ -38,15 +38,71 @@ async fn nav_products(state: &AppState) -> AppResult<Vec<crate::models::RankedPr
     Ok(db::product::list_top_rated(&state.pool, crate::handlers::pages::NAV_PRODUCT_LIMIT).await?)
 }
 
-fn valid_email(email: &str) -> bool {
+/// Characters RFC 5322 allows unquoted in the local part, beyond
+/// alphanumerics. Quoted local parts (`"a b"@example.com`) are legal and
+/// rejected here anyway — see the note on `valid_email`.
+const LOCAL_SPECIALS: &str = ".!#$%&'*+/=?^_`{|}~-";
+
+/// Whether `email` is a plausible, deliverable-looking address.
+///
+/// Still short of full RFC 5322 (per design.md's "plausible email
+/// address" bar) and deliberately so: the grammar admits quoted local
+/// parts, comments, IP-literal domains and other forms no real signup
+/// uses, and accepting them buys nothing while widening what reaches the
+/// database. What this *does* now reject, and the previous two-line
+/// version didn't, is whitespace anywhere, several `@`s, empty or
+/// oversized labels, consecutive dots, leading/trailing dots and
+/// hyphens, and a numeric or single-character TLD.
+///
+/// **Mirrored in `static/credential-policy.js`** (`isValidEmail`) so the
+/// live checkmark under the field agrees with what this accepts. Change
+/// one, change the other; the tests below are the specification.
+pub fn valid_email(email: &str) -> bool {
     let email = email.trim();
-    // Deliberately loose per design.md's "plausible email address" bar —
-    // full RFC 5322 validation is out of scope, this just rejects the
-    // obviously-malformed.
-    let Some((local, domain)) = email.split_once('@') else {
+    // 254 is the practical ceiling on an SMTP forward path (RFC 5321
+    // §4.5.3.1.3), which is the number that actually constrains a
+    // deliverable address.
+    if email.len() < 3 || email.len() > 254 {
+        return false;
+    }
+    let mut parts = email.split('@');
+    let (Some(local), Some(domain), None) = (parts.next(), parts.next(), parts.next()) else {
         return false;
     };
-    !local.is_empty() && domain.contains('.') && !domain.starts_with('.') && !domain.ends_with('.')
+    valid_local_part(local) && valid_domain(domain)
+}
+
+fn valid_local_part(local: &str) -> bool {
+    if local.is_empty() || local.len() > 64 {
+        return false;
+    }
+    if local.starts_with('.') || local.ends_with('.') || local.contains("..") {
+        return false;
+    }
+    local
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || LOCAL_SPECIALS.contains(c))
+}
+
+fn valid_domain(domain: &str) -> bool {
+    if domain.is_empty() || domain.len() > 253 || !domain.contains('.') {
+        return false;
+    }
+    let labels: Vec<&str> = domain.split('.').collect();
+    let all_labels_well_formed = labels.iter().all(|label| {
+        !label.is_empty()
+            && label.len() <= 63
+            && !label.starts_with('-')
+            && !label.ends_with('-')
+            && label.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
+    });
+    // A real TLD is alphabetic and at least two characters — this is what
+    // turns away `user@host` (no dot at all is caught above), `a@b.c` and
+    // `a@1.2.3.4`.
+    let tld_looks_real = labels
+        .last()
+        .is_some_and(|tld| tld.len() >= 2 && tld.chars().all(|c| c.is_ascii_alphabetic()));
+    all_labels_well_formed && tld_looks_real
 }
 
 #[derive(Template)]
@@ -129,8 +185,14 @@ pub async fn register(
     if !valid_email(&email) {
         return Err(AppError::Validation("Bitte eine gültige E-Mail-Adresse angeben.".into()));
     }
-    if body.password.len() < 8 {
-        return Err(AppError::Validation("Das Passwort muss mindestens 8 Zeichen haben.".into()));
+    // The policy, not just a length floor — same rules the checklist
+    // under the field shows live (auth/password.rs's `check_policy`).
+    // Enforced here because the checklist is a hint: nothing stops a
+    // client from posting whatever it likes.
+    if let Err(rule) = password::check_policy(&body.password, name, &email) {
+        return Err(AppError::Validation(
+            i18n::translate(i18n::current_locale(), rule.message_key()),
+        ));
     }
     if db::user::email_exists(&state.pool, &email).await? {
         return Err(AppError::Validation("Diese E-Mail-Adresse ist bereits registriert.".into()));
@@ -297,9 +359,12 @@ pub async fn change_password(
         tracing::warn!(user_id = %user.id, "password change rejected: wrong current password");
         return Err(AppError::ValidationAt("Aktuelles Passwort ist falsch.".into(), "password-form-error"));
     }
-    if body.new_password.len() < 8 {
+    // `user.name`/`user.email` are the stored values — the profile form
+    // above saves separately, so what's in the database is what the new
+    // password is checked against.
+    if let Err(rule) = password::check_policy(&body.new_password, &user.name, &user.email) {
         return Err(AppError::ValidationAt(
-            "Das neue Passwort muss mindestens 8 Zeichen haben.".into(),
+            i18n::translate(i18n::current_locale(), rule.message_key()),
             "password-form-error",
         ));
     }
@@ -315,4 +380,60 @@ pub async fn change_password(
         success_message: Some(i18n::translate(i18n::current_locale(), "account-password-changed")),
     });
     Ok(Sse::new(stream::iter(vec![Ok(patch_elements_at("#sidebar", "inner", &html))])))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::valid_email;
+
+    #[test]
+    fn accepts_ordinary_addresses() {
+        for email in [
+            "a@bc.de",
+            "maxi.berg@example.com",
+            "max+bauernkarte@sub.example.co.uk",
+            "user_name-1@example-host.org",
+            "  spaced@example.com  ", // trimmed before checking
+        ] {
+            assert!(valid_email(email), "should accept {email}");
+        }
+    }
+
+    #[test]
+    fn rejects_malformed_addresses() {
+        for email in [
+            "",
+            "plainstring",
+            "@example.com",
+            "user@",
+            "user@host",          // no dot in the domain
+            "user@host.c",        // single-character TLD
+            "user@1.2.3.4",       // numeric TLD
+            "a@b..c.de",          // empty label
+            "a@.example.com",
+            "a@example.com.",
+            "a@-example.com",
+            "a@example-.com",
+            "user name@example.com",
+            "user@exa mple.com",
+            "a@@example.com",
+            "two@at@example.com",
+            ".user@example.com",
+            "user.@example.com",
+            "us..er@example.com",
+            "us,er@example.com",
+        ] {
+            assert!(!valid_email(email), "should reject {email:?}");
+        }
+    }
+
+    #[test]
+    fn rejects_oversized_parts() {
+        let long_local = format!("{}@example.com", "a".repeat(65));
+        assert!(!valid_email(&long_local));
+        let long_label = format!("a@{}.com", "b".repeat(64));
+        assert!(!valid_email(&long_label));
+        let long_overall = format!("a@{}.com", vec!["b".repeat(60); 5].join("."));
+        assert!(!valid_email(&long_overall));
+    }
 }

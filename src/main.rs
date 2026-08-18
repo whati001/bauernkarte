@@ -24,7 +24,7 @@ use sqlx::postgres::PgPoolOptions;
 use state::AppState;
 use tower_governor::{governor::GovernorConfigBuilder, GovernorLayer};
 use tower_http::{
-    services::ServeDir,
+    services::{ServeDir, ServeFile},
     trace::{DefaultMakeSpan, DefaultOnFailure, DefaultOnResponse, TraceLayer},
 };
 use tower_sessions::{cookie::SameSite, session_store::ExpiredDeletion, Expiry, SessionManagerLayer};
@@ -129,6 +129,7 @@ async fn main() -> anyhow::Result<()> {
     let app = Router::new()
         .route("/healthz", get(handlers::pages::healthz))
         .route("/", get(handlers::pages::index))
+        .route("/offline", get(handlers::pages::offline))
         .route("/store/{id}", get(handlers::pages::store_page))
         .route("/api/stores", get(handlers::search::stores))
         .route("/api/filters/categories", get(handlers::search::filter_categories))
@@ -154,6 +155,14 @@ async fn main() -> anyhow::Result<()> {
         .route("/locale/{code}", get(handlers::locale::switch))
         .merge(rate_limited)
         .nest_service("/static", ServeDir::new("static"))
+        // Served from the root, not from `/static/`, even though that's
+        // where the file lives: a service worker's default scope is the
+        // path it was served from, so `/static/sw.js` could only ever
+        // control `/static/*` requests — never a page navigation, which
+        // is the whole point of registering it. (The alternative, a
+        // `Service-Worker-Allowed` header on the `/static/` service, is
+        // more machinery for the same result.)
+        .route_service("/sw.js", ServeFile::new("static/sw.js"))
         .layer(axum::middleware::from_fn(i18n::locale_middleware))
         .layer(session_layer)
         // Outermost layer (applied last = wraps everything else, so it

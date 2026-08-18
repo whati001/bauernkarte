@@ -1,0 +1,32 @@
+{#- The page the service worker serves when a navigation can't reach the
+    network (see static/sw.js). Standalone rather than an extension of
+    layout.html on purpose: the shell pulls in Leaflet, Datastar and
+    map.js, all of which immediately go looking for tiles and SSE streams
+    that by definition aren't there. This is the one page in the app that
+    has to work with nothing behind it, so it's plain HTML plus the
+    already-cached app.css.
+
+    It's still server-rendered and cached by the worker rather than
+    written as a static file, so its copy goes through Fluent like
+    everything else instead of hardcoding one language (or two). -#}
+<!doctype html>
+<html lang="{{ current_locale }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{{ "offline-title"|t }}</title>
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body class="offline-page">
+  <div class="offline-card">
+    {% include "icons/triangle-alert.svg" %}
+    <h1>{{ "offline-title"|t }}</h1>
+    <p>{{ "offline-body"|t }}</p>
+    {#- A plain link, not a Datastar action: there's no Datastar on this
+        page, and "try again" here means a real navigation the worker can
+        put back on the network. -#}
+    <a class="btn" href="/">{{ "offline-retry"|t }}</a>
+  </div>
+</body>
+</html>

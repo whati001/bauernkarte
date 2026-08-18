@@ -1,0 +1,19 @@
+<!-- App icon, "any" purpose: the same Lucide "sprout" as the navbar brand
+     and the favicon, on the shell tan plate with the accent green stroke.
+     Colours are baked in as literals because neither a manifest icon nor a
+     home-screen icon inherits the page's CSS custom properties, so if the
+     tokens in static/app.css change these have to change with them by hand.
+     Rounded corners because launchers render an "any" icon as-is; the
+     full-bleed variant next to this one (icon-maskable.svg) is the one
+     that gets a launcher-applied mask. See NOTICE.md for how the PNGs in
+     this directory are regenerated from these two files. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="96" ry="96" fill="#f5efe4" />
+  <g transform="translate(102.4 102.4) scale(12.8)"
+     fill="none" stroke="#008300" stroke-width="2"
+     stroke-linecap="round" stroke-linejoin="round">
+    <path d="M14 9.536V7a4 4 0 0 1 4-4h1.5a.5.5 0 0 1 .5.5V5a4 4 0 0 1-4 4 4 4 0 0 0-4 4c0 2 1 3 1 5a5 5 0 0 1-1 3" />
+    <path d="M4 9a5 5 0 0 1 8 4 5 5 0 0 1-8-4" />
+    <path d="M5 21h14" />
+  </g>
+</svg>

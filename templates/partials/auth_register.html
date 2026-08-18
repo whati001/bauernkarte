@@ -1,3 +1,4 @@
+{% import "partials/credential_policy.html" as policy %}
 <div class="sidebar-panel">
   <h2>{% include "icons/user.svg" %} {{ "auth-register-heading"|t }}</h2>
   <div class="panel-stack">
@@ -9,11 +10,19 @@
     </div>
     <div class="field">
       <label for="reg-email">{% include "icons/mail.svg" %} {{ "auth-email"|t }}</label>
-      <input id="reg-email" type="email" name="email" autocomplete="email" data-bind:email required>
+      <input id="reg-email" type="email" name="email" autocomplete="email" data-bind:email
+             aria-describedby="reg-email-policy" required>
+      {% call policy::email("reg-email-policy", "reg-email") %}{% endcall %}
     </div>
     <div class="field">
-      <label for="reg-password">{% include "icons/lock.svg" %} {{ "auth-password-hint"|t }}</label>
-      <input id="reg-password" type="password" name="password" autocomplete="new-password" data-bind:password minlength="8" required>
+      <label for="reg-password">{% include "icons/lock.svg" %} {{ "auth-password"|t }}</label>
+      {#- `minlength`/`maxlength` mirror auth/password.rs's MIN_LENGTH and
+          MAX_LENGTH: the browser's own enforcement, so the submit button
+          can't fire on something the server will certainly reject. The
+          checklist below is what explains *why*. -#}
+      <input id="reg-password" type="password" name="password" autocomplete="new-password" data-bind:password
+             minlength="12" maxlength="128" aria-describedby="reg-password-policy" required>
+      {% call policy::password("reg-password-policy", "reg-password") %}{% endcall %}
     </div>
     <div id="form-error" class="form-error"></div>
     <button type="submit" class="primary">{% include "icons/user.svg" %} {{ "auth-register-heading"|t }}</button>

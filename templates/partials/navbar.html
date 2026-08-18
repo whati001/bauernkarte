@@ -41,21 +41,44 @@
       </div>
       {{ suggestions_html|safe }}
     </div>
-    <div class="nav-actions">
+    <!-- `click__outside` sits here, on the wrapper holding *both* the
+         toggle and the menu, rather than on .nav-menu itself: with it on
+         the menu, a click on the toggle would count as "outside" and
+         close the menu in the same tick the toggle opened it. Same shape
+         as .nav-search's own outside-handler above. -->
+    <div class="nav-actions" data-on:click__outside="$navMenuOpen = false">
       {% if let Some(name) = user_name %}
-        <span class="nav-user-name">{{ name }}</span>
-        <a class="nav-link" href="/account" data-on:click__prevent="@get('/account')">{% include "icons/user.svg" %} {{ "nav-account"|t }}</a>
-        <a class="nav-link" href="/store/new" data-on:click__prevent="@get('/store/new')">{% include "icons/store.svg" %} {{ "nav-new-store"|t }}</a>
-        <button class="nav-link" data-on:click="@post('/logout')">{% include "icons/log-out.svg" %} {{ "nav-logout"|t }}</button>
+        <!-- Logged in, the four actions plus the language switch need
+             ~1100px to sit on one line (measured, in German — the longer
+             of the two catalogs), so below that they collapse behind this
+             toggle instead of wrapping #navbar onto a second and third
+             row and eating the map. See the `nav-collapse` block in
+             app.css, which is what actually flips between the two. -->
+        <button type="button" class="nav-toggle" id="nav-toggle"
+                aria-controls="nav-menu"
+                aria-label="{{ "nav-menu-toggle"|t }}" title="{{ "nav-menu-toggle"|t }}"
+                data-attr:aria-expanded="$navMenuOpen ? 'true' : 'false'"
+                data-on:click="$navMenuOpen = !$navMenuOpen"
+                data-on:keydown="evt.key === 'Escape' && ($navMenuOpen = false)">{% include "icons/menu.svg" %}</button>
+        <!-- Above the collapse breakpoint this is just the inline row it
+             always was; below it, `.open` is what reveals it as a
+             dropdown. Every action closes it on the way out — leaving it
+             hanging open over the panel it just swapped in is the one
+             state that reads as broken. -->
+        <div class="nav-menu" id="nav-menu" data-class:open="$navMenuOpen">
+          <span class="nav-user-name">{{ name }}</span>
+          <a class="nav-link" href="/account" data-on:click__prevent="$navMenuOpen = false; @get('/account')">{% include "icons/user.svg" %} {{ "nav-account"|t }}</a>
+          <a class="nav-link" href="/store/new" data-on:click__prevent="$navMenuOpen = false; @get('/store/new')">{% include "icons/store.svg" %} {{ "nav-new-store"|t }}</a>
+          <button class="nav-link" data-on:click="$navMenuOpen = false; @post('/logout')">{% include "icons/log-out.svg" %} {{ "nav-logout"|t }}</button>
+          {% include "partials/lang_switch.html" %}
+        </div>
       {% else %}
+        <!-- Anonymous: one call to action and the language switch fit on
+             the row at every width, so no toggle and no menu — the
+             hamburger only appears where it earns its place. -->
         <a class="nav-link nav-cta" href="/login" data-on:click__prevent="@get('/login')">{% include "icons/log-in.svg" %} {{ "nav-login"|t }}</a>
+        {% include "partials/lang_switch.html" %}
       {% endif %}
-      <!-- Plain server navigation (no data-on:click__prevent) — switching
-           language reloads the page on purpose, see handlers/locale.rs. -->
-      <span class="lang-switch" role="group" aria-label="Sprache / Language">
-        <a href="/locale/de" class="lang-link{% if current_locale == "de" %} active{% endif %}" aria-current="{% if current_locale == "de" %}true{% else %}false{% endif %}">DE</a>
-        <a href="/locale/en" class="lang-link{% if current_locale == "en" %} active{% endif %}" aria-current="{% if current_locale == "en" %}true{% else %}false{% endif %}">EN</a>
-      </span>
     </div>
   </div>
   <!-- Quick-pick row: the most-rated products (across every store, see

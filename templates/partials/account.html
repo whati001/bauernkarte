@@ -1,3 +1,4 @@
+{% import "partials/credential_policy.html" as policy %}
 <div class="sidebar-panel">
   <div class="detail-header">
     <button class="back-link" data-on:click="@get('/api/store/back')">{% include "icons/chevron-left.svg" %} {{ "action-back-to-search"|t }}</button>
@@ -17,7 +18,9 @@
         </div>
         <div class="field">
           <label for="acc-email">{{ "auth-email"|t }}</label>
-          <input id="acc-email" type="email" name="email" autocomplete="email" data-bind:email value="{{ email }}" required>
+          <input id="acc-email" type="email" name="email" autocomplete="email" data-bind:email value="{{ email }}"
+                 aria-describedby="acc-email-policy" required>
+          {% call policy::email("acc-email-policy", "acc-email") %}{% endcall %}
         </div>
         <div id="form-error" class="form-error"></div>
         <button type="submit" class="primary">{% include "icons/circle-check.svg" %} {{ "action-save"|t }}</button>
@@ -33,7 +36,12 @@
         </div>
         <div class="field">
           <label for="acc-new-password">{{ "account-new-password"|t }}</label>
-          <input id="acc-new-password" type="password" name="new_password" autocomplete="new-password" data-bind:new-password minlength="8" required>
+          <input id="acc-new-password" type="password" name="new_password" autocomplete="new-password" data-bind:new-password
+                 minlength="12" maxlength="128" aria-describedby="acc-new-password-policy" required>
+          {#- The "not your name/email" rule reads those from the profile
+              form in the card above — same values the server checks the
+              new password against. -#}
+          {% call policy::password("acc-new-password-policy", "acc-new-password") %}{% endcall %}
         </div>
         <div id="password-form-error" class="form-error"></div>
         <button type="submit" class="primary">{% include "icons/lock.svg" %} {{ "account-change-password"|t }}</button>

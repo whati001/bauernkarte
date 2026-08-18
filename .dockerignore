@@ -5,3 +5,5 @@
 *.md
 .claude/
 .agents/
+/scripts
+bootstrap.py

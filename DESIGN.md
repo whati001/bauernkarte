@@ -176,6 +176,13 @@ SVGs — native `<option>` elements can only render text.
 
 ## Responsive
 
+- `≤1100px` — a logged-in visitor's navbar actions collapse behind the
+  `.nav-toggle` hamburger into the `.nav-menu` dropdown. The number is
+  measured, not chosen: brand + search + Konto + Neues Geschäft + Logout
+  + name + language switch needs ~1100px on one line in German. An
+  anonymous visitor has no toggle — one login button and the language
+  switch fit at every width, and hiding the app's only call to action
+  would be a downgrade.
 - `≤900px` — sidebar and map stack vertically (45/55 split).
 - `≤700px` — the navbar's global search box is hidden; the sidebar's own
   filters remain the full-featured path.
@@ -183,7 +190,8 @@ SVGs — native `<option>` elements can only render text.
 - `≤400px` — navbar gutters and brand type shrink.
 
 The navbar must stay one row down to 360px. Every pixel it grows comes
-off the map.
+off the map. The collapsed menu is an *overlay*, not a push-down
+disclosure, for the same reason: opening it must not move the map.
 
 ## Checklist for new UI
 

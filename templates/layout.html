@@ -1,10 +1,32 @@
 <!doctype html>
-<html lang="de">
+<html lang="{{ current_locale }}">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {#- `viewport-fit=cover` is for the installed (display: standalone)
+      case: without it a phone with a cutout letterboxes the page instead
+      of letting the map reach the screen edges. What that costs is
+      content running under the status bar and home indicator, which
+      app.css's "Installed app" section pads back out with
+      env(safe-area-inset-*). -#}
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{{ title }}</title>
   <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+  {#- Installable-PWA metadata. The manifest is what makes "Add to home
+      screen"/"Install" appear; the rest is what makes the result look
+      like an app once it's there. iOS reads none of the manifest's icon
+      or theme fields, hence the apple-* duplicates. `theme-color` tints
+      the system bars around the app and is the --shell tan the navbar
+      already uses, per scheme — a hardcoded literal only because a meta
+      tag can't read a CSS custom property (see static/icons/NOTICE.md
+      for the other two places these values are copied). -#}
+  <link rel="manifest" href="/static/manifest.webmanifest">
+  <meta name="theme-color" content="#f5efe4" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#15120e" media="(prefers-color-scheme: dark)">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="{{ "nav-brand"|t }}">
+  <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
   <link rel="stylesheet" href="/static/leaflet/leaflet.css">
   <link rel="stylesheet" href="/static/app.css">
   <script type="module" src="/static/datastar.js"></script>
@@ -58,5 +80,14 @@
 
   <script src="/static/leaflet/leaflet.js"></script>
   <script type="module" src="/static/map.js"></script>
+  {#- Registers the service worker (static/sw.js), which is what backs
+      the offline fallback and completes the installability criteria.
+      Last, and deferred to `load` inside the script itself, so it never
+      competes with the map's first paint. -#}
+  <script type="module" src="/static/pwa.js"></script>
+  {#- Lights up the credential checklists on the register/account forms.
+      Delegated from the document inside, so it survives the Datastar
+      panel swaps that put those forms on screen. -#}
+  <script type="module" src="/static/credential-policy.js"></script>
 </body>
 </html>

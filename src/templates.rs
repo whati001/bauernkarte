@@ -96,6 +96,11 @@ pub fn render_navbar(user_name: Option<String>, products: Vec<RankedProduct>) ->
 #[template(path = "layout.html")]
 struct LayoutTemplate {
     title: String,
+    /// Drives `<html lang>`. Same source as the navbar's language switch
+    /// (`NavbarTemplate::current_locale`) — the whole page was previously
+    /// hardcoded `lang="de"`, so an English page told screen readers and
+    /// browser translation it was German.
+    current_locale: &'static str,
     signals_json: String,
     navbar_html: String,
     sidebar_html: String,
@@ -128,6 +133,7 @@ pub fn full_page(
     let navbar_html = render_navbar(user_name, nav_products);
     let page = LayoutTemplate {
         title: title.to_string(),
+        current_locale: i18n::current_locale().code(),
         signals_json: signals.to_string(),
         navbar_html,
         sidebar_html,

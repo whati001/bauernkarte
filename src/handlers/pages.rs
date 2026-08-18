@@ -1,4 +1,4 @@
-//! Full-page GET handlers: `GET /`, `GET /store/{id}`.
+//! Full-page GET handlers: `GET /`, `GET /store/{id}`, `GET /offline`.
 
 use axum::{
     extract::{Path, State},
@@ -12,6 +12,8 @@ use crate::{
     error::AppResult,
     handlers::search::{render_map_data, render_search_panel, run_search, SearchQuery, AUSTRIA_LAT, AUSTRIA_LON},
     handlers::store_detail::{load_detail_or_404, render_detail_panel},
+    i18n,
+    i18n as filters, // see templates.rs's comment on this alias
     state::AppState,
     templates::full_page,
 };
@@ -41,6 +43,11 @@ fn base_signals(lat: f64, lon: f64, geo_available: Option<bool>, logged_in: bool
         // because the navbar outlives every #sidebar swap. The quick-pick
         // row needs no signal of its own — it highlights off `$productId`.
         "navQuery": "", "navIcon": "", "navOpen": false,
+        // The collapsed navbar's dropdown (navbar.html's .nav-menu).
+        // Page-wide for the same reason as the three above: #navbar
+        // outlives every #sidebar swap, and is itself re-rendered whole
+        // on login/logout — a signal is what survives both.
+        "navMenuOpen": false,
     })
 }
 
@@ -114,4 +121,26 @@ pub async fn store_page(
 
 pub async fn healthz() -> Html<&'static str> {
     Html("ok")
+}
+
+/// `GET /offline` — the page `static/sw.js` precaches and serves when a
+/// navigation can't reach the network.
+///
+/// Server-rendered rather than a static file in `static/` so its copy
+/// goes through Fluent like the rest of the app; the worker re-fetches
+/// it after each successful navigation, which is what carries a language
+/// switch through to the cached copy. It renders its own document
+/// (`templates/offline.html`), not `full_page` — the shell would drag in
+/// Leaflet, Datastar and map.js, all of which need the network this page
+/// exists to apologise for.
+pub async fn offline() -> Html<String> {
+    Html(crate::templates::render(OfflineTemplate {
+        current_locale: i18n::current_locale().code(),
+    }))
+}
+
+#[derive(askama::Template)]
+#[template(path = "offline.html")]
+struct OfflineTemplate {
+    current_locale: &'static str,
 }
