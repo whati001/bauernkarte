@@ -5,7 +5,7 @@
 <div id="nav-suggestions" class="nav-suggestions" data-show="$navOpen" role="listbox" aria-label="{{ "nav-search-label"|t }}">
   {% for s in suggestions %}
   <button type="button" class="nav-suggestion" role="option" aria-selected="false"
-          data-on:click="@get('/api/search/select/{{ s.kind }}/{{ s.id }}')">
+          data-on:click="$navSearchOpen = false; @get('/api/search/select/{{ s.kind }}/{{ s.id }}')">
     <span class="nav-suggestion-icon" aria-hidden="true">{{ s.icon }}</span>
     <span class="nav-suggestion-name">{{ s.name }}</span>
     <span class="nav-suggestion-kind">{{ s.kind_label }}</span>

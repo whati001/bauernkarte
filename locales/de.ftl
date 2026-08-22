@@ -8,11 +8,13 @@ nav-tagline = Lokal kaufen, Bauern stärken
 nav-login = Login
 nav-logout = Logout
 nav-account = Konto
+nav-account-of = Konto von { $name }
 nav-new-store = Neues Geschäft
 nav-search-label = Kategorie oder Produkt suchen
 nav-search-placeholder = Kategorie oder Produkt…
 nav-search-no-matches = Keine passende Kategorie oder Produkt
 nav-search-clear = Suche zurücksetzen
+nav-search-toggle = Suche öffnen oder schließen
 nav-products-label = Beliebte Produkte
 nav-products-all = Alle Produkte
 

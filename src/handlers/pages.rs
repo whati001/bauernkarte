@@ -43,6 +43,11 @@ pub(crate) fn base_signals(lat: f64, lon: f64, geo_available: Option<bool>, logg
         // because the navbar outlives every #sidebar swap. The quick-pick
         // row needs no signal of its own — it highlights off `$productId`.
         "navQuery": "", "navIcon": "", "navOpen": false,
+        // Phone width only: whether the box itself is showing, since
+        // below 700px it folds behind a magnifier in the navbar row
+        // (navbar.html's .nav-search-toggle). Above that breakpoint the
+        // box is always on screen and nothing reads this.
+        "navSearchOpen": false,
         // The collapsed navbar's dropdown (navbar.html's .nav-menu).
         // Page-wide for the same reason as the three above: #navbar
         // outlives every #sidebar swap, and is itself re-rendered whole

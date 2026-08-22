@@ -325,6 +325,12 @@ a:hover { text-decoration: underline; }
   margin: 0 auto;
 }
 
+/* Box + dropdown as one unit (see navbar.html). No box of its own up
+   here, so `.nav-search`'s positioning still anchors the suggestions and
+   the layout is byte-for-byte what it was when the two were siblings;
+   below 700px this turns into the overlay they both live in. */
+.nav-search-pop { display: contents; }
+
 .nav-search-box {
   display: flex;
   align-items: center;
@@ -441,11 +447,45 @@ a:hover { text-decoration: underline; }
 }
 
 /* Below this the brand + actions already fill the row; a third flex
-   item would squeeze the box down to a few characters, which is worse
-   than the sidebar's own category/product <select>s that remain the
-   full-featured way to filter on a phone. */
+   item would squeeze the box down to a few characters. So the box folds
+   behind a 44px magnifier next to the menu toggle and reopens as an
+   overlay under the whole navbar — full width, and hanging *over* the
+   map rather than pushing it down, exactly like the collapsed .nav-menu.
+   (The sidebar's own category/product <select>s remain the
+   full-featured way to filter on a phone; this is the quick path.) */
 @media (max-width: 700px) {
-  .nav-search { display: none; }
+  /* Static, so the overlay below anchors to #navbar (the nearest
+     positioned ancestor left) rather than to this 44px button. */
+  .nav-search {
+    position: static;
+    flex: 0 0 auto;
+    max-width: none;
+    /* Was centred between brand and actions; as a lone 44px button it
+       joins the actions cluster on the right instead of floating in the
+       middle of an otherwise empty row. */
+    margin: 0 0 0 auto;
+  }
+  .nav-search-pop {
+    display: none;
+    position: absolute;
+    top: calc(100% + var(--space-1));
+    left: var(--space-4);
+    right: var(--space-4);
+  }
+  .nav-search-pop.open { display: block; }
+  /* Raised, because here it floats over the map instead of sitting in
+     the navbar's row. */
+  .nav-search-box { box-shadow: var(--shadow-md); }
+  /* The two icon squares sit shoulder to shoulder at this width; the
+     row's own gap would read as if they belonged to different groups. */
+  .nav-main { gap: var(--space-2); }
+}
+/* Small phones trim #navbar's gutters (see the ≤400px block above); the
+   overlay is inset to match, so it still lines up with the navbar it
+   hangs from. Written after the block above rather than in it because
+   that one comes earlier in the file and would lose the cascade. */
+@media (max-width: 400px) {
+  .nav-search-pop { left: var(--space-2); right: var(--space-2); }
 }
 
 /* Quick-pick product row. Scrolls sideways rather than wrapping — a
@@ -524,46 +564,55 @@ a:hover { text-decoration: underline; }
   align-items: center;
   gap: var(--space-1);
 }
-.nav-user-name {
-  color: var(--text-secondary);
-  font-size: var(--font-size-sm);
-  padding: 0 var(--space-2);
-  display: none;
-}
-@media (min-width: 480px) {
-  .nav-user-name { display: inline; }
-}
-
-/* The collapse toggle (Bootstrap's "navbar-toggler" in spirit). Hidden
-   until the row stops fitting — the rule that shows it is in the
-   nav-collapse block below, so this only describes what it looks like. */
-.nav-toggle {
+/* The navbar's two icon squares: the collapse toggle (Bootstrap's
+   "navbar-toggler" in spirit) and the phone-width search opener. One
+   shape, because at phone width they sit side by side and any
+   difference between them would have to mean something. Both are hidden
+   until their own breakpoint shows them — the nav-collapse block below
+   for the first, the ≤700px block above for the second — so this only
+   describes what they look like. */
+.nav-toggle,
+.nav-search-toggle {
   display: none;
   align-items: center;
   justify-content: center;
   width: var(--touch-target);
   min-height: var(--touch-target);
+  flex-shrink: 0;
   padding: 0;
   border-radius: var(--radius-sm);
   color: var(--text-secondary);
-  background: none;
-  border: none;
+  /* The same item box every other control on this row carries. */
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
 }
-.nav-toggle:hover { background: var(--shell-2); color: var(--text-primary); }
+.nav-toggle:hover,
+.nav-search-toggle:hover { background: var(--surface-2); color: var(--text-primary); }
 /* Open reads like every other "on" control in this app: filled accent,
    accent-contrast glyph (DESIGN.md's single selected treatment). */
-.nav-toggle[aria-expanded="true"] {
+.nav-toggle[aria-expanded="true"],
+.nav-search-toggle[aria-expanded="true"] {
   color: var(--accent-contrast);
   background: var(--accent);
+  border-color: var(--accent);
 }
-.nav-toggle[aria-expanded="true"]:hover {
+.nav-toggle[aria-expanded="true"]:hover,
+.nav-search-toggle[aria-expanded="true"]:hover {
   color: var(--accent-contrast);
   background: var(--accent);
   filter: brightness(1.08);
 }
 
-/* Collapsed navbar. Logged in, the row is brand + search + Konto + Neues
-   Geschäft + Logout + the visitor's name + the language switch; measured
+/* Here rather than with the rest of the ≤700px search rules further up:
+   that block comes earlier in the file than the `display: none` these
+   two share, and would lose the cascade. */
+@media (max-width: 700px) {
+  .nav-search-toggle { display: inline-flex; }
+}
+
+/* Collapsed navbar. Logged in, the row is brand + search + the account
+   item (labelled with the visitor's name) + Neues Geschäft + Logout +
+   the language switch; measured
    in German (the longer catalog) that needs ~1100px, and under it the
    actions used to wrap #navbar onto two and even three rows — every one
    of those pixels comes off the map, which is the thing the app is. So
@@ -595,19 +644,15 @@ a:hover { text-decoration: underline; }
   }
   .nav-menu.open { display: flex; }
 
-  /* The name heads the menu instead of being one more tappable row —
-     shown unconditionally here, overriding the ≥480px rule above, since
-     in a dropdown there's room for it at any screen width. */
-  .nav-menu .nav-user-name {
-    display: block;
-    padding: var(--space-2);
-    margin-bottom: var(--space-1);
-    border-bottom: 1px solid var(--border);
-    color: var(--text-primary);
-    font-weight: 600;
+  /* Left-aligned full-width rows: a menu, not a toolbar. And no box —
+     .nav-menu is itself a --surface card with its own border, so the
+     item's white box inside it would be a box around nothing. */
+  .nav-menu .nav-link {
+    justify-content: flex-start;
+    background: none;
+    border-color: transparent;
   }
-  /* Left-aligned full-width rows: a menu, not a toolbar. */
-  .nav-menu .nav-link { justify-content: flex-start; }
+  .nav-menu .nav-link:hover { background: var(--surface-2); }
   /* The switch is a pair of chips, so it gets the menu's full width and
      splits it rather than hugging the left edge at half size. */
   .nav-menu .lang-switch {
@@ -626,33 +671,49 @@ a:hover { text-decoration: underline; }
   color: var(--text-secondary);
   font-size: var(--font-size-sm);
   font-weight: 500;
-  /* Overrides the generic `button` chrome below so a <button
-     class="nav-link"> (Logout) reads identically to the <a
-     class="nav-link"> items beside it. */
-  background: none;
-  border: none;
+  /* One line, always. #navbar has to stay a single row down to 360px,
+     and a two-line label inside its own box grows the row rather than
+     just looking cramped — below the collapse breakpoint these move
+     into .nav-menu instead. */
+  white-space: nowrap;
+  /* The navbar item box (DESIGN.md, "Navbar items"): every control on
+     this row carries its own `--surface` well, because #navbar is
+     `--shell` and a control with no surface of its own doesn't read as
+     tappable on the tan. Also overrides the generic `button` chrome
+     below, so a <button class="nav-link"> (Logout) reads identically to
+     the <a class="nav-link"> items beside it. `box-sizing: border-box`
+     is global, so the border sits inside --touch-target and the row
+     doesn't grow. */
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
 }
-.nav-link:hover { background: var(--shell-2); color: var(--text-primary); text-decoration: none; }
+/* --surface-2, not --shell-2: the wash matches the surface the control
+   actually sits on, and that is now its own white box. */
+.nav-link:hover { background: var(--surface-2); color: var(--text-primary); text-decoration: none; }
 
-/* Login — the navbar's one call to action, so it's the filled-accent
-   pill rather than another quiet text link. Same green as the active
-   language chip; the pill shape is what keeps the two from reading as
-   the same control. */
-.nav-link.nav-cta {
-  color: var(--accent-contrast);
-  background: var(--accent);
-  border-radius: var(--radius-full);
-  font-weight: 600;
-}
-.nav-link.nav-cta:hover {
-  color: var(--accent-contrast);
-  background: var(--accent);
-  filter: brightness(1.08);
-}
+/* Login — the anonymous visitor's way in. It used to be the navbar's one
+   filled-accent pill; it now wears the same white box as every other
+   item on the row, because on this row an accent fill means "the thing
+   this opens is on screen" and a resting CTA in the same green made that
+   the one accent that meant something else. The heavier weight is what
+   is left of its emphasis — it is still the only action an anonymous
+   visitor has up here. Everything else (box, hover, height) comes from
+   `.nav-link` above. */
+.nav-link.nav-cta { font-weight: 600; }
 
 .lang-switch {
   display: inline-flex;
-  align-items: center;
+  /* `stretch`, so the segments fill the box and the active one's accent
+     reaches its edges instead of floating inside a white ring. */
+  align-items: stretch;
+  /* A navbar item box is a full --touch-target tall like every other one
+     on the row (DESIGN.md, "Navbar items"). It used to be 38px, which
+     was both under the 44px minimum and visibly shorter than the item
+     beside it. The row is already 44px, so this costs no height. */
+  min-height: var(--touch-target);
+  /* One box, two segments: the group owns the border, the radius and the
+     white, so a two-state control doesn't read as two controls. */
+  background: var(--surface);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
   overflow: hidden;
@@ -663,13 +724,14 @@ a:hover { text-decoration: underline; }
   align-items: center;
   justify-content: center;
   min-width: 2.5em;
-  min-height: calc(var(--touch-target) - 8px);
+  /* The group's own 1px border top and bottom is the difference. */
+  min-height: calc(var(--touch-target) - 2px);
   padding: 0 var(--space-2);
   font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--text-secondary);
 }
-.lang-link:hover { background: var(--shell-2); text-decoration: none; }
+.lang-link:hover { background: var(--surface-2); text-decoration: none; }
 .lang-link.active { background: var(--accent); color: var(--accent-contrast); }
 .lang-link.active:hover { background: var(--accent); }
 
@@ -2093,12 +2155,33 @@ html:has(.admin-body) { height: 100dvh; overflow: hidden; }
 .nav-link.nav-admin {
   width: var(--touch-target);
   padding: 0;
+  /* `.nav-link` lays its contents out from the start edge, which is
+     right for an icon+label row but leaves this one's lone glyph hugging
+     the left of the 44px box — so the hover wash sat visibly off-centre
+     around it. */
+  justify-content: center;
   color: var(--accent);
 }
-.nav-link.nav-admin:hover { background: var(--accent-wash); color: var(--accent); }
+/* The glyph stays accent — that is what distinguishes it on the row —
+   but the wash is the shared one, so hovering the three icon squares
+   beside each other looks like hovering one kind of thing. */
+.nav-link.nav-admin:hover { background: var(--surface-2); color: var(--accent); }
 
 @media (max-width: 900px) {
-  .admin-shell { grid-template-columns: 1fr; }
+  /* `auto 1fr`, not the implicit `auto auto`. The shell is `flex: 1`, so
+     it always fills the window; with both rows auto-sized the leftover
+     height gets shared out to the *rail*, and how much is left depends
+     on how tall the section below happens to be. A queue with two rows
+     inflated the rail to 378px with 83px-tall items, the same rail under
+     a full queue sat at 221px with 44px items, and switching sections
+     jumped the whole tan block by that difference. Pinning the rail to
+     its content height and giving the slack to .admin-content — which
+     is the scrolling region anyway — makes it the same rail on every
+     section. */
+  .admin-shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
   .admin-rail {
     flex-direction: row;
     flex-wrap: wrap;
@@ -2107,9 +2190,21 @@ html:has(.admin-body) { height: 100dvh; overflow: hidden; }
     /* Stacked, the rail is a short auto-height row — it shouldn't be its
        own scroll box, and the content below it takes the rest. */
     overflow-y: visible;
+    /* A wrapping flex row stretches both its lines and the items in them
+       by default, which is what turned 44px links into tall blocks. The
+       items are pills, not panes: they keep their own height and the
+       lines stack from the top. */
+    align-items: center;
+    align-content: flex-start;
   }
   .admin-rail-title, .admin-rail-sep { display: none; }
   .admin-rail-back { margin-bottom: 0; }
+  /* In the column the selected item's extra weight costs nothing — the
+     rail is a fixed 248px. In this wrapping row it makes the selected
+     item wider than it was a moment ago, which can push a later item to
+     the next line and change the rail's height as you move between
+     sections. The accent fill already says "this one is on". */
+  .admin-rail-item[aria-current="page"] { font-weight: 500; }
   .admin-count { margin-left: var(--space-1); }
   .admin-row { grid-template-columns: 1fr; }
   .admin-row-actions { justify-content: flex-start; }

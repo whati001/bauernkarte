@@ -13,33 +13,63 @@
          a suggestion (which hits /api/search/select — see
          handlers::search::select). There is no Enter handler and no
          enclosing <form>, so a typed-but-unmatched term does nothing. -->
-    <div class="nav-search" data-on:click__outside="$navOpen = false">
-      <div class="nav-search-box">
-        <!-- The picked item's emoji replaces the magnifier once
-             something is selected, so the box shows the same icon +
-             name pairing as the dropdown row and the product chips.
-             It's a sibling of the <input>, not part of `$navQuery`:
-             folded into the value it would become part of the search
-             term and stop the box from matching anything on reopen. -->
-        <span class="nav-search-icon" aria-hidden="true" data-show="$navIcon !== ''" data-text="$navIcon"></span>
-        <span class="nav-search-icon" data-show="$navIcon === ''">{% include "icons/search.svg" %}</span>
-        <input id="nav-search-input" type="text" autocomplete="off"
-               role="combobox" aria-controls="nav-suggestions" aria-autocomplete="list"
-               data-attr:aria-expanded="$navOpen ? 'true' : 'false'"
-               placeholder="{{ "nav-search-placeholder"|t }}"
-               aria-label="{{ "nav-search-label"|t }}"
-               data-bind:nav-query
-               data-on:input__debounce.200ms="@get('/api/search/suggest')"
-               data-on:click="@get('/api/search/suggest')"
-               data-on:keydown="evt.key === 'Escape' && ($navOpen = false)">
-        <!-- Clears the *filter*, not just the text — leaving the box empty
-             while the sidebar stayed filtered is the one state that would
-             read as broken. -->
-        <button type="button" class="nav-search-clear" data-show="$navQuery.length > 0"
-                aria-label="{{ "nav-search-clear"|t }}" title="{{ "nav-search-clear"|t }}"
-                data-on:click="@get('/api/search/clear')">{% include "icons/x.svg" %}</button>
+    <div class="nav-search" data-on:click__outside="$navOpen = false; $navSearchOpen = false">
+      <!-- Phone-width opener. Below 700px the box has no room on the row,
+           so it folds behind this button and comes back as an overlay
+           hanging under #navbar (never a push-down: opening search must
+           not move the map). The button sits *inside* .nav-search rather
+           than beside .nav-toggle so the wrapper's `click__outside` above
+           covers the opener as well as the box — on the box alone, a tap
+           on the opener would count as "outside" and shut it in the same
+           tick it opened. Same shape as .nav-actions further down.
+
+           The `focus()` is deferred by exactly one microtask, and both
+           halves of that matter. Datastar flushes signal writes to the
+           DOM at the *end* of the handler, so a straight call focuses a
+           box that is still `display: none` and silently does nothing —
+           measured, not guessed. A microtask runs after that flush but
+           still inside the tap's own task, so user activation survives
+           and mobile browsers still raise the keyboard; a
+           `requestAnimationFrame` would land in the next task and lose
+           it. -->
+      <button type="button" class="nav-search-toggle" id="nav-search-toggle"
+              aria-controls="nav-search-pop"
+              aria-label="{{ "nav-search-toggle"|t }}" title="{{ "nav-search-toggle"|t }}"
+              data-attr:aria-expanded="$navSearchOpen ? 'true' : 'false'"
+              data-on:click="$navSearchOpen = !$navSearchOpen; $navSearchOpen && queueMicrotask(() => document.getElementById('nav-search-input').focus())"
+              data-on:keydown="evt.key === 'Escape' && ($navSearchOpen = false)">{% include "icons/search.svg" %}</button>
+      <!-- Box and dropdown as one unit. Above the breakpoint this wrapper
+           is `display: contents`, so the two lay out exactly as they did
+           when they were siblings; below it, it *is* the overlay, and the
+           suggestions hang off it instead of off .nav-search. -->
+      <div class="nav-search-pop" id="nav-search-pop" data-class:open="$navSearchOpen">
+        <div class="nav-search-box">
+          <!-- The picked item's emoji replaces the magnifier once
+               something is selected, so the box shows the same icon +
+               name pairing as the dropdown row and the product chips.
+               It's a sibling of the <input>, not part of `$navQuery`:
+               folded into the value it would become part of the search
+               term and stop the box from matching anything on reopen. -->
+          <span class="nav-search-icon" aria-hidden="true" data-show="$navIcon !== ''" data-text="$navIcon"></span>
+          <span class="nav-search-icon" data-show="$navIcon === ''">{% include "icons/search.svg" %}</span>
+          <input id="nav-search-input" type="text" autocomplete="off"
+                 role="combobox" aria-controls="nav-suggestions" aria-autocomplete="list"
+                 data-attr:aria-expanded="$navOpen ? 'true' : 'false'"
+                 placeholder="{{ "nav-search-placeholder"|t }}"
+                 aria-label="{{ "nav-search-label"|t }}"
+                 data-bind:nav-query
+                 data-on:input__debounce.200ms="@get('/api/search/suggest')"
+                 data-on:click="@get('/api/search/suggest')"
+                 data-on:keydown="evt.key === 'Escape' && ($navOpen ? ($navOpen = false) : ($navSearchOpen = false))">
+          <!-- Clears the *filter*, not just the text — leaving the box empty
+               while the sidebar stayed filtered is the one state that would
+               read as broken. -->
+          <button type="button" class="nav-search-clear" data-show="$navQuery.length > 0"
+                  aria-label="{{ "nav-search-clear"|t }}" title="{{ "nav-search-clear"|t }}"
+                  data-on:click="@get('/api/search/clear')">{% include "icons/x.svg" %}</button>
+        </div>
+        {{ suggestions_html|safe }}
       </div>
-      {{ suggestions_html|safe }}
     </div>
     <!-- `click__outside` sits here, on the wrapper holding *both* the
          toggle and the menu, rather than on .nav-menu itself: with it on
@@ -48,7 +78,7 @@
          as .nav-search's own outside-handler above. -->
     <div class="nav-actions" data-on:click__outside="$navMenuOpen = false">
       {% if let Some(name) = user_name %}
-        <!-- Logged in, the four actions plus the language switch need
+        <!-- Logged in, the three actions plus the language switch need
              ~1100px to sit on one line (measured, in German — the longer
              of the two catalogs), so below that they collapse behind this
              toggle instead of wrapping #navbar onto a second and third
@@ -74,8 +104,17 @@
              hanging open over the panel it just swapped in is the one
              state that reads as broken. -->
         <div class="nav-menu" id="nav-menu" data-class:open="$navMenuOpen">
-          <span class="nav-user-name">{{ name }}</span>
-          <a class="nav-link" href="/account" data-on:click__prevent="$navMenuOpen = false; @get('/account')">{% include "icons/user.svg" %} {{ "nav-account"|t }}</a>
+          <!-- The visitor's name *is* the way to their account — it used
+               to sit beside this item as a label that did nothing, which
+               spent a slot on the row saying something the account link
+               could say itself. The word "Konto" survives as the
+               accessible name and the tooltip (`nav-account-of`, rendered
+               in templates.rs), so the control still announces what it
+               does; the name is inside that phrase, which is what keeps
+               the accessible name a superset of the visible one. -->
+          <a class="nav-link" href="/account"
+             aria-label="{{ account_label }}" title="{{ account_label }}"
+             data-on:click__prevent="$navMenuOpen = false; @get('/account')">{% include "icons/user.svg" %} {{ name }}</a>
           <a class="nav-link" href="/store/new" data-on:click__prevent="$navMenuOpen = false; @get('/store/new')">{% include "icons/store.svg" %} {{ "nav-new-store"|t }}</a>
           <button class="nav-link" data-on:click="$navMenuOpen = false; @post('/logout')">{% include "icons/log-out.svg" %} {{ "nav-logout"|t }}</button>
           {% include "partials/lang_switch.html" %}

@@ -67,7 +67,16 @@ pub fn render_confirmation(message: &str) -> String {
 #[derive(Template)]
 #[template(path = "partials/navbar.html")]
 struct NavbarTemplate {
+    /// The account item's visible label — the navbar shows the visitor's
+    /// name *as* the link to their account rather than the word "Konto"
+    /// beside a separate name label.
     user_name: Option<String>,
+    /// That item's accessible name and tooltip ("Konto von Andreas").
+    /// Pre-rendered because the askama `t` filter takes a key and nothing
+    /// else, so a Fluent message with a `{ $name }` argument can only be
+    /// resolved out here. Empty for an anonymous visitor, who has no
+    /// account item to label.
+    account_label: String,
     /// Shows the helmet button that leads into `/admin`. Passed in rather
     /// than looked up here so the navbar stays a pure render step, and so
     /// the map side (which already has the `User`) doesn't pay for a
@@ -95,6 +104,9 @@ struct NavbarTemplate {
 pub fn render_navbar(user: Option<&crate::models::User>, products: Vec<RankedProduct>) -> String {
     render(NavbarTemplate {
         user_name: user.map(|u| u.name.clone()),
+        account_label: user
+            .map(|u| i18n::translate_with_name(i18n::current_locale(), "nav-account-of", &u.name))
+            .unwrap_or_default(),
         is_admin: user.is_some_and(|u| u.admin),
         current_locale: i18n::current_locale().code(),
         suggestions_html: crate::handlers::search::render_empty_suggestions(),

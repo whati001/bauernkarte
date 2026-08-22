@@ -154,10 +154,13 @@ as a bug rather than as variety. Vary the land; leave the sky fixed.
 | `--text-primary` / `--text-secondary` / `--text-muted` | Body, labels, de-emphasised. |
 | `--border` / `--border-strong` | Hairlines; `--border-strong` for input outlines. |
 
-**Selected state is always the same shape:** filled `--accent` background,
-`--accent-contrast` text, `--radius-full`. It's used by the login button,
-the active language chip, and the active product chip. If something can
-be "on", it looks like that.
+**Selected state is always the same shape:** filled `--accent`
+background, `--accent-contrast` text. It's used by the active language
+chip, the active product chip, the selected admin rail item and the
+navbar toggles while what they open is on screen. If something can be
+"on", it looks like that — and if it can't, it doesn't get the fill.
+(The radius is the control's own: `--radius-full` on the chips, the
+navbar items' `--radius-sm` square.)
 
 ## Controls
 
@@ -185,6 +188,65 @@ be "on", it looks like that.
   ends — Leaflet gets no window `resize` event from it.
 - Focus: one global `:focus-visible` ring (`2px solid var(--accent)`,
   `2px` offset). Never remove it; never show a ring on mouse click.
+
+### Navbar items
+
+Everything in `#navbar`'s action row is a **box**, not a bare word or
+glyph laid on the tan: the `.nav-link`s (the account item, labelled with
+the visitor's name, plus Neues Geschäft and Logout), the `.nav-admin`
+helmet, `.nav-toggle`, the `.nav-search-toggle` magnifier and the
+`.lang-switch`. `#navbar` is `--shell`, and a control
+with no surface of its own doesn't read as tappable on it — which is
+exactly what the phone-width icon squares were missing before they were
+given one.
+
+One shape, three states:
+
+| State | Background | Foreground |
+| --- | --- | --- |
+| Resting | `--surface` | `--text-secondary` (`--accent` for the helmet) |
+| Hover | `--surface-2` | `--text-primary` (the helmet keeps `--accent`) |
+| Selected / open | `--accent` | `--accent-contrast` |
+
+The box is `1px solid var(--border-strong)` at `--radius-sm`, a full
+`--touch-target` tall — the same white well the search box wears, which
+is where the treatment comes from. Every box on the row is a control:
+the visitor's name used to sit among them as a bare label, and it now
+*is* the account item's label instead of a separate word beside it, so
+nothing up here looks tappable without being so.
+
+- **Hover is `--surface-2`, not `--shell-2`.** The wash has to match the
+  surface the control actually sits on, and once an item carries its own
+  white box, that surface is `--surface`. `--shell-2` is for controls
+  sitting directly on the chrome, which these no longer are.
+- **"Selected" means the thing this item opens is on screen** — not
+  merely "you are on this page". `.nav-toggle` while `.nav-menu` is
+  down, `.nav-search-toggle` while the search overlay is open, the
+  active `.lang-link`. It is the app's one selected treatment (filled
+  `--accent`, `--accent-contrast` glyph); only the radius differs, since
+  these keep their own `--radius-sm` square instead of becoming pills.
+- **The language switch is one box, not two.** `.lang-switch` owns the
+  border and the radius, and the two `.lang-link` segments sit inside it
+  sharing that single outline — otherwise a two-state control reads as
+  two separate controls.
+
+**Items folded into the stack get no box.** Below the collapse
+breakpoint the account / new-store / logout items move inside
+`.nav-menu`, which is itself a `--surface` card with its own border and
+shadow. A white bordered box inside a white bordered card is a box
+around nothing, so in the dropdown those items go back to being plain
+full-width menu rows: transparent, left-aligned, `--surface-2` on hover.
+The box belongs to the navbar *row*, not to the item.
+
+**No item is exempt, including `.nav-cta`.** The anonymous visitor's
+login button used to be a filled-accent pill at rest, on the grounds
+that it is the navbar's one call to action. That made it the single
+accent fill on the row that did *not* mean "selected", which is exactly
+the thing this rule exists to prevent: on this row, green means the
+thing that item opens is on screen. So login wears the same white box as
+everything else, keeping only a heavier `font-weight` as emphasis. It
+loses no prominence it needs — it is the only action an anonymous
+visitor has up there, and it has no competition to stand out from.
 
 ## Scales
 
@@ -215,16 +277,24 @@ SVGs — native `<option>` elements can only render text.
 
 - `≤1100px` — a logged-in visitor's navbar actions collapse behind the
   `.nav-toggle` hamburger into the `.nav-menu` dropdown. The number is
-  measured, not chosen: brand + search + Konto + Neues Geschäft + Logout
-  + name + language switch needs ~1100px on one line in German. An
+  measured, not chosen: brand + search + the account item + Neues
+  Geschäft + Logout + language switch needs ~1100px on one line in
+  German. An
   anonymous visitor has no toggle — one login button and the language
   switch fit at every width, and hiding the app's only call to action
   would be a downgrade.
 - `≤900px` — sidebar and map stack vertically (45/55 split); in
   `/admin` the rail stops being a column and becomes a wrapping row
-  above the content.
-- `≤700px` — the navbar's global search box is hidden; the sidebar's own
-  filters remain the full-featured path.
+  above the content, sized to its own content rather than to whatever
+  the section below leaves over (see `.admin-shell`).
+- `≤700px` — the navbar's global search box folds behind a 44px
+  magnifier (`.nav-search-toggle`) and reopens as an overlay under the
+  navbar, full width and over the map. The sidebar's own filters remain
+  the full-featured path; this is the quick one. What is left on the row
+  is icon squares — the magnifier, the `.nav-toggle` hamburger and (for
+  an admin) the helmet — each carrying the box described under "Navbar
+  items", and the two toggles taking the accent fill while what they
+  open is on screen.
 - `≤640px` — the brand tagline is hidden.
 - `≤400px` — navbar gutters and brand type shrink.
 
@@ -281,7 +351,15 @@ else — moderation is part of the product, not a separate tool.
   underneath, and the back link at its foot landed wherever that
   happened to be.
 - `.admin-shell` — `grid-template-columns: 248px 1fr`. Collapses to one
-  column at `≤900px`, where the rail becomes a wrapping row.
+  column at `≤900px`, where it also takes explicit
+  `grid-template-rows: auto 1fr` and the rail becomes a wrapping row.
+  The rows matter: the shell is `flex: 1` and always fills the window, so
+  with both rows auto-sized the leftover height went to the *rail*, and
+  how much was left depended on how tall that section's content was. A
+  near-empty queue inflated the rail to 378px with 83px-tall links; the
+  same rail under a full queue sat at 221px with 44px links; moving
+  between sections jumped the tan block by the difference. The slack
+  belongs to `.admin-content`, which is the scrolling region anyway.
 - `.admin-rail` — `--shell` background, full window height, so the tan
   surface reaches the bottom edge instead of stopping under the last
   link. Order inside it: `.admin-rail-back` first (see "The way out goes
@@ -293,7 +371,15 @@ else — moderation is part of the product, not a separate tool.
   with the section icons under it.
 - `.admin-rail-item` — a section link. Selected is
   `[aria-current="page"]`, in the same filled-accent shape as every other
-  "this is on" control in the app.
+  "this is on" control in the app. In row mode the rail sets
+  `align-items: center` / `align-content: flex-start`, because a wrapping
+  flex row stretches its lines *and* the items in them by default — these
+  are pills, not panes. The selected item also drops back to the
+  unselected `font-weight` there: in the 248px column the extra weight
+  costs nothing, but in a wrapping row it makes the selected item wider
+  than it just was, which can push a later item onto a new line and
+  change the rail's height as you move between sections. The accent fill
+  already carries "this one is on".
 - `.admin-content` — the work pane, and the one scrolling region on the
   page, the way `#sidebar` is on the map. `min-width: 0` so a wide table
   scrolls inside its own box instead of pushing the grid wider, and
