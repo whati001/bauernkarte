@@ -29,6 +29,7 @@ builds the host-side one from the same values plus `DB_HOST`/`DB_PORT`.
 ./bootstrap.py app       # cargo sqlx prepare + build/start the app container
 ./bootstrap.py system    # db, then app
 ./bootstrap.py stores    # seed OSM shop=farm data (needs db running)
+./bootstrap.py cleanup   # remove the containers, their images and pgdata
 ```
 
 A fresh checkout is `./bootstrap.py system` followed by
@@ -64,8 +65,10 @@ left alone.
 ### `db`
 
 1. `env`, if `.env` doesn't exist yet.
-2. `compose up -d db` — pulls `postgis/postgis:16-3.4` on first run,
-   creates the `pgdata` volume, publishes `DB_PORT` on the host.
+2. `compose up -d db` — builds `Dockerfile.postgis` on first run
+   (official `postgres:18.6-alpine3.24` with PostGIS compiled on top,
+   a few minutes; cached afterwards), creates the `pgdata` volume,
+   publishes `DB_PORT` on the host.
 3. Polls `pg_isready` inside the container until it answers.
 4. `sqlx migrate run` from the host against `DATABASE_URL`.
 
@@ -101,10 +104,29 @@ anything itself.
 1. Runs `scripts/seed_osm_farm_shops.py --live` — a live Overpass API
    fetch, takes a minute or two — and captures the SQL it prints.
 2. Pipes that into `psql` **inside the existing `db` container** via
-   `compose exec`. The postgis image already ships a `psql`, so no host
+   `compose exec`. The `db` image already ships a `psql`, so no host
    install and no extra container are needed. The connection string is
    built from the same `.env` credentials, just pointed at the
    container-side `5432` rather than the published `DB_PORT`.
+
+### `cleanup`
+
+Undoes everything the other subcommands created, in one step. Prompts
+first (`--yes` skips it, for scripts).
+
+1. `compose down --volumes --rmi local` — stops and removes the `db`
+   and `app` containers and the compose network, drops the `pgdata`
+   volume, and deletes the two images built from `Dockerfile` and
+   `Dockerfile.postgis`.
+
+The pulled `postgres:18.6-alpine3.24` base image is left cached on
+purpose: removing it would cost a re-pull *and* a full PostGIS
+recompile on the next `db`. `podman rmi postgres:18.6-alpine3.24` if
+you really want it gone.
+
+`.env` is left alone too — it's a checked-out-tree file, not a
+container artifact. Delete it by hand if you want the credentials
+regenerated.
 
 ## Running the app on the host instead
 
@@ -121,12 +143,14 @@ talks to the same database. See `README.md`.
 ## Resetting
 
 ```sh
-podman-compose down -v    # or: docker compose down -v
+./bootstrap.py cleanup    # or: podman-compose down -v
 ./bootstrap.py system
 ./bootstrap.py stores
 ```
 
-`-v` is what drops the `pgdata` volume. Without it the database — and
-its old credentials, which Postgres only reads from `POSTGRES_*` on
-*first* initialization — survives, so changing `DB_USER`/`DB_PWD` in
-`.env` needs a `down -v` to take effect.
+Dropping the `pgdata` volume is the part that matters. Without it the
+database — and its old credentials, which Postgres only reads from
+`POSTGRES_*` on *first* initialization — survives, so changing
+`DB_USER`/`DB_PWD` in `.env` doesn't take effect until the volume is
+gone. `cleanup` also drops the built images; a plain `down -v` keeps
+them, which is the faster option when only the data needs resetting.

@@ -1,5 +1,5 @@
-# Two-service stack: `db` (Postgres + PostGIS) and `app` (this repo,
-# built via `Dockerfile`).
+# Two-service stack: `db` (official Postgres with PostGIS built on top,
+# via `Dockerfile.postgis`) and `app` (this repo, via `Dockerfile`).
 #
 # Usage: `./bootstrap.py system` — that generates `.env`, brings `db`
 # up, applies migrations, refreshes `.sqlx/` and then builds/starts
@@ -19,13 +19,20 @@
 
 services:
   db:
-    image: docker.io/postgis/postgis:16-3.4
+    # Official Postgres + PostGIS built on top, so one image covers
+    # amd64 and arm64 — see `Dockerfile.postgis`.
+    build:
+      context: .
+      dockerfile: Dockerfile.postgis
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PWD}
       POSTGRES_DB: ${DB_NAME}
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      # Postgres 18 moved PGDATA to `/var/lib/postgresql/18/docker` and
+      # the volume one level up, to `/var/lib/postgresql` — a `pgdata`
+      # volume from an older Postgres image can't be reused here.
+      - pgdata:/var/lib/postgresql
     # Published so host-side tooling (`sqlx migrate run`, `cargo sqlx
     # prepare`, `psql`) can reach it on DB_PORT; `app` uses the compose
     # network regardless.

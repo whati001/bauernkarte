@@ -25,6 +25,7 @@ Subcommands:
     app     `cargo sqlx prepare` + build/start the compose `app` service
     system  db, then app
     stores  seed OSM shop=farm data into the running db
+    cleanup tear the stack down: containers, images, volumes
 
 Usage:
     ./bootstrap.py env
@@ -337,6 +338,34 @@ def do_stores():
     click.echo("stores seeded.")
 
 
+def do_cleanup(assume_yes):
+    """Tear the whole compose stack down: containers, network, the two
+    built images and the `pgdata` volume."""
+    # `.env` is only needed for compose's `${VAR}` interpolation here —
+    # none of the container/image/volume names depend on it, so a
+    # missing file falls back to the defaults rather than blocking a
+    # cleanup.
+    cfg = load_env() if ENV_FILE.exists() else dict(DEFAULTS)
+    compose = compose_cmd()
+
+    if not assume_yes:
+        click.confirm(
+            f"this removes the `{DB_SERVICE}` and `{APP_SERVICE}` "
+            f"containers, the images built for them and the pgdata volume "
+            f"— everything in the `{cfg['DB_NAME']}` database goes with it. "
+            "Continue?",
+            abort=True,
+        )
+
+    # `--rmi local` catches both services because neither names a
+    # prebuilt `image:` in docker-compose.yml. It deliberately leaves
+    # the pulled `postgres:*-alpine` base behind: dropping that would
+    # cost a re-pull *and* a full PostGIS recompile on the next `db`.
+    run(compose + ["down", "--volumes", "--rmi", "local"],
+        env=compose_env(cfg))
+    click.echo("cleaned up — `./bootstrap.py system` rebuilds from scratch.")
+
+
 @click.group()
 def cli():
     """Bootstrap the containerized BauernKarte dev environment."""
@@ -372,6 +401,13 @@ def system():
 def stores():
     """Seed OSM shop=farm data into the running db."""
     do_stores()
+
+
+@cli.command()
+@click.option("--yes", is_flag=True, help="Skip the confirmation prompt.")
+def cleanup(yes):
+    """Remove the containers, their images and the pgdata volume."""
+    do_cleanup(yes)
 
 
 if __name__ == "__main__":
