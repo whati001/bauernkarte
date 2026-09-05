@@ -19,11 +19,7 @@
 
 services:
   db:
-    # Official Postgres + PostGIS built on top, so one image covers
-    # amd64 and arm64 — see `Dockerfile.postgis`.
-    build:
-      context: .
-      dockerfile: Dockerfile.postgis
+    image: docker.io/postgis/postgis:18-3.6-alpine
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PWD}
