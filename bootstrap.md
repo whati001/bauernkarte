@@ -28,7 +28,7 @@ builds the host-side one from the same values plus `DB_HOST`/`DB_PORT`.
 ./bootstrap.py db        # start the db container + run migrations
 ./bootstrap.py app       # cargo sqlx prepare + build/start the app container
 ./bootstrap.py system    # db, then app
-./bootstrap.py stores    # seed OSM shop=farm data (needs db running)
+./bootstrap.py stores    # seed OSM farm-shop/vending data (needs db running)
 ./bootstrap.py cleanup   # remove the containers, their images and pgdata
 ```
 
@@ -97,9 +97,10 @@ Afterwards the app is on `http://127.0.0.1:$APP_PORT`.
 
 ### `stores`
 
-Seeds the db with OpenStreetMap `shop=farm` data (`design.md`'s public
-reference data). Requires a running db; it doesn't start or pull
-anything itself.
+Seeds the db with OpenStreetMap farm-produce data — `shop=farm` shops
+plus `amenity=vending_machine`s selling farm produce (`design.md`'s
+public reference data). Requires a running db; it doesn't start or
+pull anything itself.
 
 1. Runs `scripts/seed_osm_farm_shops.py --live` — a live Overpass API
    fetch, takes a minute or two — and captures the SQL it prints.

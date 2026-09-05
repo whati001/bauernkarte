@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
-"""Generate a SQL seed file from OpenStreetMap `shop=farm` data in Austria.
+"""Generate a SQL seed file from OpenStreetMap farm-produce data in Austria.
 
-Source: Overpass API, tag documented at
-https://wiki.openstreetmap.org/wiki/DE:Tag:shop%3Dfarm — farm shops selling
-agricultural products either at the farm itself or as a roadside stand.
+Source: Overpass API, two tags:
+
+  * `shop=farm` — https://wiki.openstreetmap.org/wiki/DE:Tag:shop%3Dfarm —
+    farm shops selling agricultural products either at the farm itself or
+    as a roadside stand.
+  * `amenity=vending_machine` with a farm-produce `vending=` value
+    (see VENDING_TOKENS) — https://wiki.openstreetmap.org/wiki/DE:Tag:amenity%3Dvending_machine
+    — the self-service "Regiomat"/milk-and-egg machines that sell the same
+    goods around the clock, and belong on the same map.
 
 Per-shop `name` becomes both the `company.name` and `store.name` (per
 request — this dataset doesn't distinguish farm-shop-as-a-business from
@@ -53,21 +59,43 @@ import sys
 import urllib.request
 
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
+
+# `vending=` values that mean "this machine sells farm produce". Every
+# one of them has a PRODUCT_MAP entry below — a token here without one
+# would pull the machines in and then drop them all again on the
+# no-mappable-product filter in main().
+VENDING_TOKENS = (
+    "milk", "eggs", "tomatoes", "cheese", "sausages", "potatoes",
+    "noodles", "meat", "honey", "fruits",
+)
+
+# Matched unanchored against the whole `vending` value, because it is
+# routinely a multi-value list ("milk;eggs", "cheese;sausages;bread")
+# that an anchored match would miss entirely. The looseness costs
+# nothing: it also matches values that merely *contain* a token, but
+# parse_products splits the value and looks each token up exactly, so a
+# machine with no real farm-produce token maps to no product and is
+# skipped.
 OVERPASS_QUERY = """
-[out:json][timeout:120];
+[out:json][timeout:180];
 area["ISO3166-1"="AT"][admin_level=2]->.at;
 (
   node["shop"="farm"](area.at);
   way["shop"="farm"](area.at);
+  node["amenity"="vending_machine"]["vending"~"%(vending)s"](area.at);
+  way["amenity"="vending_machine"]["vending"~"%(vending)s"](area.at);
 );
 out center tags;
-"""
+""" % {"vending": "|".join(VENDING_TOKENS)}
 
 # OSM produce=/product=/vending= tokens (English, semicolon/comma
 # separated in practice) -> (German product name, category name).
 # Tokens with no reasonable single-category home, or too vague to be a
 # real product ("food", "groceries", "deli"), are left unmapped and
-# simply skipped rather than guessed at.
+# simply skipped rather than guessed at. That holds for `vending=food`
+# machines too, even though it is the most common value on them: a
+# catch-all "assorted groceries" product is out of scope here, so those
+# machines are neither queried for nor seeded.
 PRODUCT_MAP = {
     "apple": ("Äpfel", "Obst & Gemüse"),
     "apples": ("Äpfel", "Obst & Gemüse"),
@@ -76,6 +104,7 @@ PRODUCT_MAP = {
     "fruits": ("Obst", "Obst & Gemüse"),
     "fruit": ("Obst", "Obst & Gemüse"),
     "potatoes": ("Kartoffeln", "Obst & Gemüse"),
+    "tomatoes": ("Tomaten", "Obst & Gemüse"),
     "strawberry": ("Erdbeeren", "Obst & Gemüse"),
     "cherry": ("Kirschen", "Obst & Gemüse"),
     "pumpkin_seed": ("Kürbiskerne", "Obst & Gemüse"),
@@ -96,6 +125,7 @@ PRODUCT_MAP = {
     "pork": ("Schweinefleisch", "Fleisch & Wurst"),
     "bacon": ("Speck", "Fleisch & Wurst"),
     "sausage": ("Wurst", "Fleisch & Wurst"),
+    "sausages": ("Wurst", "Fleisch & Wurst"),
     "ham": ("Schinken", "Fleisch & Wurst"),
     "chicken": ("Hühnerfleisch", "Fleisch & Wurst"),
     "chicken_meat": ("Hühnerfleisch", "Fleisch & Wurst"),
@@ -140,6 +170,7 @@ PRODUCT_ICONS = {
     "Obst": "🍇",
     "Gemüse": "🥦",
     "Kartoffeln": "🥔",
+    "Tomaten": "🍅",
     "Erdbeeren": "🍓",
     "Kirschen": "🍒",
     "Kräuter": "🌿",
@@ -197,7 +228,7 @@ def fetch_overpass():
         data=("data=" + urllib.parse.quote(OVERPASS_QUERY)).encode(),
         headers={"User-Agent": "bauernkarte-bootstrap/1.0 (andreaskarner@outlook.com)"},
     )
-    with urllib.request.urlopen(req, timeout=120) as resp:
+    with urllib.request.urlopen(req, timeout=180) as resp:
         return json.load(resp)
 
 
@@ -208,6 +239,19 @@ def extract_latlon(element):
     if center:
         return center["lat"], center["lon"]
     return None, None
+
+
+def display_name(tags):
+    """What to call this location, or None if nothing usable is tagged.
+
+    Farm shops in OSM carry a `name` almost without exception; vending
+    machines mostly don't — for those `operator` (the farm running the
+    machine) is the only other tag holding a real name, and is what
+    people would recognise it by anyway. Anything with neither is left
+    out by the caller rather than given a placeholder: hundreds of
+    unrelated machines all listed as "Automat" would be worse than
+    absent."""
+    return tags.get("name") or tags.get("operator")
 
 
 def parse_products(tags):
@@ -242,7 +286,7 @@ def main():
     skipped_no_product = 0
     for el in elements:
         tags = el.get("tags", {})
-        name = tags.get("name")
+        name = display_name(tags)
         lat, lon = extract_latlon(el)
         if not name or lat is None or lon is None:
             continue
@@ -256,9 +300,11 @@ def main():
             continue
         named.append((el, name, lat, lon, tags))
 
-    print(f"-- Generated from {len(named)} named OSM shop=farm elements in Austria")
-    print(f"-- (of {len(elements)} total; the rest had no name tag, no coordinates, "
-          f"or no mappable product — {skipped_no_product} skipped for the latter)")
+    print(f"-- Generated from {len(named)} named OSM shop=farm / farm-produce")
+    print(f"-- amenity=vending_machine elements in Austria")
+    print(f"-- (of {len(elements)} total; the rest had no name or operator tag, no "
+          f"coordinates, or no mappable product — {skipped_no_product} skipped for "
+          "the latter)")
     print("-- See scripts/seed_osm_farm_shops.py for provenance and the product mapping.")
     print()
 
@@ -296,7 +342,7 @@ def main():
         print("  WHERE product.icon IS NULL;")
         print()
 
-    print("-- Companies + stores, one pair per named shop=farm location.")
+    print("-- Companies + stores, one pair per named shop/machine location.")
     print("-- Company/store id correspondence relies on sequential identity")
     print("-- assignment on an otherwise-untouched insert order below — run")
     print("-- this against a table with no concurrent writes.")

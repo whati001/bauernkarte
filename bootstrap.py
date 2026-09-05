@@ -24,7 +24,7 @@ Subcommands:
     db      start the compose `db` service + `sqlx migrate run`
     app     `cargo sqlx prepare` + build/start the compose `app` service
     system  db, then app
-    stores  seed OSM shop=farm data into the running db
+    stores  seed OSM farm-shop/vending-machine data into the running db
     cleanup tear the stack down: containers, images, volumes
 
 Usage:
@@ -296,7 +296,8 @@ def do_app():
 
 
 def do_stores():
-    """Seed the db with OpenStreetMap shop=farm data (design.md's public
+    """Seed the db with OpenStreetMap farm-produce data — `shop=farm`
+    plus farm-produce `amenity=vending_machine`s (design.md's public
     reference data, see scripts/seed_osm_farm_shops.py's own docstring
     for the field mapping/provenance)."""
     cfg = load_env()
@@ -310,9 +311,9 @@ def do_stores():
     # in a terminal — this subprocess's stdin isn't a tty regardless of
     # how bootstrap.py itself was invoked, so `--live` forces the fetch
     # explicitly instead of relying on that.
-    click.echo("fetching OSM shop=farm data from Overpass and generating "
-               "seed SQL (this hits a public API and can take a minute or "
-               "two)...")
+    click.echo("fetching OSM farm-shop and vending-machine data from Overpass "
+               "and generating seed SQL (this hits a public API and can take "
+               "a minute or two)...")
     try:
         seed = subprocess.run(
             [sys.executable, str(SEED_SCRIPT), "--live"],
@@ -399,7 +400,7 @@ def system():
 
 @cli.command()
 def stores():
-    """Seed OSM shop=farm data into the running db."""
+    """Seed OSM farm-shop/vending-machine data into the running db."""
     do_stores()
 
 
