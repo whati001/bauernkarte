@@ -177,7 +177,6 @@ pub struct TabQuery {
 
 fn view_path(entity: Entity, id: i64) -> Option<String> {
     match entity {
-        Entity::Company => Some(format!("/company/{id}/edit")),
         Entity::Store => Some(format!("/store/{id}")),
         Entity::Product => Some(format!("/product/{id}/edit")),
         Entity::Offer => Some(format!("/store-product/{id}/edit")),
@@ -281,7 +280,6 @@ fn to_views(entity: Entity, rows: Vec<db::moderation::QueueRow>) -> Vec<QueueRow
 
 fn blurb_key(entity: Entity) -> &'static str {
     match entity {
-        Entity::Company => "admin-blurb-companies",
         Entity::Store => "admin-blurb-stores",
         Entity::Product => "admin-blurb-products",
         Entity::Offer => "admin-blurb-offers",

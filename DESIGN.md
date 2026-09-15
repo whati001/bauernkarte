@@ -65,9 +65,8 @@ nested card — nesting cards inside cards reads as noise.
 - `.section-head` — the header row: `.section-label` (icon + what this
   card *is*) on the left, its edit action on the right. Used where the
   card describes a named entity, so the name doesn't have to double as
-  the title: `Firma` / `Geschäft` label, `.entity-name` below it. Two
-  cards for a shop named after its company are otherwise the same word
-  twice with nothing saying which is which.
+  the title: a `Geschäft` label, `.entity-name` below it — the card
+  still says what it is when the name alone would be ambiguous.
 - `.fact-row` — one labelled fact: accent icon, then `.fact-label`
   stacked over the value.
 - `.card-footer` — the card's closing bar, ruled off with a top border,
@@ -75,9 +74,10 @@ nested card — nesting cards inside cards reads as noise.
   instead of trailing whatever content came last. Drop the whole bar
   when its contents are all sign-in-gated; an empty ruled strip is worse
   than no strip.
-- `.spec-grid` / `.spec` — a 2×2 block of short labelled facts sharing
-  hairline dividers (the store detail's season/rating/photos/category).
-  At sidebar width four separate cards would be nearly all border.
+- `.spec-grid` / `.spec` — a block of short labelled facts sharing
+  hairline dividers (the store detail's season/rating/category, season
+  spanning the full width for its 12-month bar). At sidebar width three
+  separate cards would be nearly all border.
 - `.btn-quiet` — accent-outlined secondary action, for a card whose
   primary is (or could be) the one filled `button.primary`.
 - `.add-tile` — full-width dashed "add another" affordance closing a

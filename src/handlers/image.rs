@@ -31,50 +31,46 @@ use crate::{
 /// "reject oversized upload before processing it").
 const MAX_UPLOAD_BYTES: usize = 15 * 1024 * 1024;
 
-async fn detail_html_for_store_product(
-    state: &AppState,
-    store_product_id: i64,
-    viewer_id: i64,
-) -> AppResult<String> {
-    let sp = db::store_product::find(&state.pool, store_product_id).await?.ok_or(AppError::NotFound)?;
-    let detail = load_detail_or_404(state, sp.store, Some(viewer_id)).await?;
+async fn detail_html_for_store(state: &AppState, store_id: i64, viewer_id: i64) -> AppResult<String> {
+    let detail = load_detail_or_404(state, store_id, Some(viewer_id)).await?;
     Ok(crate::handlers::store_detail::render_detail_panel(&detail, true))
 }
 
 #[derive(Template)]
 #[template(path = "partials/image_form.html")]
 struct ImageFormTemplate {
-    store_product_id: i64,
-    /// Where the form's back button returns to. Looked up from the
-    /// listing rather than taken from a `?store_id=` param — a
-    /// store_product belongs to exactly one store, so this stays right
-    /// even when the form is opened by a direct URL.
+    store_id: i64,
+    /// Where the form's back button returns to — the store the photo is
+    /// being added to, so this stays right even when the form is opened
+    /// by a direct URL.
     back_action: String,
 }
 
-/// `GET /store-product/{id}/image/new` (image-upload capability).
+/// `GET /store/{id}/image/new` (image-upload capability).
 pub async fn new_form(
     State(state): State<AppState>,
-    Path(store_product_id): Path<i64>,
+    Path(store_id): Path<i64>,
     CurrentUser(_user): CurrentUser,
 ) -> AppResult<Sse<impl stream::Stream<Item = Result<Event, Infallible>>>> {
-    let sp = db::store_product::find(&state.pool, store_product_id).await?.ok_or(AppError::NotFound)?;
+    if db::store::find(&state.pool, store_id).await?.is_none() {
+        return Err(AppError::NotFound);
+    }
     let html = render(ImageFormTemplate {
-        store_product_id,
-        back_action: super::back_action(Some(sp.store)),
+        store_id,
+        back_action: super::back_action(Some(store_id)),
     });
     Ok(Sse::new(stream::iter(vec![Ok(patch_elements_at("#sidebar", "inner", &html))])))
 }
 
-/// `POST /store-product/{id}/image` — multipart upload -> `image` row,
+/// `POST /store/{id}/image` — multipart upload -> `image` row,
 /// `approved=false` (image-upload capability).
 pub async fn upload(
     State(state): State<AppState>,
-    Path(store_product_id): Path<i64>,
+    Path(store_id): Path<i64>,
     CurrentUser(user): CurrentUser,
     mut multipart: Multipart,
 ) -> AppResult<Sse<impl stream::Stream<Item = Result<Event, Infallible>>>> {
-    if db::store_product::find(&state.pool, store_product_id).await?.is_none() {
+    if db::store::find(&state.pool, store_id).await?.is_none() {
         return Err(AppError::NotFound);
     }
 
@@ -111,10 +107,10 @@ pub async fn upload(
     let processed = process_upload(&file_bytes)?;
     let size_bytes = processed.bytes.len();
     let mime_type = processed.mime_type;
-    db::image::insert(&state.pool, store_product_id, &processed.bytes, mime_type, description.as_deref(), user.id)
+    db::image::insert(&state.pool, store_id, &processed.bytes, mime_type, description.as_deref(), user.id)
         .await?;
     tracing::info!(
-        user_id = %user.id, store_product_id = %store_product_id, %mime_type, size_bytes,
+        user_id = %user.id, store_id = %store_id, %mime_type, size_bytes,
         "image uploaded"
     );
 
@@ -122,7 +118,7 @@ pub async fn upload(
     // matters more for arbitrary uploaded files than for a text edit), so
     // re-rendering the detail panel here (as this used to) would show
     // *no visible change at all*: the just-uploaded image is filtered out
-    // of `db::image::list_for_store_product` until approved, same as a
+    // of `db::image::list_for_store` until approved, same as a
     // brand-new store/product doesn't appear in search yet. Every other
     // pending-review creation flow (store.rs::create, product.rs::create)
     // shows an explicit confirmation instead of silently returning to a
@@ -192,7 +188,7 @@ pub async fn update(
     .await?;
     tracing::info!(user_id = %user.id, image_id = %image_id, "image updated");
 
-    let html = detail_html_for_store_product(&state, before.store_product, user.id).await?;
+    let html = detail_html_for_store(&state, before.store, user.id).await?;
     Ok(Sse::new(stream::iter(vec![Ok(patch_elements_at("#sidebar", "inner", &html))])))
 }
 
@@ -220,6 +216,6 @@ pub async fn delete(
     .await?;
     tracing::info!(user_id = %user.id, image_id = %image_id, "image deleted");
 
-    let html = detail_html_for_store_product(&state, before.store_product, user.id).await?;
+    let html = detail_html_for_store(&state, before.store, user.id).await?;
     Ok(Sse::new(stream::iter(vec![Ok(patch_elements_at("#sidebar", "inner", &html))])))
 }

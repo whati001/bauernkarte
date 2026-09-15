@@ -110,7 +110,6 @@ async fn main() -> anyhow::Result<()> {
         .route("/register", post(handlers::account::register))
         .route("/store/new", post(handlers::store::create))
         .route("/store/{id}", patch(handlers::store::update).delete(handlers::store::delete))
-        .route("/company/{id}", patch(handlers::company::update).delete(handlers::company::delete))
         .route("/store/{id}/product/new", post(handlers::product::create))
         .route(
             "/product/{id}",
@@ -124,7 +123,7 @@ async fn main() -> anyhow::Result<()> {
             "/store-product/{id}/rating",
             post(handlers::rating::rate_up).delete(handlers::rating::unrate),
         )
-        .route("/store-product/{id}/image", post(handlers::image::upload))
+        .route("/store/{id}/image", post(handlers::image::upload))
         .route(
             "/image/{id}",
             patch(handlers::image::update).delete(handlers::image::delete),
@@ -151,11 +150,10 @@ async fn main() -> anyhow::Result<()> {
         .route("/account/password", post(handlers::account::change_password))
         .route("/store/new", get(handlers::store::new_form))
         .route("/store/{id}/edit", get(handlers::store::edit_form))
-        .route("/company/{id}/edit", get(handlers::company::edit_form))
         .route("/store/{id}/product/new", get(handlers::product::new_form))
         .route("/store-product/{id}/edit", get(handlers::product::edit_seasonality_form))
         .route("/product/{id}/edit", get(handlers::product::edit_product_form))
-        .route("/store-product/{id}/image/new", get(handlers::image::new_form))
+        .route("/store/{id}/image/new", get(handlers::image::new_form))
         .route("/image/{id}", get(handlers::image::show))
         .route("/impressum", get(handlers::impressum::page))
         .route("/api/impressum", get(handlers::impressum::panel))

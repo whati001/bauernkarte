@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "update company\n           set name = $2, description = $3, homepage = $4, modified_by = $5, modified = now()\n           where id = $1\n           returning id, name, description, homepage, approved, deleted,\n                     created_by, modified_by, created, modified",
+  "query": "update image set deleted = true, modified_by = $2, modified = now()\n           where id = $1\n           returning id, store, image, mime_type, description, approved, deleted,\n                     created_by, modified_by, created, modified",
   "describe": {
     "columns": [
       {
@@ -10,46 +10,51 @@
       },
       {
         "ordinal": 1,
-        "name": "name",
-        "type_info": "Text"
+        "name": "store",
+        "type_info": "Int8"
       },
       {
         "ordinal": 2,
-        "name": "description",
-        "type_info": "Text"
+        "name": "image",
+        "type_info": "Bytea"
       },
       {
         "ordinal": 3,
-        "name": "homepage",
+        "name": "mime_type",
         "type_info": "Text"
       },
       {
         "ordinal": 4,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
         "name": "approved",
         "type_info": "Bool"
       },
       {
-        "ordinal": 5,
+        "ordinal": 6,
         "name": "deleted",
         "type_info": "Bool"
       },
       {
-        "ordinal": 6,
+        "ordinal": 7,
         "name": "created_by",
         "type_info": "Int8"
       },
       {
-        "ordinal": 7,
+        "ordinal": 8,
         "name": "modified_by",
         "type_info": "Int8"
       },
       {
-        "ordinal": 8,
+        "ordinal": 9,
         "name": "created",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 9,
+        "ordinal": 10,
         "name": "modified",
         "type_info": "Timestamptz"
       }
@@ -57,16 +62,14 @@
     "parameters": {
       "Left": [
         "Int8",
-        "Text",
-        "Text",
-        "Text",
         "Int8"
       ]
     },
     "nullable": [
       false,
       false,
-      true,
+      false,
+      false,
       true,
       false,
       false,
@@ -76,5 +79,5 @@
       false
     ]
   },
-  "hash": "8789e96becc581cbe4d7acbad468b60dd10641c8e74c65d50496802e50953f00"
+  "hash": "7a466cdc5b8cb55075582e5bd9855bd218af670fa19cf2147e97409c9f074110"
 }

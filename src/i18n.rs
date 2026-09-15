@@ -128,7 +128,7 @@ pub fn translate_with_args(locale: Locale, key: &str, args: &HashMap<String, Str
 }
 
 /// A message with a single `{ $count }` placeholder that also selects a
-/// plural form (`detail-product-count`, `detail-image-count`).
+/// plural form (`detail-product-count`).
 ///
 /// Separate from `translate_with_args` on purpose: that one maps every
 /// argument to `FluentValue::String`, and Fluent's plural selectors only
@@ -164,22 +164,18 @@ mod tests {
     /// The two count messages use Fluent plural selectors, which only
     /// fire for a numeric argument — `translate_with_args` would stringify
     /// the count and silently always pick `*[other]` ("1 Produkte").
-    /// These aren't in `ALL_KEYS` above because a bare `lookup` of a
+    /// This isn't in `ALL_KEYS` above because a bare `lookup` of a
     /// message with a selector doesn't exercise the thing worth checking.
     #[test]
     fn count_messages_select_the_right_plural() {
         for locale in [Locale::De, Locale::En] {
-            for key in ["detail-product-count", "detail-image-count"] {
-                let one = translate_with_count(locale, key, 1);
-                let many = translate_with_count(locale, key, 3);
-                assert!(one.contains('1'), "{key}/{locale:?} dropped the count: {one}");
-                assert!(many.contains('3'), "{key}/{locale:?} dropped the count: {many}");
-                assert_ne!(one, many, "{key}/{locale:?} used one form for both counts");
-            }
+            let key = "detail-product-count";
+            let one = translate_with_count(locale, key, 1);
+            let many = translate_with_count(locale, key, 3);
+            assert!(one.contains('1'), "{key}/{locale:?} dropped the count: {one}");
+            assert!(many.contains('3'), "{key}/{locale:?} dropped the count: {many}");
+            assert_ne!(one, many, "{key}/{locale:?} used one form for both counts");
         }
-        // The zero case is spelled out in words rather than "0 Fotos".
-        assert_eq!(translate_with_count(Locale::En, "detail-image-count", 0), "No photos");
-        assert_eq!(translate_with_count(Locale::De, "detail-image-count", 0), "Keine Fotos");
     }
 
     /// Fails loudly at test time (not silently at render time) if the
@@ -220,11 +216,7 @@ mod tests {
         "month-jul", "month-aug", "month-sep", "month-oct", "month-nov", "month-dec",
         "store-form-new-heading", "store-form-edit-heading", "store-form-name",
         "store-form-location", "store-form-opening-hours", "store-form-opening-hours-hint",
-        "store-form-is-company",
-        "store-form-company", "store-form-company-choose", "store-form-company-description",
-        "store-form-company-homepage", "store-form-product-heading",
-        "company-form-heading", "company-form-name", "company-form-description",
-        "company-form-homepage",
+        "store-form-product-heading",
         "product-form-add-heading", "product-form-new-checkbox", "product-form-product",
         "product-form-choose", "product-form-name", "product-form-category",
         "product-form-description-optional", "product-form-seasonal-checkbox",
@@ -234,13 +226,13 @@ mod tests {
         "edit-product-form-description",
         "image-form-heading", "image-form-file-label", "image-form-description-optional",
         "image-form-upload", "image-form-alt-fallback",
-        "detail-edit-company", "detail-edit-store", "detail-delete-store",
+        "detail-edit-store", "detail-delete-store",
         "detail-edit-product", "detail-edit-product-title",
         "detail-edit-seasonality", "detail-edit-seasonality-title",
         "detail-remove-offer", "detail-remove-offer-title",
-        "detail-company", "detail-store", "detail-products", "detail-season",
+        "detail-store", "detail-products", "detail-season",
         "detail-category", "detail-location", "detail-rating-label", "detail-photos",
-        "detail-other-stores", "detail-get-directions",
+        "detail-get-directions",
         "confirmation-image-pending",
         "map-sidebar-collapse", "map-sidebar-expand", "map-sidebar-width",
         "language-de", "language-en",

@@ -11,11 +11,10 @@ Source: Overpass API, two tags:
     — the self-service "Regiomat"/milk-and-egg machines that sell the same
     goods around the clock, and belong on the same map.
 
-Per-shop `name` becomes both the `company.name` and `store.name` (per
-request — this dataset doesn't distinguish farm-shop-as-a-business from
-farm-shop-as-a-location, so the two are set identically, same as the
-in-app "this store is the company" flow). Coordinates become
-`store.position`. Where OSM's `produce=`/`product=`/`vending=` tags name
+Per-shop `name` becomes `store.name` and the coordinates become
+`store.position`. OSM's `website=`/`contact:website=` tag is dropped —
+there is nowhere to put it, the app has no store-level homepage field.
+Where OSM's `produce=`/`product=`/`vending=` tags name
 what's sold, those are mapped to this app's product catalog and a
 `store_product` row is created.
 
@@ -46,7 +45,7 @@ submission subject to moderation (same treatment as the `category` seed).
 
 The generated SQL is idempotent: products upsert on their name (filling
 in a missing icon and changing nothing else), and each shop's
-company/store/store_product insert is guarded
+store/store_product insert is guarded
 on "no store of this name within 1m of this point" already existing. An
 earlier version guarded only the products, so a second run silently
 duplicated every shop — see the guard's own comment below for why that
@@ -292,7 +291,7 @@ def main():
             continue
         # A store with zero store_product rows doesn't show up in the
         # app's map at all (search/results are product-driven) — it'd
-        # just be a dead company+store nobody can ever find. Skip
+        # just be a dead store nobody can ever find. Skip
         # shops whose produce=/product=/vending= tags didn't map to
         # anything in PRODUCT_MAP, rather than insert one anyway.
         if not parse_products(tags):
@@ -342,19 +341,15 @@ def main():
         print("  WHERE product.icon IS NULL;")
         print()
 
-    print("-- Companies + stores, one pair per named shop/machine location.")
-    print("-- Company/store id correspondence relies on sequential identity")
-    print("-- assignment on an otherwise-untouched insert order below — run")
-    print("-- this against a table with no concurrent writes.")
+    print("-- Stores, one per named shop/machine location.")
     print()
 
     for el, name, lat, lon, tags in named:
-        website = tags.get("website") or tags.get("contact:website")
         point = f"ST_SetSRID(ST_MakePoint({lon}, {lat}), 4326)::geography"
         # The whole per-shop statement hangs off this guard: if a store
-        # with this name already sits on this spot, the company INSERT
-        # selects no row, so `new_company` is empty, so `new_store` and
-        # the store_product INSERT below it are empty too. Without it a
+        # with this name already sits on this spot, the store INSERT
+        # selects no row, so `new_store` is empty, so the store_product
+        # INSERT below it is empty too. Without it a
         # second run duplicated every shop at identical coordinates —
         # and two pins on the exact same point cluster into a permanent
         # "2" badge that no amount of zooming can split, which makes
@@ -362,21 +357,15 @@ def main():
         # 1 metre rather than exact equality so re-running can't be
         # defeated by float representation drift through the geography
         # column.
-        print("WITH new_company AS (")
+        print("WITH new_store AS (")
         print(
-            f"  INSERT INTO company (name, homepage, approved, created_by)\n"
-            f"  SELECT {sql_str(name)}, {sql_str(website)}, true, NULL\n"
+            f"  INSERT INTO store (name, position, approved, created_by)\n"
+            f"  SELECT {sql_str(name)}, {point}, true, NULL\n"
             f"  WHERE NOT EXISTS (\n"
             f"    SELECT 1 FROM store s\n"
             f"    WHERE s.name = {sql_str(name)} AND ST_DWithin(s.position, {point}, 1)\n"
             f"  )\n"
             f"  RETURNING id"
-        )
-        print("), new_store AS (")
-        print(
-            "  INSERT INTO store (company, name, position, approved, created_by) "
-            f"SELECT id, {sql_str(name)}, {point}, "
-            "true, NULL FROM new_company RETURNING id"
         )
         print(")")
         # `named` is pre-filtered to shops with >=1 mapped product, so
@@ -399,7 +388,7 @@ def main():
         )
         print()
 
-    print(f"-- Done: {len(named)} companies, {len(named)} stores, "
+    print(f"-- Done: {len(named)} stores, "
           f"{len(all_products)} distinct products.", file=sys.stderr)
 
 

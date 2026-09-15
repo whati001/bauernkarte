@@ -3,8 +3,8 @@
 //!
 //! One module rather than a per-table split (the house rule elsewhere in
 //! `db/`) because everything here is the *same* four operations applied
-//! to five tables; splitting it would put five near-identical copies of
-//! each into five files. The differences that are real — which columns
+//! to four tables; splitting it would put four near-identical copies of
+//! each into four files. The differences that are real — which columns
 //! make a readable label, which joins reach them — stay as separate
 //! compile-time-checked queries below.
 
@@ -14,12 +14,11 @@ use time::OffsetDateTime;
 
 use crate::db::edit_log::EditAction;
 
-/// The five moderated tables. `category` is deliberately absent: it's a
+/// The four moderated tables. `category` is deliberately absent: it's a
 /// fixed taxonomy managed directly in the database, not user-creatable
 /// (see the comment on the table in its migration).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Entity {
-    Company,
     Store,
     Product,
     /// `store_product` — "this shop sells this product", with its season.
@@ -28,8 +27,7 @@ pub enum Entity {
 }
 
 impl Entity {
-    pub const ALL: [Entity; 5] = [
-        Entity::Company,
+    pub const ALL: [Entity; 4] = [
         Entity::Store,
         Entity::Product,
         Entity::Offer,
@@ -39,7 +37,6 @@ impl Entity {
     /// URL segment under `/admin/`.
     pub fn slug(self) -> &'static str {
         match self {
-            Entity::Company => "companies",
             Entity::Store => "stores",
             Entity::Product => "products",
             Entity::Offer => "offers",
@@ -55,7 +52,6 @@ impl Entity {
     /// name — the two have always been the same string.
     pub fn table(self) -> &'static str {
         match self {
-            Entity::Company => "company",
             Entity::Store => "store",
             Entity::Product => "product",
             Entity::Offer => "store_product",
@@ -66,7 +62,6 @@ impl Entity {
     /// Fluent key for the section's own name.
     pub fn label_key(self) -> &'static str {
         match self {
-            Entity::Company => "admin-nav-companies",
             Entity::Store => "admin-nav-stores",
             Entity::Product => "admin-nav-products",
             Entity::Offer => "admin-nav-offers",
@@ -113,21 +108,11 @@ pub struct FieldDiff {
 
 pub async fn pending(pool: &PgPool, entity: Entity) -> sqlx::Result<Vec<QueueRow>> {
     let rows = match entity {
-        Entity::Company => sqlx::query_as!(
-            QueueRow,
-            r#"select c.id, c.name as "title!", null as "subtitle?",
-                      u.name as "author?", c.created as "at!"
-               from company c left join "user" u on u.id = c.created_by
-               where not c.approved and not c.deleted order by c.created"#
-        )
-        .fetch_all(pool)
-        .await?,
         Entity::Store => sqlx::query_as!(
             QueueRow,
-            r#"select s.id, s.name as "title!", co.name as "subtitle?",
+            r#"select s.id, s.name as "title!", null as "subtitle?",
                       u.name as "author?", s.created as "at!"
                from store s
-               join company co on co.id = s.company
                left join "user" u on u.id = s.created_by
                where not s.approved and not s.deleted order by s.created"#
         )
@@ -158,12 +143,13 @@ pub async fn pending(pool: &PgPool, entity: Entity) -> sqlx::Result<Vec<QueueRow
         .await?,
         Entity::Image => sqlx::query_as!(
             QueueRow,
-            r#"select i.id, coalesce(i.description, p.name) as "title!",
-                      s.name as "subtitle?", u.name as "author?", i.created as "at!"
+            // Title is the shop, subtitle the uploader's own caption
+            // (often absent) — a photo has no name of its own, and which
+            // shop it claims to show is what an admin is judging.
+            r#"select i.id, s.name as "title!", i.description as "subtitle?",
+                      u.name as "author?", i.created as "at!"
                from image i
-               join store_product sp on sp.id = i.store_product
-               join product p on p.id = sp.product
-               join store s on s.id = sp.store
+               join store s on s.id = i.store
                left join "user" u on u.id = i.created_by
                where not i.approved and not i.deleted order by i.created"#
         )
@@ -178,21 +164,11 @@ pub async fn deleted(pool: &PgPool, entity: Entity) -> sqlx::Result<Vec<QueueRow
     // those are when and by whom it was deleted (the soft-delete writes
     // both), which is what an admin deciding whether to restore needs.
     let rows = match entity {
-        Entity::Company => sqlx::query_as!(
-            QueueRow,
-            r#"select c.id, c.name as "title!", null as "subtitle?",
-                      u.name as "author?", c.modified as "at!"
-               from company c left join "user" u on u.id = c.modified_by
-               where c.deleted order by c.modified desc"#
-        )
-        .fetch_all(pool)
-        .await?,
         Entity::Store => sqlx::query_as!(
             QueueRow,
-            r#"select s.id, s.name as "title!", co.name as "subtitle?",
+            r#"select s.id, s.name as "title!", null as "subtitle?",
                       u.name as "author?", s.modified as "at!"
                from store s
-               join company co on co.id = s.company
                left join "user" u on u.id = s.modified_by
                where s.deleted order by s.modified desc"#
         )
@@ -223,12 +199,10 @@ pub async fn deleted(pool: &PgPool, entity: Entity) -> sqlx::Result<Vec<QueueRow
         .await?,
         Entity::Image => sqlx::query_as!(
             QueueRow,
-            r#"select i.id, coalesce(i.description, p.name) as "title!",
-                      s.name as "subtitle?", u.name as "author?", i.modified as "at!"
+            r#"select i.id, s.name as "title!", i.description as "subtitle?",
+                      u.name as "author?", i.modified as "at!"
                from image i
-               join store_product sp on sp.id = i.store_product
-               join product p on p.id = sp.product
-               join store s on s.id = sp.store
+               join store s on s.id = i.store
                left join "user" u on u.id = i.modified_by
                where i.deleted order by i.modified desc"#
         )
@@ -453,23 +427,6 @@ pub async fn revert(pool: &PgPool, entity: Entity, log_id: i64, by: i64) -> sqlx
     // Snapshot of where the row stands *before* the revert, so the log
     // entry reads like any other edit: this -> that.
     let (before, after) = match entity {
-        Entity::Company => {
-            let before = crate::db::company::find(pool, id).await?;
-            let Some(before) = before else { return Ok(()) };
-            let after = crate::db::company::update(
-                pool,
-                id,
-                &str_field("name").unwrap_or_default(),
-                str_field("description").as_deref(),
-                str_field("homepage").as_deref(),
-                by,
-            )
-            .await?;
-            (
-                crate::db::company::snapshot(&before),
-                crate::db::company::snapshot(&after),
-            )
-        }
         Entity::Store => {
             let before = crate::db::store::find(pool, id).await?;
             let Some(before) = before else { return Ok(()) };
@@ -480,7 +437,6 @@ pub async fn revert(pool: &PgPool, entity: Entity, log_id: i64, by: i64) -> sqlx
             let after = crate::db::store::update(
                 pool,
                 id,
-                i64_field("company").unwrap_or(before.company),
                 &str_field("name").unwrap_or_default(),
                 f64_field("lat").unwrap_or(before.lat),
                 f64_field("lon").unwrap_or(before.lon),

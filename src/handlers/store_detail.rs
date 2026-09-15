@@ -17,7 +17,7 @@ use crate::{
     error::{AppError, AppResult},
     handlers::search::{render_map_data, render_search_panel, run_search, SearchQuery},
     i18n as filters, // see templates.rs's comment on this alias
-    models::{RatingCount, SiblingStore, StoreDetail},
+    models::{RatingCount, StoreDetail},
     opening_hours,
     seasonality,
     sse::{patch_elements, patch_elements_at},
@@ -74,10 +74,6 @@ struct StoreProductView {
     season_summary: String,
     ratings: Vec<RatingCount>,
     viewer_has_rated_up: bool,
-    /// Pre-pluralised "3 Fotos" for the spec grid's images cell — built
-    /// here rather than in the template because the `|t` filter can't
-    /// pass Fluent arguments (see `i18n::translate_with_count`).
-    image_count_label: String,
     selected: bool,
 }
 
@@ -92,14 +88,10 @@ struct SidebarDetailTemplate {
     opening_hours: Option<Vec<opening_hours::WeekdayRow>>,
     lat: f64,
     lon: f64,
-    company_id: i64,
-    company_name: String,
-    company_description: Option<String>,
-    company_homepage: Option<String>,
     products: Vec<StoreProductView>,
-    /// Pre-pluralised "2 Produkte" for the store card's footer — see
-    /// `StoreProductView::image_count_label` on why it isn't done in the
-    /// template.
+    /// Pre-pluralised "2 Produkte" for the store card's footer — built
+    /// here rather than in the template because the `|t` filter can't
+    /// pass Fluent arguments (see `i18n::translate_with_count`).
     product_count_label: String,
     /// The store's first uploaded photo, used as the header image.
     /// `None` falls back to `hero_art`.
@@ -108,7 +100,6 @@ struct SidebarDetailTemplate {
     /// Every approved photo across all of the store's products, for the
     /// carousel. Empty means the whole section is skipped.
     photos: Vec<ImageView>,
-    sibling_stores: Vec<SiblingStore>,
     /// Prebuilt Google Maps link for the "Get directions" button.
     maps_url: String,
     logged_in: bool,
@@ -139,26 +130,19 @@ pub fn render_detail_panel_with_selection(
             season_summary: seasonality::season_summary(p.seasonal_months.as_deref()),
             ratings: p.ratings.clone(),
             viewer_has_rated_up: p.viewer_has_rated_up,
-            image_count_label: crate::i18n::translate_with_count(
-                locale,
-                "detail-image-count",
-                p.images.len() as i64,
-            ),
             selected: selected_store_product_id == Some(p.store_product_id),
         })
         .collect();
 
-    // Flattened across products: the carousel is a property of the store,
-    // not of one listing, so a shop with one photo on each of three
-    // products still gets a three-photo strip.
+    // The store's own photos. Captions fall back to the shop's name —
+    // a description is optional on upload, and an empty caption under a
+    // slide reads as a rendering bug rather than as "untitled".
     let photos: Vec<ImageView> = detail
-        .products
+        .images
         .iter()
-        .flat_map(|p| {
-            p.images.iter().map(|i| ImageView {
-                id: i.id,
-                caption: i.description.clone().unwrap_or_else(|| p.product_name.clone()),
-            })
+        .map(|i| ImageView {
+            id: i.id,
+            caption: i.description.clone().unwrap_or_else(|| detail.store_name.clone()),
         })
         .collect();
 
@@ -186,10 +170,6 @@ pub fn render_detail_panel_with_selection(
         opening_hours: (!detail.openinghours.is_empty()).then(|| opening_hours::week_rows(&detail.openinghours)),
         lat: detail.lat,
         lon: detail.lon,
-        company_id: detail.company_id,
-        company_name: detail.company_name.clone(),
-        company_description: detail.company_description.clone(),
-        company_homepage: detail.company_homepage.clone(),
         product_count_label: crate::i18n::translate_with_count(
             locale,
             "detail-product-count",
@@ -199,7 +179,6 @@ pub fn render_detail_panel_with_selection(
         hero_image_id: photos.first().map(|i| i.id),
         hero_art,
         photos,
-        sibling_stores: detail.sibling_stores.clone(),
         maps_url: format!(
             "https://www.google.com/maps/dir/?api=1&destination={},{}",
             detail.lat, detail.lon

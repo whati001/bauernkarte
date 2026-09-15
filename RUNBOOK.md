@@ -73,7 +73,7 @@ The UI never hard-deletes catalog rows. To actually remove spam, delete
 children first — the foreign keys are `NO ACTION`:
 
 ```sql
-delete from image         where store_product in (select id from store_product where store = <id>);
+delete from image         where store = <id>;
 delete from store_product where store = <id>;
 delete from store         where id = <id> and not approved;
 ```

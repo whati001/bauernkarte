@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "update image set description = $2, modified_by = $3, modified = now()\n           where id = $1\n           returning id, store_product, image, mime_type, description, approved, deleted,\n                     created_by, modified_by, created, modified",
+  "query": "insert into image (store, image, mime_type, description, approved, created_by, modified_by)\n           values ($1, $2, $3, $4, false, $5, $5)\n           returning id, store, image, mime_type, description, approved, deleted,\n                     created_by, modified_by, created, modified",
   "describe": {
     "columns": [
       {
@@ -10,7 +10,7 @@
       },
       {
         "ordinal": 1,
-        "name": "store_product",
+        "name": "store",
         "type_info": "Int8"
       },
       {
@@ -62,6 +62,8 @@
     "parameters": {
       "Left": [
         "Int8",
+        "Bytea",
+        "Text",
         "Text",
         "Int8"
       ]
@@ -80,5 +82,5 @@
       false
     ]
   },
-  "hash": "025c482859a9c2cb062ce45905399e04bf08a74db7543b65b428cdbaeffd0438"
+  "hash": "f714b6d17114d462278867edcbc17ff3982f75b10df03b511ff77d8b1a6eef9d"
 }

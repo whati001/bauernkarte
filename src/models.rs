@@ -28,20 +28,6 @@ pub struct User {
 }
 
 #[derive(Debug, Clone, sqlx::FromRow, Serialize)]
-pub struct Company {
-    pub id: i64,
-    pub name: String,
-    pub description: Option<String>,
-    pub homepage: Option<String>,
-    pub approved: bool,
-    pub deleted: bool,
-    pub created_by: Option<i64>,
-    pub modified_by: Option<i64>,
-    pub created: OffsetDateTime,
-    pub modified: OffsetDateTime,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, Serialize)]
 pub struct Category {
     pub id: i64,
     pub name: String,
@@ -90,7 +76,6 @@ pub struct DayHours {
 #[derive(Debug, Clone, sqlx::FromRow, Serialize)]
 pub struct Store {
     pub id: i64,
-    pub company: i64,
     pub name: String,
     pub openinghours: Option<Json<Vec<DayHours>>>,
     pub lat: f64,
@@ -124,7 +109,7 @@ pub struct StoreProduct {
 #[derive(Debug, Clone, sqlx::FromRow, Serialize)]
 pub struct Image {
     pub id: i64,
-    pub store_product: i64,
+    pub store: i64,
     #[serde(skip)]
     pub image: Vec<u8>,
     pub mime_type: String,
@@ -215,21 +200,12 @@ pub struct StoreProductDetail {
     pub seasonal_months: Option<Vec<i16>>,
     pub ratings: Vec<RatingCount>,
     pub viewer_has_rated_up: bool,
-    pub images: Vec<ImageSummary>,
 }
 
 #[derive(Debug, Clone, sqlx::FromRow)]
 pub struct ImageSummary {
     pub id: i64,
     pub description: Option<String>,
-}
-
-/// Another shop belonging to the same company — just enough to link to
-/// it from a store's detail page (`db::store::list_siblings`).
-#[derive(Debug, Clone, sqlx::FromRow)]
-pub struct SiblingStore {
-    pub id: i64,
-    pub name: String,
 }
 
 /// Full store detail view (store-detail capability).
@@ -244,12 +220,9 @@ pub struct StoreDetail {
     pub openinghours: Vec<DayHours>,
     pub lat: f64,
     pub lon: f64,
-    pub company_id: i64,
-    pub company_name: String,
-    pub company_description: Option<String>,
-    pub company_homepage: Option<String>,
     pub products: Vec<StoreProductDetail>,
-    /// The company's other shops, empty when this is its only one — the
-    /// detail page skips the whole section then.
-    pub sibling_stores: Vec<SiblingStore>,
+    /// The shop's photos, newest last. A photo is of the place, not of
+    /// one listing, so they hang off the store rather than off any
+    /// `StoreProductDetail`.
+    pub images: Vec<ImageSummary>,
 }

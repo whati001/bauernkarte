@@ -1,5 +1,5 @@
 //! community-submissions capability (create) + catalog-editing capability
-//! (edit/delete) for `store` and `company`.
+//! (edit/delete) for `store`.
 
 use askama::Template;
 use axum::{
@@ -19,7 +19,7 @@ use crate::{
     handlers::store_detail::load_detail_or_404,
     i18n,
     i18n as filters, // see templates.rs's comment on this alias
-    models::{Category, Company, Product},
+    models::{Category, Product},
     opening_hours::{self, OpeningHoursFields},
     seasonality,
     sse::{patch_elements_at, patch_signals},
@@ -47,7 +47,6 @@ struct StoreFormTemplate {
     /// Every half hour, `"00:00"` .. `"24:00"` — the same list for all 14
     /// `<select>`s in the grid (`opening_hours::time_options`).
     time_options: Vec<String>,
-    companies: Vec<Company>,
     /// Only populated (and only rendered, per the template's `!is_edit`
     /// guard) for the new-store form — a store SHALL carry at least one
     /// product on creation, see `handlers::product::resolve_product`'s
@@ -80,7 +79,6 @@ pub async fn new_form(
     State(state): State<AppState>,
     CurrentUser(_user): CurrentUser,
 ) -> AppResult<Sse<impl stream::Stream<Item = Result<Event, Infallible>>>> {
-    let companies = db::company::list_approved(&state.pool).await?;
     // All approved products across every category — same flat-select
     // rationale as `product::new_form`.
     let products = db::product::list_all_approved(&state.pool).await?;
@@ -94,7 +92,6 @@ pub async fn new_form(
         lon: None,
         opening_hours: opening_hours::week_rows(&[]),
         time_options: opening_hours::time_options(),
-        companies,
         products,
         categories,
         product_slots: product::slot_views(),
@@ -119,7 +116,6 @@ pub async fn edit_form(
     if store.deleted {
         return Err(AppError::Conflict("store is deleted".into()));
     }
-    let companies = db::company::list_approved(&state.pool).await?;
     let hours = store.openinghours.map(|j| j.0).unwrap_or_default();
     let html = render(StoreFormTemplate {
         is_edit: true,
@@ -130,7 +126,6 @@ pub async fn edit_form(
         lon: Some(store.lon),
         opening_hours: opening_hours::week_rows(&hours),
         time_options: opening_hours::time_options(),
-        companies,
         products: Vec::new(),
         categories: Vec::new(),
         product_slots: Vec::new(),
@@ -155,14 +150,6 @@ pub struct NewStoreBody {
     store_lat: f64,
     #[serde(deserialize_with = "crate::de::flexible_f64")]
     store_lon: f64,
-    #[serde(default)]
-    company_id: Option<String>,
-    #[serde(default)]
-    is_company: bool,
-    #[serde(default)]
-    company_description: Option<String>,
-    #[serde(default)]
-    company_homepage: Option<String>,
     #[serde(flatten)]
     opening_hours: OpeningHoursFields,
     /// Everything else in the signal blob — the index-suffixed product
@@ -173,13 +160,8 @@ pub struct NewStoreBody {
     product_slots: std::collections::HashMap<String, serde_json::Value>,
 }
 
-fn non_empty(s: Option<String>) -> Option<String> {
-    s.filter(|v| !v.trim().is_empty())
-}
-
-/// `POST /store/new` — creates `company` (maybe) + `store`, both
-/// `approved=false` (community-submissions capability). Server-side
-/// validation: exactly one of `{company_id, isCompany}`.
+/// `POST /store/new` — creates the `store` with `approved=false`
+/// (community-submissions capability).
 pub async fn create(
     State(state): State<AppState>,
     CurrentUser(user): CurrentUser,
@@ -190,16 +172,8 @@ pub async fn create(
         return Err(AppError::Validation("Bitte einen Namen angeben.".into()));
     }
 
-    let company_id = non_empty(body.company_id).and_then(|s| s.parse::<i64>().ok());
-    let has_company_id = company_id.is_some();
-    if has_company_id == body.is_company {
-        return Err(AppError::Validation(
-            "Bitte entweder eine bestehende Firma wählen ODER angeben, dass dieses Geschäft die Firma ist — nicht beides oder keines.".into(),
-        ));
-    }
-
-    // All parsed/validated before any mutation (company/store/product) —
-    // same "fail before committing" reasoning as `resolve_product` below.
+    // All parsed/validated before any mutation (store/product) — same
+    // "fail before committing" reasoning as `resolve_product` below.
     let hours = opening_hours::parse(&body.opening_hours)?;
     let slots = product::parse_slots(&body.product_slots)?;
     if slots.is_empty() {
@@ -207,37 +181,22 @@ pub async fn create(
     }
     // Each slot's seasonality is validated up front, before anything is
     // written — a bad month set in the *third* product must not leave a
-    // company, a store and two listings behind.
+    // store and two listings behind.
     let mut resolved = Vec::with_capacity(slots.len());
     for slot in &slots {
         resolved.push(seasonality::parse(&slot.seasonality)?);
     }
     // Products are resolved (and, for brand-new ones, inserted) before
-    // the company/store themselves — a store must carry at least one
-    // product (see `resolve_product`'s doc comment), so failing this
-    // validation must not leave an orphaned company/store behind.
+    // the store itself — a store must carry at least one product (see
+    // `resolve_product`'s doc comment), so failing this validation must
+    // not leave an orphaned store behind.
     let mut products = Vec::with_capacity(slots.len());
     for slot in &slots {
         products.push(resolve_product(&state.pool, &slot.selection, user.id).await?);
     }
 
-    let company_id = if body.is_company {
-        let company = db::company::insert(
-            &state.pool,
-            name,
-            non_empty(body.company_description).as_deref(),
-            non_empty(body.company_homepage).as_deref(),
-            user.id,
-        )
-        .await?;
-        company.id
-    } else {
-        company_id.expect("validated above: exactly one of company_id/is_company")
-    };
-
     let store = db::store::insert(
         &state.pool,
-        company_id,
         name,
         body.store_lat,
         body.store_lon,
@@ -250,7 +209,7 @@ pub async fn create(
         db::store_product::insert(&state.pool, store.id, product.id, seasonal_months, user.id).await?;
     }
     tracing::info!(
-        user_id = %user.id, store_id = %store.id, company_id = %company_id,
+        user_id = %user.id, store_id = %store.id,
         product_count = products.len(), "store submitted for review"
     );
 
@@ -296,7 +255,6 @@ pub async fn update(
     let after = db::store::update(
         &state.pool,
         store_id,
-        before.company,
         name,
         body.store_lat,
         body.store_lon,

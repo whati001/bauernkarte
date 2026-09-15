@@ -1351,9 +1351,8 @@ a.icon-btn.danger:hover, button.icon-btn.danger:hover { background: var(--critic
 
 /* A card's header row: what the card *is* on the left, its edit action
    on the right. The entity's own name is a separate line below
-   (.entity-name) rather than being the title itself — with company and
-   store stacked, a shop named after its business showed the same words
-   twice with nothing saying which card was which. */
+   (.entity-name) rather than being the title itself, so the card always
+   says what it is even when the name alone would be ambiguous. */
 .section-head {
   display: flex;
   /* Not `center`: if a long translation pushes the action group onto a
@@ -1525,8 +1524,12 @@ a.icon-btn.danger:hover, button.icon-btn.danger:hover { background: var(--critic
   overflow: hidden;
 }
 .spec { padding: var(--space-3); min-width: 0; }
-.spec:nth-child(odd) { border-right: 1px solid var(--border); }
-.spec:nth-child(-n + 2) { border-bottom: 1px solid var(--border); }
+/* Season on its own row (12 dots need the full width), rating and
+   category sharing the one below. Rules are stated per cell rather than
+   via nth-child so the grid isn't silently wrong if a cell is added or
+   removed. */
+.spec-season { grid-column: 1 / -1; border-bottom: 1px solid var(--border); }
+.spec-season + .spec { border-right: 1px solid var(--border); }
 .spec-title {
   display: flex;
   align-items: center;
@@ -1577,9 +1580,6 @@ a.icon-btn.danger:hover, button.icon-btn.danger:hover { background: var(--critic
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
-.sibling-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
-.sibling-list a { display: inline-flex; align-items: center; gap: var(--space-2); font-weight: 600; }
 
 /* Full-width so it reads as the panel's closing action, matching the
    mockup's footer button. */

@@ -2,7 +2,7 @@
 //! edit/delete handler calls — see design.md's "Editing & deletion"
 //! section. Deliberately entity-agnostic (`entity_type` is a plain
 //! string, `old_value`/`new_value` are full-row JSON snapshots), so a
-//! single function covers company/store/product/store_product/image
+//! single function covers store/product/store_product/image
 //! instead of one per entity.
 
 use serde_json::Value;

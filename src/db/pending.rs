@@ -1,6 +1,6 @@
 //! content-moderation capability: "Meine Einträge (in Prüfung)" — a
 //! user's own not-yet-approved submissions, across every moderated
-//! entity type. Five small per-table queries, combined in Rust, rather
+//! entity type. Four small per-table queries, combined in Rust, rather
 //! than one UNION across differently-shaped tables.
 
 use sqlx::PgPool;
@@ -16,7 +16,6 @@ pub struct PendingItem {
 impl PendingItem {
     fn new(entity_type: &'static str, id: i64, label: String) -> Self {
         let edit_path = match entity_type {
-            "company" => Some(format!("/company/{id}/edit")),
             "store" => Some(format!("/store/{id}/edit")),
             "product" => Some(format!("/product/{id}/edit")),
             "store_product" => Some(format!("/store-product/{id}/edit")),
@@ -28,18 +27,6 @@ impl PendingItem {
 
 pub async fn for_user(pool: &PgPool, user_id: i64) -> sqlx::Result<Vec<PendingItem>> {
     let mut items = Vec::new();
-
-    let companies = sqlx::query!(
-        "select id, name from company where created_by = $1 and not approved and not deleted",
-        user_id
-    )
-    .fetch_all(pool)
-    .await?;
-    items.extend(
-        companies
-            .into_iter()
-            .map(|r| PendingItem::new("company", r.id, format!("Firma: {}", r.name))),
-    );
 
     let stores = sqlx::query!(
         "select id, name from store where created_by = $1 and not approved and not deleted",

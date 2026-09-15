@@ -75,9 +75,7 @@ detail-seasonal-availability = Seasonal availability
 detail-location = Location
 detail-rating-label = Rating
 detail-photos = Photos
-detail-other-stores = More stores from this company
 detail-get-directions = Get directions
-detail-company = Company
 detail-store = Store
 detail-products = Products
 detail-season = Season
@@ -85,11 +83,6 @@ detail-category = Category
 detail-product-count = { $count ->
     [one] { $count } product
    *[other] { $count } products
-  }
-detail-image-count = { $count ->
-    [0] No photos
-    [one] { $count } photo
-   *[other] { $count } photos
   }
 detail-hero-art-alt = Illustration of a farm with the products on offer
 opening-hours-closed = Closed
@@ -127,19 +120,8 @@ store-form-opening-hours-hint = Pick "Closed" for days the store is shut.
 store-form-define-opening-hours = Define opening hours
 store-form-opens = Opens
 store-form-closes = Closes
-store-form-is-company = This store is the company
-store-form-company = Company
-store-form-company-choose = — choose —
-store-form-company-description = Company description (optional)
-store-form-company-homepage = Company homepage (optional)
 store-form-product-heading = Products (at least one required)
 store-form-product-n = Product
-
-## Company form
-company-form-heading = Edit company
-company-form-name = Name
-company-form-description = Description
-company-form-homepage = Homepage
 
 ## Product form (add to store)
 product-form-add-heading = Add product to "{ $name }"
@@ -169,7 +151,6 @@ image-form-upload = Upload
 image-form-alt-fallback = Product image
 
 ## Store detail — action labels
-detail-edit-company = Edit company
 detail-edit-store = Edit store
 detail-delete-store = Delete store
 detail-edit-product = Edit product (name, category, description)
@@ -220,13 +201,11 @@ admin-title = Admin area
 admin-nav-label = Admin sections
 admin-back-to-map = Back to the map
 admin-nav-users = Users
-admin-nav-companies = Companies
 admin-nav-stores = Stores
 admin-nav-products = Products
 admin-nav-offers = Offers
 admin-nav-images = Images
 
-admin-blurb-companies = The business behind a store. One company can run several stores, which is why it is reviewed separately.
 admin-blurb-stores = The place itself, with its position and opening hours. New entries stay invisible to the public until approved here.
 admin-blurb-products = The shared catalog. A product exists once and is offered by any number of stores.
 admin-blurb-offers = The link "this store sells this product", with its season. A new offer does not create a new product.

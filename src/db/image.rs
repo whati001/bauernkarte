@@ -3,13 +3,13 @@ use sqlx::PgPool;
 
 use crate::models::{Image, ImageSummary};
 
-pub async fn list_for_store_product(pool: &PgPool, store_product_id: i64) -> sqlx::Result<Vec<ImageSummary>> {
+pub async fn list_for_store(pool: &PgPool, store_id: i64) -> sqlx::Result<Vec<ImageSummary>> {
     sqlx::query_as!(
         ImageSummary,
         r#"select id, description from image
-           where store_product = $1 and approved and not deleted
+           where store = $1 and approved and not deleted
            order by created"#,
-        store_product_id
+        store_id
     )
     .fetch_all(pool)
     .await
@@ -18,7 +18,7 @@ pub async fn list_for_store_product(pool: &PgPool, store_product_id: i64) -> sql
 pub async fn find(pool: &PgPool, id: i64) -> sqlx::Result<Option<Image>> {
     sqlx::query_as!(
         Image,
-        r#"select id, store_product, image, mime_type, description, approved, deleted,
+        r#"select id, store, image, mime_type, description, approved, deleted,
                   created_by, modified_by, created, modified
            from image where id = $1"#,
         id
@@ -29,7 +29,7 @@ pub async fn find(pool: &PgPool, id: i64) -> sqlx::Result<Option<Image>> {
 
 pub async fn insert(
     pool: &PgPool,
-    store_product_id: i64,
+    store_id: i64,
     image_bytes: &[u8],
     mime_type: &str,
     description: Option<&str>,
@@ -37,11 +37,11 @@ pub async fn insert(
 ) -> sqlx::Result<Image> {
     sqlx::query_as!(
         Image,
-        r#"insert into image (store_product, image, mime_type, description, approved, created_by, modified_by)
+        r#"insert into image (store, image, mime_type, description, approved, created_by, modified_by)
            values ($1, $2, $3, $4, false, $5, $5)
-           returning id, store_product, image, mime_type, description, approved, deleted,
+           returning id, store, image, mime_type, description, approved, deleted,
                      created_by, modified_by, created, modified"#,
-        store_product_id,
+        store_id,
         image_bytes,
         mime_type,
         description,
@@ -61,7 +61,7 @@ pub async fn update_description(
         Image,
         r#"update image set description = $2, modified_by = $3, modified = now()
            where id = $1
-           returning id, store_product, image, mime_type, description, approved, deleted,
+           returning id, store, image, mime_type, description, approved, deleted,
                      created_by, modified_by, created, modified"#,
         id,
         description,
@@ -76,7 +76,7 @@ pub async fn soft_delete(pool: &PgPool, id: i64, changed_by: i64) -> sqlx::Resul
         Image,
         r#"update image set deleted = true, modified_by = $2, modified = now()
            where id = $1
-           returning id, store_product, image, mime_type, description, approved, deleted,
+           returning id, store, image, mime_type, description, approved, deleted,
                      created_by, modified_by, created, modified"#,
         id,
         changed_by
@@ -92,7 +92,7 @@ pub async fn soft_delete(pool: &PgPool, id: i64, changed_by: i64) -> sqlx::Resul
 /// logged), so the bytes are never actually "edited" in place.
 pub fn snapshot(image: &Image) -> serde_json::Value {
     json!({
-        "id": image.id, "store_product": image.store_product, "mime_type": image.mime_type,
+        "id": image.id, "store": image.store, "mime_type": image.mime_type,
         "description": image.description, "approved": image.approved, "deleted": image.deleted,
     })
 }

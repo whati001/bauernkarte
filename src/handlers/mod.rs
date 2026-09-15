@@ -1,6 +1,5 @@
 pub mod account;
 pub mod admin;
-pub mod company;
 pub mod image;
 pub mod impressum;
 pub mod locale;
@@ -16,7 +15,7 @@ pub mod store_detail;
 /// it. Not a bound signal: it's baked into the link's `@get(...)` string
 /// at render time in `sidebar_detail.html` and rides alongside the
 /// `?datastar=` blob Datastar appends to the same URL (see
-/// `company::edit_form`, where this pattern started).
+/// `product::edit_form`).
 #[derive(serde::Deserialize)]
 pub struct ReturnQuery {
     #[serde(default)]

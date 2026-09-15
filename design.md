@@ -2,7 +2,7 @@
 
 Online, map-first product & rating finder. Users browse a Google-Maps-style
 page to find which stores carry which products, at what price, with what
-rating. Logged-in users can extend the dataset (stores, companies, products,
+rating. Logged-in users can extend the dataset (stores, products,
 prices, images, ratings); every user-submitted change is held for manual
 approval before it becomes publicly visible.
 
@@ -16,11 +16,10 @@ blueprint for implementation.
 **Goals**
 - Anonymous users can explore stores/products/ratings on a map, filter by
   category/product/distance, and view store detail (products, prices,
-  ratings, images, opening hours, company info, Google Maps link).
+  ratings, images, opening hours, Google Maps link).
 - Registered users can additionally: rate a store's product (❤️ "UP" vote
   only, extensible via `rating_type`), upload images, add a product to an
-  existing store (with price), and add a brand-new store (optionally
-  creating its company at the same time).
+  existing store (with price), and add a brand-new store.
 - All community-submitted content is unpublished (`approved = false`) until
   an admin flips the flag directly in the database. No admin UI in v1.
 - Simple, fast, server-rendered UI using Rust + Datastar — minimal client
@@ -98,15 +97,13 @@ lookups. New/changed columns vs. `db_schema.txt` are marked **[new]**.
 
 ```mermaid
 erDiagram
-    "user" ||--o{ company : created_by
     "user" ||--o{ store : created_by
     "user" ||--o{ rating : created_by
-    company ||--o{ store : has
     store ||--o{ store_product : offers
     product ||--o{ store_product : "sold as"
     category ||--o{ product : classifies
     store_product ||--o{ rating : receives
-    store_product ||--o{ image : has
+    store ||--o{ image : has
     rating_type ||--o{ rating : classifies
 
     "user" {
@@ -118,20 +115,8 @@ erDiagram
         timestamptz created
         timestamptz modified
     }
-    company {
-        bigint id PK
-        text name
-        text description
-        text homepage
-        boolean approved "[new] default false"
-        bigint created_by FK
-        bigint modified_by FK
-        timestamptz created
-        timestamptz modified
-    }
     store {
         bigint id PK
-        bigint company FK
         text name
         geography position "GEOGRAPHY(Point,4326)"
         text openinghours
@@ -184,7 +169,7 @@ erDiagram
     }
     image {
         bigint id PK
-        bigint store_product FK
+        bigint store FK
         bytea image
         text mime_type "[new]"
         text description
@@ -198,7 +183,7 @@ erDiagram
 
 ### 4.1 Notes on additions
 
-- **`approved BOOLEAN NOT NULL DEFAULT false`** added to `company`, `store`,
+- **`approved BOOLEAN NOT NULL DEFAULT false`** added to `store`,
   `product`, `store_product`, `image`. Every public read query filters
   `WHERE approved`. `category` and `rating_type` are not user-creatable in
   v1 (fixed taxonomies seeded by admin), so no flag needed. `rating` itself
@@ -225,9 +210,9 @@ erDiagram
 - **`image.mime_type`** added — needed to serve the `bytea` back with a
   correct `Content-Type`.
 - Foreign key indexes added on all `*_id`/`store_product`/`category`/etc.
-  columns used in joins/filters (`store.company`, `product.category`,
+  columns used in joins/filters (`product.category`,
   `store_product.store`, `store_product.product`, `rating.store_product`,
-  `image.store_product`).
+  `image.store`).
 - All `created_by`/`modified_by` are `FK -> user.id`, `ON DELETE SET NULL`
   (keep content if a user account is removed).
 
@@ -304,7 +289,7 @@ product_finder/
 | POST | `/register` | anon | creates user (`verified=false`), auto-login |
 | GET/POST | `/account` | user | view/update own `name`/`email`/password |
 | GET | `/store/new` | user | new-store form fragment |
-| POST | `/store/new` | user | creates `company`(maybe) + `store`, both `approved=false` |
+| POST | `/store/new` | user | creates `store`, `approved=false` |
 | GET | `/store/{id}/product/new` | user | add-product-to-store form |
 | POST | `/store/{id}/product/new` | user | creates `product`(maybe, `approved=false`) + `store_product` (`approved=false`) |
 | POST | `/rating` | user | upsert `rating` (form: `store_product_id`, `rating_type_id` optional → defaults to `UP`) |
@@ -345,11 +330,10 @@ sequenceDiagram
     participant U as Logged-in user
     participant S as Server
     participant DB as Postgres
-    U->>S: POST /store/new (name, position, company_id | new company, "is company" checkbox)
-    S->>DB: INSERT company (approved=false) [if new/checkbox]
+    U->>S: POST /store/new (name, position, opening hours, products)
     S->>DB: INSERT store (approved=false, created_by=U)
     S-->>U: confirmation fragment: "Danke! Dein Eintrag wird geprüft."
-    Note over DB: store/company invisible in public queries (approved filter)
+    Note over DB: store invisible in public queries (approved filter)
     Note over DB: Admin later runs UPDATE store SET approved=true WHERE id=... (direct SQL)
 ```
 
@@ -357,19 +341,6 @@ Every public read (`/api/stores`, store detail, product list, image
 serving) filters `approved = true`. The submitting user can still see
 their own pending submissions in `/account` under "Meine Einträge (in
 Prüfung)" (simple `WHERE created_by = current_user AND NOT approved`).
-
-### 5.5 "Store is Company" flow
-
-New-store form (`/store/new`):
-- Field: **Firma** — typeahead/select over existing `company` rows.
-- Checkbox: **"Dieses Geschäft ist die Firma"** — when checked, the company
-  select is hidden/disabled and replaced by the store's own `name` field
-  (plus optional company `description`/`homepage`). On submit, if checked,
-  the server creates a `company` row reusing the store name as company
-  name (and any provided description/homepage) before creating the store,
-  instead of requiring `company_id`.
-- Server-side validation: exactly one of `{company_id, "isCompany" checkbox}`
-  must be present.
 
 ---
 
@@ -408,7 +379,6 @@ requested.
    - "← Zurück" button (`GET /api/store/back` — restores search state) and
      `Escape` key bound globally (`data-on-keydown.window.esc`) to the same
      action.
-   - Company block: name, description, homepage link.
    - Store block: name, opening hours, **"In Google Maps öffnen"** link
      (`https://www.google.com/maps/search/?api=1&query=<lat>,<lon>`).
    - Selected product highlighted; full list of the store's other products

@@ -2,7 +2,7 @@
   {% include "partials/form_back.html" %}
   <h2>{% include "icons/store.svg" %} {% if is_edit %}{{ "store-form-edit-heading"|t }}{% else %}{{ "store-form-new-heading"|t }}{% endif %}</h2>
   <!-- One `.form-card` per group (name / location / opening hours /
-       company / products / save) — the form is long enough that a flat
+       products / save) — the form is long enough that a flat
        run of fields gives no sense of where one concern ends and the
        next begins. -->
   <form class="panel-stack" data-on:submit__prevent="@{% if is_edit %}patch{% else %}post{% endif %}('{{ action }}')">
@@ -80,31 +80,6 @@
     </section>
 
     {% if !is_edit %}
-    <section class="panel-card">
-      <h3>{% include "icons/building-2.svg" %} {{ "store-form-company"|t }}</h3>
-      <div class="field checkbox-field">
-        <input id="is-company-checkbox" type="checkbox" data-bind:is-company>
-        <label for="is-company-checkbox" style="margin: 0;">{{ "store-form-is-company"|t }}</label>
-      </div>
-      <div class="field" data-show="!$isCompany">
-        <label for="store-company">{{ "store-form-company"|t }}</label>
-        <select id="store-company" data-bind:company-id>
-          <option value="">{{ "store-form-company-choose"|t }}</option>
-          {% for c in companies %}
-          <option value="{{ c.id }}">{{ c.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="field" data-show="$isCompany">
-        <label for="company-description">{{ "store-form-company-description"|t }}</label>
-        <textarea id="company-description" name="company_description" data-bind:company-description></textarea>
-      </div>
-      <div class="field" data-show="$isCompany">
-        <label for="company-homepage">{{ "store-form-company-homepage"|t }}</label>
-        <input id="company-homepage" type="url" name="company_homepage" data-bind:company-homepage>
-      </div>
-    </section>
-
     <!-- A store SHALL carry at least one product on creation — one never
          showing up is otherwise indistinguishable from a bug (the entire
          search/map path requires at least one approved store_product to

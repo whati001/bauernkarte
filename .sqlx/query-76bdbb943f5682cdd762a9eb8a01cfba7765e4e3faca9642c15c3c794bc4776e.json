@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "select i.id, coalesce(i.description, p.name) as \"title!\",\n                      s.name as \"subtitle?\", u.name as \"author?\", i.modified as \"at!\"\n               from image i\n               join store_product sp on sp.id = i.store_product\n               join product p on p.id = sp.product\n               join store s on s.id = sp.store\n               left join \"user\" u on u.id = i.modified_by\n               where i.deleted order by i.modified desc",
+  "query": "select i.id, s.name as \"title!\", i.description as \"subtitle?\",\n                      u.name as \"author?\", i.modified as \"at!\"\n               from image i\n               join store s on s.id = i.store\n               left join \"user\" u on u.id = i.modified_by\n               where i.deleted order by i.modified desc",
   "describe": {
     "columns": [
       {
@@ -34,11 +34,11 @@
     },
     "nullable": [
       false,
-      null,
       false,
+      true,
       false,
       false
     ]
   },
-  "hash": "0c3ef970eca9d74288c50500938a1a9b4e05a53dd1ffd4f093aced7f9bc657c8"
+  "hash": "76bdbb943f5682cdd762a9eb8a01cfba7765e4e3faca9642c15c3c794bc4776e"
 }

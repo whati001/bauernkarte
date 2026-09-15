@@ -1,19 +1,8 @@
 -- DB Schema --
 
 -- Base
-company:
-id: BIGINT
-name: VARCHAR/TEXT
-description: VARCHAR/TEXT
-homepage: URL
-created: DATETIME
-created_by: user.id
-modified: DATETIME
-modified_by: user.id
-
 store:
 id: BIGINT
-company: company.id
 name: VARCHAR/TEXT
 position: postgis.geography
 openinghours: VARCHAR/TEXT -- (or something better)
@@ -59,7 +48,7 @@ created_by: user.id
 
 images:
 id: BIGINT
-store_product: store_product.id
+store: store.id
 image: BINARY
 description: VARCHAR/TEXT
 created: DATETIME

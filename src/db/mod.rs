@@ -1,5 +1,4 @@
 pub mod category;
-pub mod company;
 pub mod detail;
 pub mod edit_log;
 pub mod image;

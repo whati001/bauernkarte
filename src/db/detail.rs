@@ -1,6 +1,6 @@
-//! Store-detail capability: assembles the full detail view (company +
-//! store + product list with ratings/images) from the smaller
-//! per-table queries in `db::{store,company,rating,image}`. Kept as its
+//! Store-detail capability: assembles the full detail view (store +
+//! its photos + product list with ratings) from the smaller per-table
+//! queries in `db::{store,rating,image}`. Kept as its
 //! own module since it's a read-side composition, not owned by any single
 //! table.
 
@@ -8,16 +8,12 @@ use sqlx::{types::Json, PgPool};
 
 use crate::models::{DayHours, StoreDetail, StoreProductDetail};
 
-struct StoreCompanyRow {
+struct StoreRow {
     store_id: i64,
     store_name: String,
     openinghours: Option<Json<Vec<DayHours>>>,
     lat: f64,
     lon: f64,
-    company_id: i64,
-    company_name: String,
-    company_description: Option<String>,
-    company_homepage: Option<String>,
 }
 
 struct StoreProductRow {
@@ -37,14 +33,11 @@ pub async fn get_store_detail(
     viewer_id: Option<i64>,
 ) -> sqlx::Result<Option<StoreDetail>> {
     let header = sqlx::query_as!(
-        StoreCompanyRow,
+        StoreRow,
         r#"select s.id as "store_id!", s.name as "store_name!",
                   s.openinghours as "openinghours: Json<Vec<DayHours>>",
-                  ST_Y(s.position::geometry) as "lat!", ST_X(s.position::geometry) as "lon!",
-                  c.id as "company_id!", c.name as "company_name!", c.description as company_description,
-                  c.homepage as company_homepage
+                  ST_Y(s.position::geometry) as "lat!", ST_X(s.position::geometry) as "lon!"
            from store s
-           join company c on c.id = s.company
            where s.id = $1 and s.approved and not s.deleted"#,
         store_id
     )
@@ -78,7 +71,6 @@ pub async fn get_store_detail(
     let mut products = Vec::with_capacity(store_products.len());
     for row in store_products {
         let ratings = crate::db::rating::counts_for_store_product(pool, row.store_product_id).await?;
-        let images = crate::db::image::list_for_store_product(pool, row.store_product_id).await?;
         let viewer_has_rated_up = match viewer_id {
             Some(uid) => crate::db::rating::viewer_has_rated_up(pool, row.store_product_id, uid).await?,
             None => false,
@@ -94,7 +86,6 @@ pub async fn get_store_detail(
             seasonal_months: row.seasonal_months.map(|j| j.0),
             ratings,
             viewer_has_rated_up,
-            images,
         });
     }
 
@@ -104,11 +95,7 @@ pub async fn get_store_detail(
         openinghours: header.openinghours.map(|j| j.0).unwrap_or_default(),
         lat: header.lat,
         lon: header.lon,
-        company_id: header.company_id,
-        company_name: header.company_name,
-        company_description: header.company_description,
-        company_homepage: header.company_homepage,
         products,
-        sibling_stores: crate::db::store::list_siblings(pool, header.company_id, store_id).await?,
+        images: crate::db::image::list_for_store(pool, store_id).await?,
     }))
 }

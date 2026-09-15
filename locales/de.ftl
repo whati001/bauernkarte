@@ -75,9 +75,7 @@ detail-seasonal-availability = Saisonale Verfügbarkeit
 detail-location = Standort
 detail-rating-label = Bewertung
 detail-photos = Fotos
-detail-other-stores = Weitere Geschäfte dieser Firma
 detail-get-directions = Route berechnen
-detail-company = Firma
 detail-store = Geschäft
 detail-products = Produkte
 detail-season = Saison
@@ -85,11 +83,6 @@ detail-category = Kategorie
 detail-product-count = { $count ->
     [one] { $count } Produkt
    *[other] { $count } Produkte
-  }
-detail-image-count = { $count ->
-    [0] Keine Fotos
-    [one] { $count } Foto
-   *[other] { $count } Fotos
   }
 detail-hero-art-alt = Illustration eines Bauernhofs mit den angebotenen Produkten
 opening-hours-closed = Geschlossen
@@ -127,19 +120,8 @@ store-form-opening-hours-hint = An geschlossenen Tagen "Geschlossen" auswählen.
 store-form-define-opening-hours = Öffnungszeiten definieren
 store-form-opens = Beginn
 store-form-closes = Ende
-store-form-is-company = Dieses Geschäft ist die Firma
-store-form-company = Firma
-store-form-company-choose = — wählen —
-store-form-company-description = Firmenbeschreibung (optional)
-store-form-company-homepage = Firmen-Homepage (optional)
 store-form-product-heading = Produkte (mindestens eines erforderlich)
 store-form-product-n = Produkt
-
-## Company form
-company-form-heading = Firma bearbeiten
-company-form-name = Name
-company-form-description = Beschreibung
-company-form-homepage = Homepage
 
 ## Product form (add to store)
 product-form-add-heading = Produkt zu "{ $name }" hinzufügen
@@ -169,7 +151,6 @@ image-form-upload = Hochladen
 image-form-alt-fallback = Produktbild
 
 ## Store detail — action labels
-detail-edit-company = Firma bearbeiten
 detail-edit-store = Geschäft bearbeiten
 detail-delete-store = Geschäft löschen
 detail-edit-product = Produkt bearbeiten (Name, Kategorie, Beschreibung)
@@ -220,13 +201,11 @@ admin-title = Adminbereich
 admin-nav-label = Adminbereiche
 admin-back-to-map = Zurück zur Karte
 admin-nav-users = Benutzer
-admin-nav-companies = Firmen
 admin-nav-stores = Geschäfte
 admin-nav-products = Produkte
 admin-nav-offers = Angebote
 admin-nav-images = Bilder
 
-admin-blurb-companies = Der Betrieb hinter einem Geschäft. Eine Firma kann mehrere Geschäfte haben, deshalb wird sie getrennt geprüft.
 admin-blurb-stores = Der Verkaufsort selbst, mit Position und Öffnungszeiten. Neue Einträge sind öffentlich unsichtbar, bis sie hier freigegeben werden.
 admin-blurb-products = Der gemeinsame Katalog. Ein Produkt existiert einmal und wird von beliebig vielen Geschäften angeboten.
 admin-blurb-offers = Die Verbindung „dieses Geschäft führt dieses Produkt“, samt Saison. Ein neues Angebot legt kein neues Produkt an.

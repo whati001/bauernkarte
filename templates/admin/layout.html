@@ -48,11 +48,10 @@
       <a class="admin-rail-item" href="/admin/{{ s.slug }}"
          {% if section == s.slug %}aria-current="page"{% endif %}>
         {#- One icon per section. Spelled out rather than looped because
-            `include` needs a literal path — and the five are exactly the
+            `include` needs a literal path — and the four are exactly the
             icons the rest of the app already uses for these things, so a
-            company reads the same here as on a store card. -#}
-        {% if s.slug == "companies" %}{% include "icons/building-2.svg" %}
-        {% else if s.slug == "stores" %}{% include "icons/store.svg" %}
+            store reads the same here as on a detail card. -#}
+        {% if s.slug == "stores" %}{% include "icons/store.svg" %}
         {% else if s.slug == "products" %}{% include "icons/package.svg" %}
         {% else if s.slug == "offers" %}{% include "icons/tag.svg" %}
         {% else %}{% include "icons/image.svg" %}{% endif %}

@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select s.id as \"store_id!\", s.name as \"store_name!\",\n                  s.openinghours as \"openinghours: Json<Vec<DayHours>>\",\n                  ST_Y(s.position::geometry) as \"lat!\", ST_X(s.position::geometry) as \"lon!\"\n           from store s\n           where s.id = $1 and s.approved and not s.deleted",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "store_id!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "store_name!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "openinghours: Json<Vec<DayHours>>",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 3,
+        "name": "lat!",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 4,
+        "name": "lon!",
+        "type_info": "Float8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      null,
+      null
+    ]
+  },
+  "hash": "e295e83d6f51271c8e3c723929b93af525740b5790f5312e2633f22a6a1796bb"
+}

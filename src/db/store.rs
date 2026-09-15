@@ -1,7 +1,7 @@
 use serde_json::json;
 use sqlx::{types::Json, PgPool};
 
-use crate::models::{ProductSummary, SiblingStore, Store, StoreSearchResult};
+use crate::models::{ProductSummary, Store, StoreSearchResult};
 
 /// Mirrors `StoreSearchResult` for `query_as!`'s benefit — `products`
 /// comes back as a jsonb column decoded via `sqlx::types::Json`, which
@@ -121,31 +121,10 @@ pub async fn search(
         .collect())
 }
 
-/// The company's *other* approved stores — the detail page links to
-/// them ("also from this company"). Excludes `store_id` itself, so an
-/// empty result means "this is the company's only shop" and the section
-/// is skipped entirely.
-pub async fn list_siblings(
-    pool: &PgPool,
-    company_id: i64,
-    store_id: i64,
-) -> sqlx::Result<Vec<SiblingStore>> {
-    sqlx::query_as!(
-        SiblingStore,
-        r#"select id, name from store
-           where company = $1 and id <> $2 and approved and not deleted
-           order by name"#,
-        company_id,
-        store_id
-    )
-    .fetch_all(pool)
-    .await
-}
-
 pub async fn find(pool: &PgPool, id: i64) -> sqlx::Result<Option<Store>> {
     sqlx::query_as!(
         Store,
-        r#"select id, company, name,
+        r#"select id, name,
                   openinghours as "openinghours: Json<Vec<crate::models::DayHours>>",
                   ST_Y(position::geometry) as "lat!", ST_X(position::geometry) as "lon!",
                   approved, deleted, created_by, modified_by, created, modified
@@ -163,7 +142,7 @@ pub async fn find(pool: &PgPool, id: i64) -> sqlx::Result<Option<Store>> {
 pub async fn find_public(pool: &PgPool, id: i64) -> sqlx::Result<Option<Store>> {
     sqlx::query_as!(
         Store,
-        r#"select id, company, name,
+        r#"select id, name,
                   openinghours as "openinghours: Json<Vec<crate::models::DayHours>>",
                   ST_Y(position::geometry) as "lat!", ST_X(position::geometry) as "lon!",
                   approved, deleted, created_by, modified_by, created, modified
@@ -176,7 +155,6 @@ pub async fn find_public(pool: &PgPool, id: i64) -> sqlx::Result<Option<Store>> 
 
 pub async fn insert(
     pool: &PgPool,
-    company: i64,
     name: &str,
     lat: f64,
     lon: f64,
@@ -185,13 +163,12 @@ pub async fn insert(
 ) -> sqlx::Result<Store> {
     sqlx::query_as!(
         Store,
-        r#"insert into store (company, name, position, openinghours, approved, created_by, modified_by)
-           values ($1, $2, ST_SetSRID(ST_MakePoint($4, $3), 4326)::geography, $5, false, $6, $6)
-           returning id, company, name,
+        r#"insert into store (name, position, openinghours, approved, created_by, modified_by)
+           values ($1, ST_SetSRID(ST_MakePoint($3, $2), 4326)::geography, $4, false, $5, $5)
+           returning id, name,
                      openinghours as "openinghours: Json<Vec<crate::models::DayHours>>",
                      ST_Y(position::geometry) as "lat!", ST_X(position::geometry) as "lon!",
                      approved, deleted, created_by, modified_by, created, modified"#,
-        company,
         name,
         lat,
         lon,
@@ -205,7 +182,6 @@ pub async fn insert(
 pub async fn update(
     pool: &PgPool,
     id: i64,
-    company: i64,
     name: &str,
     lat: f64,
     lon: f64,
@@ -215,16 +191,15 @@ pub async fn update(
     sqlx::query_as!(
         Store,
         r#"update store
-           set company = $2, name = $3,
-               position = ST_SetSRID(ST_MakePoint($5, $4), 4326)::geography,
-               openinghours = $6, modified_by = $7, modified = now()
+           set name = $2,
+               position = ST_SetSRID(ST_MakePoint($4, $3), 4326)::geography,
+               openinghours = $5, modified_by = $6, modified = now()
            where id = $1
-           returning id, company, name,
+           returning id, name,
                      openinghours as "openinghours: Json<Vec<crate::models::DayHours>>",
                      ST_Y(position::geometry) as "lat!", ST_X(position::geometry) as "lon!",
                      approved, deleted, created_by, modified_by, created, modified"#,
         id,
-        company,
         name,
         lat,
         lon,
@@ -240,7 +215,7 @@ pub async fn soft_delete(pool: &PgPool, id: i64, changed_by: i64) -> sqlx::Resul
         Store,
         r#"update store set deleted = true, modified_by = $2, modified = now()
            where id = $1
-           returning id, company, name,
+           returning id, name,
                      openinghours as "openinghours: Json<Vec<crate::models::DayHours>>",
                      ST_Y(position::geometry) as "lat!", ST_X(position::geometry) as "lon!",
                      approved, deleted, created_by, modified_by, created, modified"#,
@@ -253,7 +228,7 @@ pub async fn soft_delete(pool: &PgPool, id: i64, changed_by: i64) -> sqlx::Resul
 
 pub fn snapshot(store: &Store) -> serde_json::Value {
     json!({
-        "id": store.id, "company": store.company, "name": store.name,
+        "id": store.id, "name": store.name,
         "lat": store.lat, "lon": store.lon, "openinghours": store.openinghours,
         "approved": store.approved, "deleted": store.deleted,
     })

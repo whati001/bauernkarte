@@ -88,8 +88,7 @@ pub async fn list_all(pool: &PgPool) -> sqlx::Result<Vec<AdminUserRow>> {
     sqlx::query_as!(
         AdminUserRow,
         r#"select u.id, u.name, u.email::text as "email!", u.admin, u.created,
-                  (  (select count(*) from company       where created_by = u.id)
-                   + (select count(*) from store         where created_by = u.id)
+                  (  (select count(*) from store         where created_by = u.id)
                    + (select count(*) from product       where created_by = u.id)
                    + (select count(*) from store_product where created_by = u.id)
                    + (select count(*) from image         where created_by = u.id)
