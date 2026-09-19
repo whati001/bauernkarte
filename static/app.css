@@ -245,6 +245,19 @@ a:hover { text-decoration: underline; }
   box-shadow: var(--shadow-sm);
   position: relative;
   z-index: 1000;
+  /* No pinch- or double-tap-zoom for a gesture that starts on the bar —
+     zooming the chrome of a map app is never what was meant, and it was
+     the easiest place to trigger it by accident. This is the half that
+     holds in an iOS Safari tab, where layout.html's `user-scalable=no`
+     is ignored by design.
+
+     `pan-x pan-y` rather than a single axis or `none`: the UA intersects
+     touch-action down the ancestor chain, so anything narrower here also
+     disables scrolling for the descendants that legitimately scroll —
+     .nav-products sideways, .nav-suggestions vertically. Naming both
+     axes keeps every one of those working; it is only pinch and
+     double-tap that are dropped. */
+  touch-action: pan-x pan-y;
 }
 
 .nav-main {
@@ -760,6 +773,10 @@ a:hover { text-decoration: underline; }
      matters on mobile, where #sidebar is the one genuinely scrollable
      region left (see the html/body comment above). */
   overscroll-behavior-y: contain;
+  /* Same reasoning as #navbar's, both axes for the same reason: the
+     panel scrolls vertically, but .photo-carousel inside it scrolls
+     sideways, and a bare `pan-y` here would intersect that away. */
+  touch-action: pan-x pan-y;
 }
 .sidebar-panel { padding: var(--space-4); }
 /* The search panel's filter card and its results list are siblings

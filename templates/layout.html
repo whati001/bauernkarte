@@ -7,8 +7,20 @@
       of letting the map reach the screen edges. What that costs is
       content running under the status bar and home indicator, which
       app.css's "Installed app" section pads back out with
-      env(safe-area-inset-*). -#}
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+      env(safe-area-inset-*).
+
+      `user-scalable=no` because this page *is* a map: it has its own
+      zoom, and browser zoom on top of it scaled the whole app — chrome
+      included — with no way back out once installed and chrome-less.
+      Deliberately only here; /admin and /offline are documents, and
+      stay zoomable.
+
+      It does not carry on its own. iOS Safari has ignored
+      `user-scalable=no` in a browser tab since iOS 10 (an accessibility
+      guarantee it does not let a page revoke), so this only bites in
+      standalone mode and on Android. app.css's `touch-action` on
+      #navbar/#sidebar is what covers the iOS-tab case. -#}
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>{{ title }}</title>
   <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
   {#- Installable-PWA metadata. The manifest is what makes "Add to home
