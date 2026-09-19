@@ -10,9 +10,9 @@ nav-logout = Logout
 nav-account = Konto
 nav-account-of = Konto von { $name }
 nav-new-store = Neues Geschäft
-nav-search-label = Kategorie oder Produkt suchen
-nav-search-placeholder = Kategorie oder Produkt…
-nav-search-no-matches = Keine passende Kategorie oder Produkt
+nav-search-label = Produkt suchen
+nav-search-placeholder = Produkt…
+nav-search-no-matches = Kein passendes Produkt
 nav-search-clear = Suche zurücksetzen
 nav-search-toggle = Suche öffnen oder schließen
 nav-products-label = Beliebte Produkte
@@ -20,7 +20,6 @@ nav-products-all = Alle Produkte
 
 ## Search sidebar
 search-filter-heading = Filter
-search-category = Kategorie
 search-product = Produkt
 search-all = Alle
 search-results-count = { $count ->
@@ -79,7 +78,6 @@ detail-get-directions = Route berechnen
 detail-store = Geschäft
 detail-products = Produkte
 detail-season = Saison
-detail-category = Kategorie
 detail-product-count = { $count ->
     [one] { $count } Produkt
    *[other] { $count } Produkte
@@ -129,7 +127,6 @@ product-form-new-checkbox = Neues Produkt anlegen
 product-form-product = Produkt
 product-form-choose = — wählen —
 product-form-name = Produktname
-product-form-category = Kategorie
 product-form-description-optional = Beschreibung (optional)
 product-form-seasonal-checkbox = Nur saisonal verfügbar
 product-form-seasonal-hint = Standardmäßig das ganze Jahr über verfügbar — nur aktivieren, um bestimmte Monate auszuwählen.
@@ -140,8 +137,7 @@ store-product-seasonality-form-heading = Saisonalität bearbeiten: { $name }
 ## Edit product form
 edit-product-form-heading = Produkt bearbeiten
 edit-product-form-name = Name
-edit-product-form-category = Kategorie
-edit-product-form-description = Beschreibung
+edit-edit-product-form-description = Beschreibung
 
 ## Image form
 image-form-heading = Bild hinzufügen
@@ -153,7 +149,7 @@ image-form-alt-fallback = Produktbild
 ## Store detail — action labels
 detail-edit-store = Geschäft bearbeiten
 detail-delete-store = Geschäft löschen
-detail-edit-product = Produkt bearbeiten (Name, Kategorie, Beschreibung)
+detail-edit-product = Produkt bearbeiten (Name, Beschreibung)
 detail-edit-product-title = Produkt bearbeiten
 detail-edit-seasonality = Saisonalität bearbeiten
 detail-edit-seasonality-title = Saisonalität bearbeiten

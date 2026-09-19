@@ -15,7 +15,7 @@ blueprint for implementation.
 
 **Goals**
 - Anonymous users can explore stores/products/ratings on a map, filter by
-  category/product/distance, and view store detail (products, prices,
+  product/distance, and view store detail (products, prices,
   ratings, images, opening hours, Google Maps link).
 - Registered users can additionally: rate a store's product (❤️ "UP" vote
   only, extensible via `rating_type`), upload images, add a product to an
@@ -101,7 +101,6 @@ erDiagram
     "user" ||--o{ rating : created_by
     store ||--o{ store_product : offers
     product ||--o{ store_product : "sold as"
-    category ||--o{ product : classifies
     store_product ||--o{ rating : receives
     store ||--o{ image : has
     rating_type ||--o{ rating : classifies
@@ -126,17 +125,8 @@ erDiagram
         timestamptz created
         timestamptz modified
     }
-    category {
-        bigint id PK
-        text name UK
-        bigint created_by FK
-        bigint modified_by FK
-        timestamptz created
-        timestamptz modified
-    }
     product {
         bigint id PK
-        bigint category FK
         text name
         text description
         boolean approved "[new] default false"
@@ -185,8 +175,8 @@ erDiagram
 
 - **`approved BOOLEAN NOT NULL DEFAULT false`** added to `store`,
   `product`, `store_product`, `image`. Every public read query filters
-  `WHERE approved`. `category` and `rating_type` are not user-creatable in
-  v1 (fixed taxonomies seeded by admin), so no flag needed. `rating` itself
+  `WHERE approved`. `rating_type` is not user-creatable in v1 (a fixed
+  taxonomy seeded by admin), so no flag needed. `rating` itself
   is intentionally **not** gated by approval (see below) — visible
   immediately.
 - **`rating_type`** replaces the inline `score enum(UP)` so future rating
@@ -209,10 +199,9 @@ erDiagram
   `ST_DWithin`/`ST_Distance` queries.
 - **`image.mime_type`** added — needed to serve the `bytea` back with a
   correct `Content-Type`.
-- Foreign key indexes added on all `*_id`/`store_product`/`category`/etc.
-  columns used in joins/filters (`product.category`,
-  `store_product.store`, `store_product.product`, `rating.store_product`,
-  `image.store`).
+- Foreign key indexes added on all `*_id`/`store_product`/etc. columns
+  used in joins/filters (`store_product.store`, `store_product.product`,
+  `rating.store_product`, `image.store`).
 - All `created_by`/`modified_by` are `FK -> user.id`, `ON DELETE SET NULL`
   (keep content if a user account is removed).
 
@@ -229,7 +218,6 @@ where s.approved
         select 1 from store_product sp
         join product p on p.id = sp.product and p.approved and sp.approved
         where sp.store = s.id and ($3::bigint is null or p.id = $3)
-          and ($4::bigint is null or p.category = $4)
       ))
   and ST_DWithin(s.position, ST_MakePoint($1,$2)::geography, $5 * 1000)
 order by distance_m asc;
@@ -263,7 +251,7 @@ product_finder/
    ├─ auth/                   # session middleware, password hashing
    ├─ handlers/
    │  ├─ pages.rs             # GET / , GET /store/{id} (deep link)
-   │  ├─ search.rs            # GET /api/stores, /api/filters/*
+   │  ├─ search.rs            # GET /api/stores, /api/search/*
    │  ├─ store.rs             # GET/POST /store/new
    │  ├─ store_product.rs     # POST /store/{id}/product
    │  ├─ rating.rs            # POST/DELETE /rating
@@ -279,8 +267,6 @@ product_finder/
 | GET | `/` | any | full page (map shell + default search sidebar) |
 | GET | `/store/{id}` | any | full page, sidebar pre-loaded to that store's detail (deep link / share URL) |
 | GET | `/api/stores` | any | Datastar SSE: `patch-signals {stores: [...]}` + `patch-elements #sidebar-results` |
-| GET | `/api/filters/categories` | any | `patch-elements` (`<select>` options) |
-| GET | `/api/filters/products?category_id=` | any | `patch-elements` (`<select>` options, cascading) |
 | GET | `/api/store/{id}` | any | `patch-elements #sidebar` → detail view fragment |
 | GET | `/api/store/back` | any | `patch-elements #sidebar` → re-render last search (signals retained client-side) |
 | GET | `/login`, `/register` | anon only | form fragment/page |
@@ -306,7 +292,7 @@ redirects to `/login` (Datastar: `data-on-401` → navigate).
 ```js
 {
   // filters
-  categoryId: null, productId: null, distanceKm: 5,
+  productId: null, distanceKm: 5,
   lat: null, lon: null,           // geolocation or map center
   // results (server-populated via patch-signals)
   stores: [],                     // [{id,name,lat,lon,topProduct,upCount,distanceM}, ...]
@@ -316,7 +302,7 @@ redirects to `/login` (Datastar: `data-on-401` → navigate).
 }
 ```
 
-Filter `<select>`/slider inputs bind with `data-bind-categoryId` etc.;
+Filter `<select>`/slider inputs bind with `data-bind-productId` etc.;
 `data-on-change="@get('/api/stores')"` (debounced) re-runs the search and
 streams new `stores` + sidebar HTML. `map.js` subscribes to signal patches
 for `stores`/`selectedStoreId` and re-renders Leaflet markers/popups —
@@ -353,7 +339,6 @@ Prüfung)" (simple `WHERE created_by = current_user AND NOT approved`).
 │  Was hat der Bauer                                   [Login] / [👤 Max ▾] │  ← navbar
 ├───────────────┬───────────────────────────────────────────────────┤
 │  SEARCH        │                                                   │
-│  Kategorie ▾   │                                                   │
 │  Produkt   ▾   │                     MAP (Leaflet)                 │
 │  Umkreis ──○── │            pins with label if zoomed/wide enough: │
 │  5 km          │              ┌─────────────┐                     │
@@ -372,9 +357,8 @@ requested.
 
 ### 6.2 Sidebar states (single container `#sidebar`, server-swapped)
 
-1. **Search** (default): category select → product select (cascades on
-   category) → distance slider → results list. Selecting a result or a map
-   pin triggers `GET /api/store/{id}`.
+1. **Search** (default): product select → distance slider → results
+   list. Selecting a result or a map pin triggers `GET /api/store/{id}`.
 2. **Detail** (after a store/product is picked):
    - "← Zurück" button (`GET /api/store/back` — restores search state) and
      `Escape` key bound globally (`data-on-keydown.window.esc`) to the same

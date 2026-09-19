@@ -311,7 +311,7 @@ a:hover { text-decoration: underline; }
   .brand-name { font-size: var(--font-size-base); }
 }
 
-/* Global category/product picker — centered by `margin: 0 auto` inside
+/* Global product picker — centered by `margin: 0 auto` inside
    #navbar's space-between row, so it stays visually centered on the page
    even though the brand and the actions cluster have very different
    widths. `min-width: 0` lets it actually shrink when the actions
@@ -422,7 +422,7 @@ a:hover { text-decoration: underline; }
 .nav-suggestion:hover { background: var(--surface-2); }
 .nav-suggestion-icon { flex-shrink: 0; }
 /* The name is the part worth reading, so it takes the slack and the
-   truncation; the kind badge keeps its intrinsic width. */
+   truncation. */
 .nav-suggestion-name {
   flex: 1;
   min-width: 0;
@@ -430,14 +430,6 @@ a:hover { text-decoration: underline; }
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--text-primary);
-}
-.nav-suggestion-kind {
-  flex-shrink: 0;
-  padding: 0 var(--space-2);
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
-  background: var(--surface-2);
-  border-radius: var(--radius-full);
 }
 .nav-suggestion-empty {
   margin: 0;
@@ -451,8 +443,8 @@ a:hover { text-decoration: underline; }
    behind a 44px magnifier next to the menu toggle and reopens as an
    overlay under the whole navbar — full width, and hanging *over* the
    map rather than pushing it down, exactly like the collapsed .nav-menu.
-   (The sidebar's own category/product <select>s remain the
-   full-featured way to filter on a phone; this is the quick path.) */
+   (The sidebar's own product <select> remains the full-featured way to
+   filter on a phone; this is the quick path.) */
 @media (max-width: 700px) {
   /* Static, so the overlay below anchors to #navbar (the nearest
      positioned ancestor left) rather than to this 44px button. */
@@ -532,9 +524,10 @@ a:hover { text-decoration: underline; }
 .product-pick-icon { font-size: 1.05em; }
 
 /* Pinned to the leading edge of the scroller — the row scrolls sideways,
-   and the one control that reaches the *rest* of the catalog is no use
-   parked off-screen. The shell-colored backdrop (plus the fade to its
-   right) is what the chips slide under. */
+   and the chip that clears the filter is no use parked off-screen. The
+   shell-colored backdrop (plus the fade to its right) is what the chips
+   slide under; `.product-pick.active` outranks it on specificity, so
+   this chip still takes the accent pill when no product is selected. */
 .product-more {
   position: sticky;
   left: 0;
@@ -546,6 +539,8 @@ a:hover { text-decoration: underline; }
 }
 .product-more:hover { background: var(--shell-2); box-shadow: 12px 0 12px -6px var(--shell); }
 .product-more-icon { display: inline-flex; color: var(--text-secondary); }
+/* Muted grey on the accent fill fails contrast — follow the pill. */
+.product-pick.active .product-more-icon { color: inherit; }
 .product-more-icon .icon { width: 1em; height: 1em; vertical-align: 0; }
 
 /* Anchor for the collapsed .nav-menu dropdown below. `flex-wrap` is
@@ -1263,7 +1258,7 @@ a.icon-btn.danger:hover, button.icon-btn.danger:hover { background: var(--critic
 }
 
 /* ============================================================
-   Filter card (sidebar_search.html's category/product/distance fields)
+   Filter card (sidebar_search.html's product field)
    ============================================================ */
 /* ============================================================
    Results list
@@ -1513,23 +1508,19 @@ a.icon-btn.danger:hover, button.icon-btn.danger:hover { background: var(--critic
   font-weight: 700;
 }
 
-/* The four facts a shopper actually compares on, in one bordered block.
-   Hairline dividers rather than four separate cards: at sidebar width
+/* The facts a shopper actually compares on, in one bordered block.
+   A hairline divider rather than separate cards: at sidebar width
    nested cards would be almost entirely border and padding. */
 .spec-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   overflow: hidden;
 }
 .spec { padding: var(--space-3); min-width: 0; }
-/* Season on its own row (12 dots need the full width), rating and
-   category sharing the one below. Rules are stated per cell rather than
-   via nth-child so the grid isn't silently wrong if a cell is added or
-   removed. */
-.spec-season { grid-column: 1 / -1; border-bottom: 1px solid var(--border); }
-.spec-season + .spec { border-right: 1px solid var(--border); }
+/* Stated per cell rather than via nth-child so the grid isn't silently
+   wrong if a cell is added or removed. */
+.spec-season { border-bottom: 1px solid var(--border); }
 .spec-title {
   display: flex;
   align-items: center;

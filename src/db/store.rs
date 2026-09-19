@@ -19,9 +19,8 @@ struct SearchRow {
     product_total: i64,
 }
 
-/// Every approved store matching the category/product filter, ranked by
-/// distance from `origin` when there is one and alphabetically when
-/// there isn't.
+/// Every approved store matching the product filter, ranked by distance
+/// from `origin` when there is one and alphabetically when there isn't.
 ///
 /// There is deliberately no radius. The "Umkreis" filter this replaced
 /// was a second thing to get right before seeing any results, and it hid
@@ -40,7 +39,6 @@ pub async fn search(
     pool: &PgPool,
     origin: Option<(f64, f64)>,
     product_id: Option<i64>,
-    category_id: Option<i64>,
 ) -> sqlx::Result<Vec<StoreSearchResult>> {
     let (lat, lon) = match origin {
         Some((lat, lon)) => (Some(lat), Some(lon)),
@@ -75,7 +73,6 @@ pub async fn search(
                 left join rating r on r.store_product = sp.id
                 where sp.store = s.id and sp.approved and not sp.deleted
                   and ($3::bigint is null or p.id = $3)
-                  and ($4::bigint is null or p.category = $4)
                 group by p.id, p.name, p.icon
                 order by count(r.id) desc, p.name asc
                 limit 5
@@ -87,7 +84,6 @@ pub async fn search(
             join product p on p.id = sp.product and p.approved and not p.deleted
             where sp.store = s.id and sp.approved and not sp.deleted
               and ($3::bigint is null or p.id = $3)
-              and ($4::bigint is null or p.category = $4)
         ) cnt on true
         where s.approved and not s.deleted
           and exists (
@@ -95,14 +91,12 @@ pub async fn search(
                 join product p on p.id = sp.product and p.approved and not p.deleted
                 where sp.store = s.id and sp.approved and not sp.deleted
                   and ($3::bigint is null or p.id = $3)
-                  and ($4::bigint is null or p.category = $4)
               )
         order by "distance_m?" asc nulls last, s.name asc
         "#,
         lon,
         lat,
         product_id,
-        category_id,
     )
     .fetch_all(pool)
     .await?;

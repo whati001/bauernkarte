@@ -45,7 +45,7 @@ pub async fn page(
     let sidebar_html = render_panel(&state).await?;
     // Unfiltered pins, same as a `/store/{id}` deep link: the map behind
     // the panel still needs something on it.
-    let map_stores = db::store::search(&state.pool, None, None, None).await?;
+    let map_stores = db::store::search(&state.pool, None, None).await?;
     let map_data_html = crate::handlers::search::render_map_data(&map_stores);
     let signals = crate::handlers::pages::base_signals(
         crate::handlers::search::AUSTRIA_LAT,

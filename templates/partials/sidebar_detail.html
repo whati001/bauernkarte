@@ -76,11 +76,10 @@
     {% endif %}
 
     <!-- One card per offering: the glyph gets a tinted disc so it reads
-         as the card's picture (there's rarely a real photo), and the
-         three things a shopper compares on — season, rating, category —
-         sit in a bordered grid rather than as a run of stacked
-         label/value pairs. Season spans the full width: its 12-dot
-         timeline needs the room the other two don't. -->
+         as the card's picture (there's rarely a real photo), and the two
+         things a shopper compares on — season and rating — sit in a
+         bordered grid rather than as a run of stacked label/value
+         pairs. -->
     {% for p in products %}
     <section class="panel-card product-card{% if p.selected %} selected{% endif %}">
       <div class="product-figure">
@@ -113,12 +112,6 @@
             <span class="rating-badge">{% include "icons/heart.svg" %} {{ r.count }}</span>
             {% endfor %}
             {% if p.ratings.is_empty() %}<span class="spec-empty">—</span>{% endif %}
-          </div>
-        </div>
-        <div class="spec">
-          <div class="spec-title">{% include "icons/tag.svg" %} {{ "detail-category"|t }}</div>
-          <div class="spec-value">
-            {% if let Some(icon) = p.category_icon %}<span aria-hidden="true">{{ icon }}</span> {% endif %}{{ p.category_name }}
           </div>
         </div>
       </div>

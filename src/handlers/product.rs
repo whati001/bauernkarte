@@ -18,7 +18,7 @@ use crate::{
     handlers::store_detail::load_detail_or_404,
     i18n,
     i18n as filters, // see templates.rs's comment on this alias
-    models::{Category, Product},
+    models::Product,
     seasonality::{self, SeasonalityFields},
     sse::{patch_elements_at, patch_signals},
     state::AppState,
@@ -48,7 +48,6 @@ struct ProductFormTemplate {
     /// resolved via `i18n::translate_with_name` elsewhere.
     heading: String,
     products: Vec<Product>,
-    categories: Vec<Category>,
     /// Always `false` here — a brand-new listing starts as "available
     /// all year" (see seasonality_fields.html), never pre-checked.
     is_seasonal: bool,
@@ -62,10 +61,6 @@ pub async fn new_form(
     CurrentUser(_user): CurrentUser,
 ) -> AppResult<Sse<impl stream::Stream<Item = Result<Event, Infallible>>>> {
     let store = db::store::find_public(&state.pool, store_id).await?.ok_or(AppError::NotFound)?;
-    let categories = db::category::list_all(&state.pool).await?;
-    // All approved products across every category — a farm-shop catalog
-    // is small enough in v1 that a single flat select is fine (no
-    // category-cascade needed here, unlike the search filter).
     let products = db::product::list_all_approved(&state.pool).await?;
     let heading = i18n::translate_with_name(i18n::current_locale(), "product-form-add-heading", &store.name);
     let html = render(ProductFormTemplate {
@@ -73,7 +68,6 @@ pub async fn new_form(
         back_action: super::back_action(Some(store_id)),
         heading,
         products,
-        categories,
         is_seasonal: false,
         seasonal_months: seasonality::month_rows(None),
     });
@@ -103,8 +97,6 @@ pub struct NewProductSelection {
     offer_product_id: Option<String>,
     #[serde(default)]
     new_product_name: Option<String>,
-    #[serde(default)]
-    new_product_category_id: Option<String>,
     #[serde(default)]
     new_product_description: Option<String>,
 }
@@ -212,7 +204,6 @@ fn blank_selection(map: &mut serde_json::Map<String, serde_json::Value>, suffix:
     map.insert(format!("isNewProduct{suffix}"), false.into());
     map.insert(format!("offerProductId{suffix}"), "".into());
     map.insert(format!("newProductName{suffix}"), "".into());
-    map.insert(format!("newProductCategoryId{suffix}"), "".into());
     map.insert(format!("newProductDescription{suffix}"), "".into());
     map.insert(format!("isSeasonal{suffix}"), false.into());
     for month in seasonality::month_keys() {
@@ -264,15 +255,8 @@ pub async fn resolve_product(
     if sel.is_new_product {
         let name = non_empty(sel.new_product_name.clone())
             .ok_or_else(|| AppError::Validation("Bitte einen Produktnamen angeben.".into()))?;
-        let category_id: i64 = non_empty(sel.new_product_category_id.clone())
-            .and_then(|s| s.parse().ok())
-            .ok_or_else(|| AppError::Validation("Bitte eine Kategorie wählen.".into()))?;
-        if !db::category::exists(pool, category_id).await? {
-            return Err(AppError::Validation("Unbekannte Kategorie.".into()));
-        }
         Ok(db::product::insert(
             pool,
-            category_id,
             &name,
             non_empty(sel.new_product_description.clone()).as_deref(),
             created_by,
@@ -453,8 +437,6 @@ struct EditProductFormTemplate {
     back_action: String,
     name: String,
     description: Option<String>,
-    category_id: i64,
-    categories: Vec<Category>,
 }
 
 /// `GET /product/{id}/edit` (catalog-editing).
@@ -468,14 +450,11 @@ pub async fn edit_product_form(
     if product.deleted {
         return Err(AppError::Conflict("product is deleted".into()));
     }
-    let categories = db::category::list_all(&state.pool).await?;
     let html = render(EditProductFormTemplate {
         product_id,
         back_action: super::back_action(q.store_id),
         name: product.name,
         description: product.description,
-        category_id: product.category,
-        categories,
     });
     Ok(Sse::new(stream::iter(vec![Ok(patch_elements_at("#sidebar", "inner", &html))])))
 }
@@ -484,8 +463,6 @@ pub async fn edit_product_form(
 #[serde(rename_all = "camelCase")]
 pub struct EditProductBody {
     product_name: String,
-    #[serde(deserialize_with = "crate::de::flexible_i64")]
-    product_category_id: i64,
     #[serde(default)]
     product_description: Option<String>,
 }
@@ -505,15 +482,11 @@ pub async fn update_product(
     if name.is_empty() {
         return Err(AppError::Validation("Bitte einen Namen angeben.".into()));
     }
-    if !db::category::exists(&state.pool, body.product_category_id).await? {
-        return Err(AppError::Validation("Unbekannte Kategorie.".into()));
-    }
 
     let old_snapshot = db::product::snapshot(&before);
     let after = db::product::update(
         &state.pool,
         product_id,
-        body.product_category_id,
         name,
         non_empty(body.product_description).as_deref(),
         user.id,
@@ -572,7 +545,7 @@ pub async fn delete_product(
 
     let q = crate::handlers::search::SearchQuery::default();
     let results = crate::handlers::search::run_search(&state, &q).await?;
-    let sidebar_html = crate::handlers::search::render_search_panel(&state, None, &results).await?;
+    let sidebar_html = crate::handlers::search::render_search_panel(&state, &results).await?;
     let map_data_html = crate::handlers::search::render_map_data(&results);
     Ok(Sse::new(stream::iter(vec![
         Ok(patch_elements_at("#sidebar", "inner", &sidebar_html)),

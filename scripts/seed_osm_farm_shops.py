@@ -41,7 +41,7 @@ tty either.
 
 Everything is inserted `approved = true, created_by = NULL` — this is
 curated reference data being seeded directly, not a simulated user
-submission subject to moderation (same treatment as the `category` seed).
+submission subject to moderation.
 
 The generated SQL is idempotent: products upsert on their name (filling
 in a missing icon and changing nothing else), and each shop's
@@ -88,68 +88,67 @@ out center tags;
 """ % {"vending": "|".join(VENDING_TOKENS)}
 
 # OSM produce=/product=/vending= tokens (English, semicolon/comma
-# separated in practice) -> (German product name, category name).
-# Tokens with no reasonable single-category home, or too vague to be a
-# real product ("food", "groceries", "deli"), are left unmapped and
+# separated in practice) -> German product name. Tokens too vague to be
+# a real product ("food", "groceries", "deli") are left unmapped and
 # simply skipped rather than guessed at. That holds for `vending=food`
 # machines too, even though it is the most common value on them: a
 # catch-all "assorted groceries" product is out of scope here, so those
 # machines are neither queried for nor seeded.
 PRODUCT_MAP = {
-    "apple": ("Äpfel", "Obst & Gemüse"),
-    "apples": ("Äpfel", "Obst & Gemüse"),
-    "vegetables": ("Gemüse", "Obst & Gemüse"),
-    "vegetable": ("Gemüse", "Obst & Gemüse"),
-    "fruits": ("Obst", "Obst & Gemüse"),
-    "fruit": ("Obst", "Obst & Gemüse"),
-    "potatoes": ("Kartoffeln", "Obst & Gemüse"),
-    "tomatoes": ("Tomaten", "Obst & Gemüse"),
-    "strawberry": ("Erdbeeren", "Obst & Gemüse"),
-    "cherry": ("Kirschen", "Obst & Gemüse"),
-    "pumpkin_seed": ("Kürbiskerne", "Obst & Gemüse"),
-    "pumpkin_seeds": ("Kürbiskerne", "Obst & Gemüse"),
-    "herbs": ("Kräuter", "Obst & Gemüse"),
-    "egg": ("Eier", "Eier"),
-    "eggs": ("Eier", "Eier"),
-    "cheese": ("Käse", "Milchprodukte & Käse"),
-    "milk": ("Milch", "Milchprodukte & Käse"),
-    "yoghurt": ("Joghurt", "Milchprodukte & Käse"),
-    "jughurt": ("Joghurt", "Milchprodukte & Käse"),
-    "butter": ("Butter", "Milchprodukte & Käse"),
-    "buttermilk": ("Buttermilch", "Milchprodukte & Käse"),
-    "curd chease": ("Topfen", "Milchprodukte & Käse"),
-    "dairy": ("Milchprodukte", "Milchprodukte & Käse"),
-    "meat": ("Fleisch", "Fleisch & Wurst"),
-    "beef": ("Rindfleisch", "Fleisch & Wurst"),
-    "pork": ("Schweinefleisch", "Fleisch & Wurst"),
-    "bacon": ("Speck", "Fleisch & Wurst"),
-    "sausage": ("Wurst", "Fleisch & Wurst"),
-    "sausages": ("Wurst", "Fleisch & Wurst"),
-    "ham": ("Schinken", "Fleisch & Wurst"),
-    "chicken": ("Hühnerfleisch", "Fleisch & Wurst"),
-    "chicken_meat": ("Hühnerfleisch", "Fleisch & Wurst"),
-    "bread": ("Brot", "Brot & Backwaren"),
-    "bakery_products": ("Backwaren", "Brot & Backwaren"),
-    "honey": ("Honig", "Honig"),
-    "wine": ("Wein", "Getränke"),
-    "juice": ("Saft", "Getränke"),
-    "juices": ("Saft", "Getränke"),
-    "syrup": ("Sirup", "Getränke"),
-    "sirup": ("Sirup", "Getränke"),
-    "tea": ("Tee", "Getränke"),
-    "liquer": ("Likör", "Getränke"),
-    "liqueur": ("Likör", "Getränke"),
-    "noodles": ("Nudeln", "Sonstiges"),
-    "cereal": ("Getreide", "Sonstiges"),
-    "cereals": ("Getreide", "Sonstiges"),
-    "spices": ("Gewürze", "Sonstiges"),
-    "algae": ("Algen", "Sonstiges"),
-    "flowers": ("Blumen", "Sonstiges"),
-    "christmas tree": ("Christbaum", "Sonstiges"),
-    "soups": ("Suppen", "Sonstiges"),
-    "jam": ("Marmelade", "Sonstiges"),
-    "pumpkin_seed_oil": ("Kürbiskernöl", "Sonstiges"),
-    "fish": ("Fisch", "Sonstiges"),
+    "apple": "Äpfel",
+    "apples": "Äpfel",
+    "vegetables": "Gemüse",
+    "vegetable": "Gemüse",
+    "fruits": "Obst",
+    "fruit": "Obst",
+    "potatoes": "Kartoffeln",
+    "tomatoes": "Tomaten",
+    "strawberry": "Erdbeeren",
+    "cherry": "Kirschen",
+    "pumpkin_seed": "Kürbiskerne",
+    "pumpkin_seeds": "Kürbiskerne",
+    "herbs": "Kräuter",
+    "egg": "Eier",
+    "eggs": "Eier",
+    "cheese": "Käse",
+    "milk": "Milch",
+    "yoghurt": "Joghurt",
+    "jughurt": "Joghurt",
+    "butter": "Butter",
+    "buttermilk": "Buttermilch",
+    "curd chease": "Topfen",
+    "dairy": "Milchprodukte",
+    "meat": "Fleisch",
+    "beef": "Rindfleisch",
+    "pork": "Schweinefleisch",
+    "bacon": "Speck",
+    "sausage": "Wurst",
+    "sausages": "Wurst",
+    "ham": "Schinken",
+    "chicken": "Hühnerfleisch",
+    "chicken_meat": "Hühnerfleisch",
+    "bread": "Brot",
+    "bakery_products": "Backwaren",
+    "honey": "Honig",
+    "wine": "Wein",
+    "juice": "Saft",
+    "juices": "Saft",
+    "syrup": "Sirup",
+    "sirup": "Sirup",
+    "tea": "Tee",
+    "liquer": "Likör",
+    "liqueur": "Likör",
+    "noodles": "Nudeln",
+    "cereal": "Getreide",
+    "cereals": "Getreide",
+    "spices": "Gewürze",
+    "algae": "Algen",
+    "flowers": "Blumen",
+    "christmas tree": "Christbaum",
+    "soups": "Suppen",
+    "jam": "Marmelade",
+    "pumpkin_seed_oil": "Kürbiskernöl",
+    "fish": "Fisch",
 }
 
 
@@ -254,7 +253,7 @@ def display_name(tags):
 
 
 def parse_products(tags):
-    """Collect distinct (German name, category) tuples named by
+    """Collect the distinct German product names named by
     produce=/product=/vending= on one shop, splitting each on the mix of
     ';'/',' separators used in practice."""
     found = {}
@@ -266,8 +265,8 @@ def parse_products(tags):
             token = token.strip().lower()
             mapped = PRODUCT_MAP.get(token)
             if mapped:
-                found[mapped[0]] = mapped
-    return list(found.values())
+                found[mapped] = None
+    return list(found)
 
 
 def main():
@@ -311,19 +310,17 @@ def main():
     # references, deduplicated up front, `ON CONFLICT (name) DO NOTHING` so
     # re-running this script is safe against an already-seeded product
     # table (e.g. "Äpfel" from manual testing).
-    all_products = {}
+    all_products = set()
     for _, _, _, _, tags in named:
-        for name, category in parse_products(tags):
-            all_products[name] = category
+        all_products.update(parse_products(tags))
 
     if all_products:
         print("-- Product catalog referenced by the shops below.")
-        print("INSERT INTO product (category, name, icon, approved, created_by) VALUES")
+        print("INSERT INTO product (name, icon, approved, created_by) VALUES")
         rows = []
-        for name, category in sorted(all_products.items()):
+        for name in sorted(all_products):
             rows.append(
-                f"  ((SELECT id FROM category WHERE name = {sql_str(category)}), "
-                f"{sql_str(name)}, {sql_str(PRODUCT_ICONS.get(name))}, true, NULL)"
+                f"  ({sql_str(name)}, {sql_str(PRODUCT_ICONS.get(name))}, true, NULL)"
             )
         # `WHERE NOT deleted` is required, not decorative: `product_name_key`
         # is a *partial* unique index (so a deleted product's name can be
@@ -371,7 +368,7 @@ def main():
         # `named` is pre-filtered to shops with >=1 mapped product, so
         # this is never empty here.
         selects = []
-        for pname, _category in parse_products(tags):
+        for pname in parse_products(tags):
             # Explicit cast: a UNION ALL of several SELECTs each
             # carrying a bare `NULL` infers the merged column as
             # `text` instead of the target `bigint`, which Postgres

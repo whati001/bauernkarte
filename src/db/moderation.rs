@@ -14,9 +14,7 @@ use time::OffsetDateTime;
 
 use crate::db::edit_log::EditAction;
 
-/// The four moderated tables. `category` is deliberately absent: it's a
-/// fixed taxonomy managed directly in the database, not user-creatable
-/// (see the comment on the table in its migration).
+/// The four moderated tables.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Entity {
     Store,
@@ -120,10 +118,9 @@ pub async fn pending(pool: &PgPool, entity: Entity) -> sqlx::Result<Vec<QueueRow
         .await?,
         Entity::Product => sqlx::query_as!(
             QueueRow,
-            r#"select p.id, p.name as "title!", cat.name as "subtitle?",
+            r#"select p.id, p.name as "title!", p.description as "subtitle?",
                       u.name as "author?", p.created as "at!"
                from product p
-               join category cat on cat.id = p.category
                left join "user" u on u.id = p.created_by
                where not p.approved and not p.deleted order by p.created"#
         )
@@ -176,10 +173,9 @@ pub async fn deleted(pool: &PgPool, entity: Entity) -> sqlx::Result<Vec<QueueRow
         .await?,
         Entity::Product => sqlx::query_as!(
             QueueRow,
-            r#"select p.id, p.name as "title!", cat.name as "subtitle?",
+            r#"select p.id, p.name as "title!", p.description as "subtitle?",
                       u.name as "author?", p.modified as "at!"
                from product p
-               join category cat on cat.id = p.category
                left join "user" u on u.id = p.modified_by
                where p.deleted order by p.modified desc"#
         )
@@ -421,7 +417,6 @@ pub async fn revert(pool: &PgPool, entity: Entity, log_id: i64, by: i64) -> sqlx
     let id = entry.entity_id;
 
     let str_field = |key: &str| old.get(key).and_then(Value::as_str).map(str::to_string);
-    let i64_field = |key: &str| old.get(key).and_then(Value::as_i64);
     let f64_field = |key: &str| old.get(key).and_then(Value::as_f64);
 
     // Snapshot of where the row stands *before* the revert, so the log
@@ -455,7 +450,6 @@ pub async fn revert(pool: &PgPool, entity: Entity, log_id: i64, by: i64) -> sqlx
             let after = crate::db::product::update(
                 pool,
                 id,
-                i64_field("category").unwrap_or(before.category),
                 &str_field("name").unwrap_or_default(),
                 str_field("description").as_deref(),
                 by,

@@ -121,15 +121,6 @@
           <input id="new-product-name-{{ s.index }}" type="text" data-bind:new-product-name{{ s.index }}>
         </div>
         <div class="field" data-show="$isNewProduct{{ s.index }}">
-          <label for="new-product-category-{{ s.index }}">{% include "icons/tag.svg" %} {{ "product-form-category"|t }}</label>
-          <select id="new-product-category-{{ s.index }}" data-bind:new-product-category-id{{ s.index }}>
-            <option value="">{{ "product-form-choose"|t }}</option>
-            {% for c in categories %}
-            <option value="{{ c.id }}">{{ c.name }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="field" data-show="$isNewProduct{{ s.index }}">
           <label for="new-product-desc-{{ s.index }}">{{ "product-form-description-optional"|t }}</label>
           <textarea id="new-product-desc-{{ s.index }}" data-bind:new-product-description{{ s.index }}></textarea>
         </div>

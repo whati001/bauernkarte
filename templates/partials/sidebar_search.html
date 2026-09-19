@@ -7,18 +7,8 @@
        initial results, harmless) but not on its own response, since
        /api/stores never touches $lat/$lon — no feedback loop. -->
   <div data-effect="$lat !== null && $lon !== null && @get('/api/stores')" style="display:none"></div>
-  <!-- Reuses the exact fragments the /api/filters/* routes serve
-       standalone, rather than duplicating the <option> markup here — one
-       source of truth for how a category/product option renders (this
-       is exactly the kind of duplication that drifted out of sync
-       before: the icon added below would otherwise need updating in
-       two places). -->
   <section class="panel-card">
     <h3>{% include "icons/tag.svg" %} {{ "search-filter-heading"|t }}</h3>
-    <div class="field">
-      <label for="category-select">{% include "icons/tag.svg" %} {{ "search-category"|t }}</label>
-      {% include "partials/category_options.html" %}
-    </div>
     <div class="field">
       <label for="product-select">{% include "icons/package.svg" %} {{ "search-product"|t }}</label>
       {% include "partials/product_options.html" %}

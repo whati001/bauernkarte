@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "select p.id, p.name as \"title!\", cat.name as \"subtitle?\",\n                      u.name as \"author?\", p.modified as \"at!\"\n               from product p\n               join category cat on cat.id = p.category\n               left join \"user\" u on u.id = p.modified_by\n               where p.deleted order by p.modified desc",
+  "query": "select p.id, p.name as \"title!\", p.description as \"subtitle?\",\n                      u.name as \"author?\", p.modified as \"at!\"\n               from product p\n               left join \"user\" u on u.id = p.modified_by\n               where p.deleted order by p.modified desc",
   "describe": {
     "columns": [
       {
@@ -35,10 +35,10 @@
     "nullable": [
       false,
       false,
-      false,
+      true,
       false,
       false
     ]
   },
-  "hash": "7cfe07ec671f85fb00cb6ce590a70f32c310f9dafcf03b9c405958c4b01bcf66"
+  "hash": "f3a6e845b9ca34f197fbb77105e4ecf06d0fd67321bc6d36342c36fdfc37ec4b"
 }

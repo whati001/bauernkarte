@@ -20,15 +20,6 @@
       <input id="new-product-name" type="text" name="new_product_name" data-bind:new-product-name>
     </div>
     <div class="field" data-show="$isNewProduct">
-      <label for="new-product-category">{% include "icons/tag.svg" %} {{ "product-form-category"|t }}</label>
-      <select id="new-product-category" name="new_product_category_id" data-bind:new-product-category-id>
-        <option value="">{{ "product-form-choose"|t }}</option>
-        {% for c in categories %}
-        <option value="{{ c.id }}">{{ c.name }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="field" data-show="$isNewProduct">
       <label for="new-product-desc">{{ "product-form-description-optional"|t }}</label>
       <textarea id="new-product-desc" name="new_product_description" data-bind:new-product-description></textarea>
     </div>

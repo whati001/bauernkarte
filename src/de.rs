@@ -29,29 +29,3 @@ where
         StringOrFloat::String(s) => s.parse().map_err(serde::de::Error::custom),
     }
 }
-
-/// As `flexible_f64`, but `i64` — for the same "not one of Datastar's
-/// specially-coerced input types" issue on a `<select>` element (only
-/// `number`/`range`/`checkbox` get numeric coercion in the bind plugin;
-/// a `<select>`'s value is always sent as a plain string), currently
-/// `edit_product_form.html`'s category `<select>`. Sibling `<select>`s
-/// elsewhere in the app dodge this by typing the field `String`/
-/// `Option<String>` and parsing by hand (see `product.rs`'s
-/// `new_product_category_id`) — this one didn't, and so 422'd on every
-/// product edit with a generic axum extractor-rejection body that never
-/// reaches `AppError::Validation` at all (caught by a real submit, not curl).
-pub fn flexible_i64<'de, D>(deserializer: D) -> Result<i64, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    #[derive(Deserialize)]
-    #[serde(untagged)]
-    enum StringOrInt {
-        String(String),
-        Int(i64),
-    }
-    match StringOrInt::deserialize(deserializer)? {
-        StringOrInt::Int(i) => Ok(i),
-        StringOrInt::String(s) => s.parse().map_err(serde::de::Error::custom),
-    }
-}

@@ -75,9 +75,8 @@ nested card — nesting cards inside cards reads as noise.
   when its contents are all sign-in-gated; an empty ruled strip is worse
   than no strip.
 - `.spec-grid` / `.spec` — a block of short labelled facts sharing
-  hairline dividers (the store detail's season/rating/category, season
-  spanning the full width for its 12-month bar). At sidebar width three
-  separate cards would be nearly all border.
+  hairline dividers (the store detail's season and rating). At sidebar
+  width separate cards would be nearly all border.
 - `.btn-quiet` — accent-outlined secondary action, for a card whose
   primary is (or could be) the one filled `button.primary`.
 - `.add-tile` — full-width dashed "add another" affordance closing a
@@ -270,8 +269,8 @@ with `{% include "icons/name.svg" %}` — never a CDN. They carry
 Decorative icons are `aria-hidden`; icon-only controls need an
 `aria-label` *and* a `title`.
 
-Product and category glyphs are plain-text emoji from the database, not
-SVGs — native `<option>` elements can only render text.
+Product glyphs are plain-text emoji from the database, not SVGs —
+native `<option>` elements can only render text.
 
 ## Responsive
 

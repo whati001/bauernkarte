@@ -3,32 +3,16 @@ use sqlx::PgPool;
 
 use crate::models::{Product, RankedProduct};
 
-/// Every approved product, regardless of category — the search filter's
-/// default state (no category selected yet). `list_approved_by_category`
-/// below narrows this once a category is picked (store-search capability:
-/// "product options cascade from the selected category").
+/// Everything the search filter's product `<select>` offers, and the same
+/// set the submission forms let someone pick an existing product from.
 pub async fn list_all_approved(pool: &PgPool) -> sqlx::Result<Vec<Product>> {
     sqlx::query_as!(
         Product,
-        r#"select id, category, name, description, icon, approved, deleted,
+        r#"select id, name, description, icon, approved, deleted,
                   created_by, modified_by, created, modified
            from product
            where approved and not deleted
            order by name"#,
-    )
-    .fetch_all(pool)
-    .await
-}
-
-pub async fn list_approved_by_category(pool: &PgPool, category_id: i64) -> sqlx::Result<Vec<Product>> {
-    sqlx::query_as!(
-        Product,
-        r#"select id, category, name, description, icon, approved, deleted,
-                  created_by, modified_by, created, modified
-           from product
-           where approved and not deleted and category = $1
-           order by name"#,
-        category_id
     )
     .fetch_all(pool)
     .await
@@ -63,7 +47,7 @@ pub async fn list_top_rated(pool: &PgPool, limit: i64) -> sqlx::Result<Vec<Ranke
 pub async fn search_approved_by_name(pool: &PgPool, term: &str, limit: i64) -> sqlx::Result<Vec<Product>> {
     sqlx::query_as!(
         Product,
-        r#"select id, category, name, description, icon, approved, deleted,
+        r#"select id, name, description, icon, approved, deleted,
                   created_by, modified_by, created, modified
            from product
            where approved and not deleted and name ilike $1
@@ -82,7 +66,7 @@ pub async fn search_approved_by_name(pool: &PgPool, term: &str, limit: i64) -> s
 pub async fn find_approved(pool: &PgPool, id: i64) -> sqlx::Result<Option<Product>> {
     sqlx::query_as!(
         Product,
-        r#"select id, category, name, description, icon, approved, deleted,
+        r#"select id, name, description, icon, approved, deleted,
                   created_by, modified_by, created, modified
            from product where id = $1 and approved and not deleted"#,
         id
@@ -94,7 +78,7 @@ pub async fn find_approved(pool: &PgPool, id: i64) -> sqlx::Result<Option<Produc
 pub async fn find(pool: &PgPool, id: i64) -> sqlx::Result<Option<Product>> {
     sqlx::query_as!(
         Product,
-        r#"select id, category, name, description, icon, approved, deleted,
+        r#"select id, name, description, icon, approved, deleted,
                   created_by, modified_by, created, modified
            from product where id = $1"#,
         id
@@ -105,18 +89,16 @@ pub async fn find(pool: &PgPool, id: i64) -> sqlx::Result<Option<Product>> {
 
 pub async fn insert(
     pool: &PgPool,
-    category: i64,
     name: &str,
     description: Option<&str>,
     created_by: i64,
 ) -> sqlx::Result<Product> {
     sqlx::query_as!(
         Product,
-        r#"insert into product (category, name, description, approved, created_by, modified_by)
-           values ($1, $2, $3, false, $4, $4)
-           returning id, category, name, description, icon, approved, deleted,
+        r#"insert into product (name, description, approved, created_by, modified_by)
+           values ($1, $2, false, $3, $3)
+           returning id, name, description, icon, approved, deleted,
                      created_by, modified_by, created, modified"#,
-        category,
         name,
         description,
         created_by
@@ -128,7 +110,6 @@ pub async fn insert(
 pub async fn update(
     pool: &PgPool,
     id: i64,
-    category: i64,
     name: &str,
     description: Option<&str>,
     changed_by: i64,
@@ -136,12 +117,11 @@ pub async fn update(
     sqlx::query_as!(
         Product,
         r#"update product
-           set category = $2, name = $3, description = $4, modified_by = $5, modified = now()
+           set name = $2, description = $3, modified_by = $4, modified = now()
            where id = $1
-           returning id, category, name, description, icon, approved, deleted,
+           returning id, name, description, icon, approved, deleted,
                      created_by, modified_by, created, modified"#,
         id,
-        category,
         name,
         description,
         changed_by
@@ -155,7 +135,7 @@ pub async fn soft_delete(pool: &PgPool, id: i64, changed_by: i64) -> sqlx::Resul
         Product,
         r#"update product set deleted = true, modified_by = $2, modified = now()
            where id = $1
-           returning id, category, name, description, icon, approved, deleted,
+           returning id, name, description, icon, approved, deleted,
                      created_by, modified_by, created, modified"#,
         id,
         changed_by
@@ -166,7 +146,7 @@ pub async fn soft_delete(pool: &PgPool, id: i64, changed_by: i64) -> sqlx::Resul
 
 pub fn snapshot(product: &Product) -> serde_json::Value {
     json!({
-        "id": product.id, "category": product.category, "name": product.name,
+        "id": product.id, "name": product.name,
         "description": product.description, "approved": product.approved, "deleted": product.deleted,
     })
 }

@@ -7,7 +7,7 @@
         <span class="brand-tagline">{{ "nav-tagline"|t }}</span>
       </span>
     </a>
-    <!-- Global category/product picker. Deliberately not a free-text
+    <!-- Global product picker. Deliberately not a free-text
          search: the input only filters the suggestion list, nothing is
          submitted, and the actual filter is only ever applied by clicking
          a suggestion (which hits /api/search/select — see
@@ -130,8 +130,8 @@
   </div>
   <!-- Quick-pick row: the most-rated products (across every store, see
        db::product::list_top_rated), one click each. Same target as a
-       search suggestion (/api/search/select/product/{id}), so picking
-       here and picking there land in exactly one code path.
+       search suggestion (/api/search/select/{id}), so picking here and
+       picking there land in exactly one code path.
 
        Highlighting is `data-class:active` off `$productId` rather than
        server-rendered: the filter can equally be set from the search
@@ -141,28 +141,22 @@
        ("17"), not a number. -->
   {% if !nav_products.is_empty() %}
   <div class="nav-products" role="group" aria-label="{{ "nav-products-label"|t }}">
-    <!-- The row only carries the top handful (pages::NAV_PRODUCT_LIMIT);
-         this is the way to the rest, i.e. the sidebar's own product
-         <select> plus the category filter. First in the
-         markup as well as visually, so tab order follows what's on
-         screen.
-
-         Two halves, because "show me the filters" has to work from
-         wherever the visitor is: `/api/store/back` swaps the *search
-         panel* into #sidebar (whatever it held — login, a store detail,
-         a form), and `pfShowSidebar` (map.js) makes sure the panel is
-         open and marks it as the visitor's own doing so the deselect
-         rule doesn't close it again a moment later. -->
+    <!-- The row's own "no filter" option, and a peer of the chips after
+         it rather than a way out of the row: it drops the product filter
+         so every store is back on the map. First in the markup as well
+         as visually, so tab order follows what's on screen. -->
     <button type="button" class="product-pick product-more"
             title="{{ "nav-products-all"|t }}"
-            data-on:click="pfShowSidebar(); @get('/api/store/back')">
+            data-class:active="$productId == ''"
+            data-attr:aria-pressed="$productId == '' ? 'true' : 'false'"
+            data-on:click="@get('/api/search/clear')">
       <span class="product-more-icon" aria-hidden="true">{% include "icons/layers.svg" %}</span>
       <span class="product-pick-name">{{ "nav-products-all"|t }}</span>
     </button>
     {% for p in nav_products %}
     <button type="button" class="product-pick" data-class:active="$productId == {{ p.id }}"
             data-attr:aria-pressed="$productId == {{ p.id }} ? 'true' : 'false'"
-            data-on:click="$productId == {{ p.id }} ? @get('/api/search/clear') : @get('/api/search/select/product/{{ p.id }}')">
+            data-on:click="$productId == {{ p.id }} ? @get('/api/search/clear') : @get('/api/search/select/{{ p.id }}')">
       <span class="product-pick-icon" aria-hidden="true">{% if let Some(icon) = p.icon %}{{ icon }}{% else %}📦{% endif %}</span>
       <span class="product-pick-name">{{ p.name }}</span>
     </button>

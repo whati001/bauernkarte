@@ -34,10 +34,10 @@ pub const NAV_PRODUCT_LIMIT: i64 = 12;
 /// not the visitor's position, so the list stays alphabetical.
 pub(crate) fn base_signals(lat: f64, lon: f64, geo_available: Option<bool>, logged_in: bool) -> serde_json::Value {
     json!({
-        "categoryId": "", "productId": "",
+        "productId": "",
         "lat": lat, "lon": lon, "geoAvailable": geo_available,
         "resultCount": 0, "selectedStoreId": null, "loggedIn": logged_in,
-        // Navbar global search: the picked category/product's name and
+        // Navbar global search: the picked product's name and
         // emoji (both shown in the box) and whether its suggestion
         // dropdown is open. These live in the page-wide signal set
         // because the navbar outlives every #sidebar swap. The quick-pick
@@ -64,7 +64,6 @@ pub(crate) fn base_signals(lat: f64, lon: f64, geo_available: Option<bool>, logg
 /// through `data-effect` and re-ranks the same list by distance.
 pub async fn index(State(state): State<AppState>, OptionalUser(user): OptionalUser) -> AppResult<impl IntoResponse> {
     let q = SearchQuery {
-        category_id: None,
         product_id: None,
         lat: Some(AUSTRIA_LAT),
         lon: Some(AUSTRIA_LON),
@@ -75,7 +74,7 @@ pub async fn index(State(state): State<AppState>, OptionalUser(user): OptionalUs
         geo_available: None,
     };
     let results = run_search(&state, &q).await?;
-    let sidebar_html = render_search_panel(&state, None, &results).await?;
+    let sidebar_html = render_search_panel(&state, &results).await?;
     let map_data_html = render_map_data(&results);
     let signals = base_signals(AUSTRIA_LAT, AUSTRIA_LON, None, user.is_some());
     let nav_products = db::product::list_top_rated(&state.pool, NAV_PRODUCT_LIMIT).await?;
@@ -105,12 +104,11 @@ pub async fn store_page(
     let detail = load_detail_or_404(&state, store_id, viewer_id).await?;
     let title = format!("{} – BauernKarte", detail.store_name);
     let sidebar_html = render_detail_panel(&detail, user.is_some());
-    // Unfiltered, matching the signal defaults below ($categoryId/
-    // $productId both "") — a store detail deep link carries no search
-    // filter of its own, but the map behind it (see full_page's own doc
-    // comment) still needs *some* pin set on first paint, same as the
-    // plain search landing page gets.
-    let map_stores = db::store::search(&state.pool, None, None, None).await?;
+    // Unfiltered, matching the $productId default below ("") — a store
+    // detail deep link carries no search filter of its own, but the map
+    // behind it (see full_page's own doc comment) still needs *some* pin
+    // set on first paint, same as the plain search landing page gets.
+    let map_stores = db::store::search(&state.pool, None, None).await?;
     let map_data_html = render_map_data(&map_stores);
     // Geolocation status genuinely doesn't matter for a detail deep
     // link, but the signal set is shared app-wide (the visitor might hit

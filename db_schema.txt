@@ -11,17 +11,8 @@ created_by: user.id
 modified: DATETIME
 modified_by: user.id
 
-category:
-id: BIGINT
-name: VARCHAR/TEXT
-created: DATETIME
-created_by: user.id
-modified: DATETIME
-modified_by: user.id
-
 product:
 id: BIGINT
-category: category.id
 name: VARCHAR/TEXT
 description: VARCHAR/TEXT
 created: DATETIME

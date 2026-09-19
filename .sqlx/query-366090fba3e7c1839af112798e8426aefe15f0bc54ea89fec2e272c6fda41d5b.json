@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "update product\n           set category = $2, name = $3, description = $4, modified_by = $5, modified = now()\n           where id = $1\n           returning id, category, name, description, icon, approved, deleted,\n                     created_by, modified_by, created, modified",
+  "query": "select id, name, description, icon, approved, deleted,\n                  created_by, modified_by, created, modified\n           from product\n           where approved and not deleted\n           order by name",
   "describe": {
     "columns": [
       {
@@ -10,66 +10,54 @@
       },
       {
         "ordinal": 1,
-        "name": "category",
-        "type_info": "Int8"
-      },
-      {
-        "ordinal": 2,
         "name": "name",
         "type_info": "Text"
       },
       {
-        "ordinal": 3,
+        "ordinal": 2,
         "name": "description",
         "type_info": "Text"
       },
       {
-        "ordinal": 4,
+        "ordinal": 3,
         "name": "icon",
         "type_info": "Text"
       },
       {
-        "ordinal": 5,
+        "ordinal": 4,
         "name": "approved",
         "type_info": "Bool"
       },
       {
-        "ordinal": 6,
+        "ordinal": 5,
         "name": "deleted",
         "type_info": "Bool"
       },
       {
-        "ordinal": 7,
+        "ordinal": 6,
         "name": "created_by",
         "type_info": "Int8"
       },
       {
-        "ordinal": 8,
+        "ordinal": 7,
         "name": "modified_by",
         "type_info": "Int8"
       },
       {
-        "ordinal": 9,
+        "ordinal": 8,
         "name": "created",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 10,
+        "ordinal": 9,
         "name": "modified",
         "type_info": "Timestamptz"
       }
     ],
     "parameters": {
-      "Left": [
-        "Int8",
-        "Int8",
-        "Text",
-        "Text",
-        "Int8"
-      ]
+      "Left": []
     },
     "nullable": [
-      false,
       false,
       false,
       true,
@@ -82,5 +70,5 @@
       false
     ]
   },
-  "hash": "fd0e2bf4639d01dfaecd8c2b0abb47a7729c7dd7f57c9f32ef9c6617a2db7ab7"
+  "hash": "366090fba3e7c1839af112798e8426aefe15f0bc54ea89fec2e272c6fda41d5b"
 }

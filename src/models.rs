@@ -28,24 +28,13 @@ pub struct User {
 }
 
 #[derive(Debug, Clone, sqlx::FromRow, Serialize)]
-pub struct Category {
-    pub id: i64,
-    pub name: String,
-    /// A plain-text emoji, not one of the vendored SVG icons — native
-    /// `<option>` elements can't render markup, only text (see the
-    /// `category_icon` migration).
-    pub icon: Option<String>,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, Serialize)]
 pub struct Product {
     pub id: i64,
-    pub category: i64,
     pub name: String,
     pub description: Option<String>,
-    /// A plain-text emoji, same treatment (and same rationale — native
-    /// `<option>` elements can't render markup) as `Category::icon` (see
-    /// the `product_icon` migration).
+    /// A plain-text emoji, not one of the vendored SVG icons — native
+    /// `<option>` elements can't render markup, only text (see the
+    /// `product_icon` migration).
     pub icon: Option<String>,
     pub approved: bool,
     pub deleted: bool,
@@ -191,11 +180,6 @@ pub struct StoreProductDetail {
     pub product_name: String,
     pub product_description: Option<String>,
     pub product_icon: Option<String>,
-    /// The product's category, one cell of the detail view's per-product
-    /// spec grid. Never null — `product.category` is a NOT NULL FK into
-    /// the fixed admin-managed taxonomy.
-    pub category_name: String,
-    pub category_icon: Option<String>,
     /// `None` = available all year, see `StoreProduct::seasonal_months`.
     pub seasonal_months: Option<Vec<i16>>,
     pub ratings: Vec<RatingCount>,

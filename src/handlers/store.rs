@@ -19,7 +19,7 @@ use crate::{
     handlers::store_detail::load_detail_or_404,
     i18n,
     i18n as filters, // see templates.rs's comment on this alias
-    models::{Category, Product},
+    models::Product,
     opening_hours::{self, OpeningHoursFields},
     seasonality,
     sse::{patch_elements_at, patch_signals},
@@ -53,7 +53,6 @@ struct StoreFormTemplate {
     /// doc comment for why. Editing an existing store doesn't touch its
     /// product list, so these stay empty there.
     products: Vec<Product>,
-    categories: Vec<Category>,
     /// Same `!is_edit`-only scope as `products` above — the new-store
     /// form's repeating product blocks, revealed one at a time as the
     /// previous one is filled (`product::slot_views`).
@@ -79,10 +78,7 @@ pub async fn new_form(
     State(state): State<AppState>,
     CurrentUser(_user): CurrentUser,
 ) -> AppResult<Sse<impl stream::Stream<Item = Result<Event, Infallible>>>> {
-    // All approved products across every category — same flat-select
-    // rationale as `product::new_form`.
     let products = db::product::list_all_approved(&state.pool).await?;
-    let categories = db::category::list_all(&state.pool).await?;
     let html = render(StoreFormTemplate {
         is_edit: false,
         action: "/store/new".to_string(),
@@ -93,7 +89,6 @@ pub async fn new_form(
         opening_hours: opening_hours::week_rows(&[]),
         time_options: opening_hours::time_options(),
         products,
-        categories,
         product_slots: product::slot_views(),
         location_status_expr: location_status_expr(),
     });
@@ -127,7 +122,6 @@ pub async fn edit_form(
         opening_hours: opening_hours::week_rows(&hours),
         time_options: opening_hours::time_options(),
         products: Vec::new(),
-        categories: Vec::new(),
         product_slots: Vec::new(),
         location_status_expr: location_status_expr(),
     });
@@ -309,7 +303,7 @@ pub async fn delete(
     // search rather than a now-404ing detail view.
     let q = crate::handlers::search::SearchQuery::default();
     let results = crate::handlers::search::run_search(&state, &q).await?;
-    let sidebar_html = crate::handlers::search::render_search_panel(&state, None, &results).await?;
+    let sidebar_html = crate::handlers::search::render_search_panel(&state, &results).await?;
     let map_data_html = crate::handlers::search::render_map_data(&results);
     Ok(Sse::new(stream::iter(vec![
         Ok(patch_elements_at("#sidebar", "inner", &sidebar_html)),

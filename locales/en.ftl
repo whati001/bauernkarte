@@ -10,9 +10,9 @@ nav-logout = Logout
 nav-account = Account
 nav-account-of = Account of { $name }
 nav-new-store = New Store
-nav-search-label = Search category or product
-nav-search-placeholder = Category or product…
-nav-search-no-matches = No matching category or product
+nav-search-label = Search product
+nav-search-placeholder = Product…
+nav-search-no-matches = No matching product
 nav-search-clear = Reset search
 nav-search-toggle = Open or close search
 nav-products-label = Popular products
@@ -20,7 +20,6 @@ nav-products-all = All products
 
 ## Search sidebar
 search-filter-heading = Filter
-search-category = Category
 search-product = Product
 search-all = All
 search-results-count = { $count ->
@@ -79,7 +78,6 @@ detail-get-directions = Get directions
 detail-store = Store
 detail-products = Products
 detail-season = Season
-detail-category = Category
 detail-product-count = { $count ->
     [one] { $count } product
    *[other] { $count } products
@@ -129,7 +127,6 @@ product-form-new-checkbox = Create new product
 product-form-product = Product
 product-form-choose = — choose —
 product-form-name = Product name
-product-form-category = Category
 product-form-description-optional = Description (optional)
 product-form-seasonal-checkbox = Only available seasonally
 product-form-seasonal-hint = Available all year by default — turn this on to pick specific months.
@@ -140,8 +137,7 @@ store-product-seasonality-form-heading = Edit seasonality: { $name }
 ## Edit product form
 edit-product-form-heading = Edit product
 edit-product-form-name = Name
-edit-product-form-category = Category
-edit-product-form-description = Description
+edit-edit-product-form-description = Description
 
 ## Image form
 image-form-heading = Add image
@@ -153,7 +149,7 @@ image-form-alt-fallback = Product image
 ## Store detail — action labels
 detail-edit-store = Edit store
 detail-delete-store = Delete store
-detail-edit-product = Edit product (name, category, description)
+detail-edit-product = Edit product (name, description)
 detail-edit-product-title = Edit product
 detail-edit-seasonality = Edit seasonality
 detail-edit-seasonality-title = Edit seasonality

@@ -62,8 +62,6 @@ struct StoreProductView {
     product_name: String,
     product_description: Option<String>,
     product_icon: Option<String>,
-    category_name: String,
-    category_icon: Option<String>,
     /// Always 12 rows (`seasonality::month_rows`) — the store-detail
     /// month bar shows every month regardless of whether the listing
     /// restricts any of them.
@@ -124,8 +122,6 @@ pub fn render_detail_panel_with_selection(
             product_name: p.product_name.clone(),
             product_description: p.product_description.clone(),
             product_icon: p.product_icon.clone(),
-            category_name: p.category_name.clone(),
-            category_icon: p.category_icon.clone(),
             seasonal_months: seasonality::month_rows(p.seasonal_months.as_deref()),
             season_summary: seasonality::season_summary(p.seasonal_months.as_deref()),
             ratings: p.ratings.clone(),
@@ -217,7 +213,7 @@ pub async fn back(
     DatastarSignals(q): DatastarSignals<SearchQuery>,
 ) -> AppResult<Sse<impl stream::Stream<Item = Result<Event, Infallible>>>> {
     let results = run_search(&state, &q).await?;
-    let sidebar_html = render_search_panel(&state, q.category_id, &results).await?;
+    let sidebar_html = render_search_panel(&state, &results).await?;
     let map_data_html = render_map_data(&results);
     Ok(Sse::new(stream::iter(vec![
         Ok(patch_elements_at("#sidebar", "inner", &sidebar_html)),
