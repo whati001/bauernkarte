@@ -137,7 +137,7 @@ store-product-seasonality-form-heading = Edit seasonality: { $name }
 ## Edit product form
 edit-product-form-heading = Edit product
 edit-product-form-name = Name
-edit-edit-product-form-description = Description
+edit-product-form-description = Description
 
 ## Image form
 image-form-heading = Add image
@@ -282,3 +282,62 @@ admin-site-info-country = Country
 admin-site-info-optional = Everything here is optional — a private operator has no VAT ID and no register entry.
 admin-site-info-purpose = What this website is for
 admin-site-info-saved = Site info saved.
+
+## Store info (redesigned detail panel)
+detail-close = Close
+detail-shop-owner = Shop owner
+detail-owner-since = Farmer since { $year }
+detail-call = Call { $name }
+detail-reviews-count = { $count ->
+    [one] ({ $count } review)
+   *[other] ({ $count } reviews)
+  }
+detail-no-reviews = No reviews yet
+detail-your-rating = Your rating
+detail-rate-store = Rate this farm
+detail-remove-review = Remove rating
+detail-stars = { $count ->
+    [one] { $count } star
+   *[other] { $count } stars
+  }
+detail-in-season-count = { $count } in season
+detail-in-season = In season
+detail-out-of-season = Out of season
+detail-year-round = All year
+detail-hours-daily = Daily
+detail-hours-show-week = Full week
+detail-more-actions = More about this product
+## Store form — new fields
+store-form-contact-heading = Address and contact
+store-form-address = Address
+store-form-phone = Phone
+store-form-owner-heading = Owner (optional)
+store-form-owner-name = Name
+store-form-owner-since = Farming since (year)
+store-form-owner-bio = Short introduction
+## Image form — owner portrait
+image-form-is-owner = This is a portrait of the owner
+## Validation
+error-generic = Something went wrong. Please try again.
+error-login-required = Please log in first.
+error-name-required = Please enter a name.
+error-email-invalid = Please enter a valid email address.
+error-email-taken = This email address is already registered.
+error-login-failed = Wrong email or password.
+error-current-password-wrong = Current password is wrong.
+error-product-required = Please choose a product.
+error-product-name-required = Please enter a product name.
+error-product-name-taken = A product with this name already exists — please pick it from the list.
+error-products-min-one = Please add at least one product.
+error-season-month-required = Please pick at least one month, or untick "Only available seasonally".
+error-hours-order = Opening hours: opening must be before closing.
+error-hours-incomplete = Opening hours: for each day, set both opening and closing or leave both empty.
+error-location-required = Please pick the location on the map.
+error-image-required = Please choose an image file.
+error-image-too-large = The file is too large (max. 15 MB).
+error-image-format = Only JPEG, PNG or WebP are supported.
+error-image-decode = The image could not be read (too large or damaged).
+error-owner-since-invalid = Please enter a year between 1800 and now.
+error-stars-range = Please give 1 to 5 stars.
+error-not-found = This entry does not exist (anymore).
+error-deleted = This entry has been deleted.

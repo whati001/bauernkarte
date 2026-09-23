@@ -1,176 +1,99 @@
-//! Per-listing seasonal-availability model — a `store_product`'s
-//! `seasonal_months` is `None` (available all year) or `Some(months)`
-//! (1 = January .. 12 = December, see `models::StoreProduct`). This
-//! module expands that into the fixed 12-month grid the "add product"/
-//! "edit seasonality" forms and the store-detail month bar all render
-//! from, and parses the form's fields back.
+//! Per-offer seasonal availability: `None` means available all year,
+//! `Some(months)` only those months (1 = January .. 12 = December).
 
-use crate::error::AppError;
-use crate::i18n;
+use crate::i18n::Locale;
 
-/// One month of the fixed 12-month grid — `key` is the form's
-/// signal-name suffix (see `SeasonalityFields`), `available` drives both
-/// the edit form's checkbox state and the detail view's green/muted
-/// dot.
-pub struct MonthRow {
-    pub key: &'static str,
-    pub label: String,
-    pub available: bool,
-}
-
-/// (month number, form signal-name key, i18n label key). `key` is
-/// letters, not the month number — Datastar's kebab-to-camelCase
-/// conversion only fires on `-<lowercase letter>` (confirmed against the
-/// vendored bundle, see map.js's own comment on this), so a
-/// `data-bind:month-1`-style digit suffix would leave a literal hyphen
-/// in the signal name instead of becoming `$month1`; letters side-step
-/// that entirely, same reasoning as `opening_hours::WEEKDAYS`'s `key`.
-const MONTHS: [(i16, &str, &str); 12] = [
-    (1, "jan", "month-jan"),
-    (2, "feb", "month-feb"),
-    (3, "mar", "month-mar"),
-    (4, "apr", "month-apr"),
-    (5, "may", "month-may"),
-    (6, "jun", "month-jun"),
-    (7, "jul", "month-jul"),
-    (8, "aug", "month-aug"),
-    (9, "sep", "month-sep"),
-    (10, "oct", "month-oct"),
-    (11, "nov", "month-nov"),
-    (12, "dec", "month-dec"),
+pub const MONTH_KEYS: [&str; 12] = [
+    "month-jan", "month-feb", "month-mar", "month-apr", "month-may", "month-jun",
+    "month-jul", "month-aug", "month-sep", "month-oct", "month-nov", "month-dec",
 ];
 
-/// The signal-name stems (`"jan"` .. `"dec"`) behind `data-bind:month-*`
-/// — needed by `handlers::product::slot_signals`, which builds those
-/// names for the new-store form's indexed product blocks.
-pub fn month_keys() -> impl Iterator<Item = &'static str> {
-    MONTHS.iter().map(|(_, key, _)| *key)
+pub fn is_available(seasonal_months: Option<&[i16]>, month: i16) -> bool {
+    seasonal_months.is_none_or(|months| months.contains(&month))
 }
 
-/// (start index, end index) of each consecutive run of `true` in a
-/// 12-slot Jan..Dec array — deliberately *not* circular (a run available
-/// Nov+Dec plus Jan+Feb is two runs, not one wrapping across New Year's):
-/// nothing in the request this implements asked for wraparound, and a
-/// non-wrapping reading is the less surprising one.
-fn available_blocks(available: &[bool; 12]) -> Vec<(usize, usize)> {
-    let mut blocks = Vec::new();
+/// The 12 months as a fixed Jan..Dec availability array.
+pub fn availability(seasonal_months: Option<&[i16]>) -> [bool; 12] {
+    std::array::from_fn(|i| is_available(seasonal_months, i as i16 + 1))
+}
+
+/// "Jän..Jun, Sep..Dez" — each consecutive run of available months,
+/// deliberately not wrapping across New Year's.
+pub fn summary(locale: Locale, seasonal_months: Option<&[i16]>) -> String {
+    let available = availability(seasonal_months);
+    let mut runs = Vec::new();
     let mut start = None;
-    for (i, &is_available) in available.iter().enumerate() {
-        if is_available {
-            start.get_or_insert(i);
-        } else if let Some(s) = start.take() {
-            blocks.push((s, i - 1));
+    for i in 0..=12 {
+        let on = i < 12 && available[i];
+        match (on, start) {
+            (true, None) => start = Some(i),
+            (false, Some(s)) => {
+                runs.push((s, i - 1));
+                start = None;
+            }
+            _ => {}
         }
     }
-    if let Some(s) = start {
-        blocks.push((s, 11));
-    }
-    blocks
-}
-
-/// `None` (available all year) expands to all 12 months marked
-/// available — correct for both call sites: the detail view's bar shows
-/// every dot green (one run, "Jan..Dez"), and the edit form reveals a
-/// fully-checked grid the first time "only available seasonally" is
-/// turned on (so unchecking the closed months is the whole interaction,
-/// not building the list from scratch).
-pub fn month_rows(seasonal_months: Option<&[i16]>) -> Vec<MonthRow> {
-    let labels: Vec<String> =
-        MONTHS.iter().map(|(_, _, label_key)| i18n::translate(i18n::current_locale(), label_key)).collect();
-    let available: [bool; 12] = std::array::from_fn(|i| match seasonal_months {
-        None => true,
-        Some(months) => months.contains(&MONTHS[i].0),
-    });
-
-    MONTHS
-        .iter()
-        .enumerate()
-        .map(|(i, (_, key, _))| MonthRow {
-            key,
-            label: labels[i].clone(),
-            available: available[i],
-        })
-        .collect()
-}
-
-/// A plain-text "Jan..Jun, Sep..Dez" (or "Jan..Dez" for available-all-year)
-/// rendering of the same runs `month_rows` labels on the dot bar —
-/// accessibility only (the bar's own `aria-label`/`title`, read as one
-/// coherent phrase instead of the dot-by-dot labels a screen reader would
-/// otherwise announce one at a time), not rendered as visible text of its
-/// own.
-pub fn season_summary(seasonal_months: Option<&[i16]>) -> String {
-    let rows = month_rows(seasonal_months);
-    let available: [bool; 12] = std::array::from_fn(|i| rows[i].available);
-    available_blocks(&available)
-        .into_iter()
-        .map(|(start, end)| {
-            if start == end {
-                rows[start].label.clone()
+    runs.into_iter()
+        .map(|(s, e)| {
+            if s == e {
+                locale.t(MONTH_KEYS[s])
             } else {
-                format!("{}..{}", rows[start].label, rows[end].label)
+                format!("{}..{}", locale.t(MONTH_KEYS[s]), locale.t(MONTH_KEYS[e]))
             }
         })
         .collect::<Vec<_>>()
         .join(", ")
 }
 
-/// The form's "only available seasonally" checkbox + 12 month
-/// checkboxes (`month<Jan..Dec>`) — `#[serde(flatten)]`d into
-/// `product::NewStoreProductBody` and `store::NewStoreBody` (both create
-/// a `store_product`) and, standalone, into `product::EditSeasonalityBody`.
-#[derive(Debug, Default, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SeasonalityFields {
-    #[serde(default)]
-    pub is_seasonal: bool,
-    #[serde(default)]
-    pub month_jan: bool,
-    #[serde(default)]
-    pub month_feb: bool,
-    #[serde(default)]
-    pub month_mar: bool,
-    #[serde(default)]
-    pub month_apr: bool,
-    #[serde(default)]
-    pub month_may: bool,
-    #[serde(default)]
-    pub month_jun: bool,
-    #[serde(default)]
-    pub month_jul: bool,
-    #[serde(default)]
-    pub month_aug: bool,
-    #[serde(default)]
-    pub month_sep: bool,
-    #[serde(default)]
-    pub month_oct: bool,
-    #[serde(default)]
-    pub month_nov: bool,
-    #[serde(default)]
-    pub month_dec: bool,
-}
-
-/// `is_seasonal == false` (the default — the shortcut this whole module
-/// exists for) short-circuits straight to `None`/"all year" without even
-/// looking at the 12 month flags, so a listing that doesn't care about
-/// seasonality never has to touch them. `true` requires at least one
-/// month checked — "seasonal but available zero months" isn't a
-/// meaningful state to store.
-pub fn parse(fields: &SeasonalityFields) -> Result<Option<Vec<i16>>, AppError> {
-    if !fields.is_seasonal {
+/// A form's month checkboxes -> the stored value. Unticking "seasonal"
+/// means all year regardless of the grid; ticking it with no month
+/// checked is not a meaningful state to store.
+pub fn from_form(is_seasonal: bool, months: &[bool; 12]) -> Result<Option<Vec<i16>>, &'static str> {
+    if !is_seasonal {
         return Ok(None);
     }
-    let flags = [
-        fields.month_jan, fields.month_feb, fields.month_mar, fields.month_apr, fields.month_may,
-        fields.month_jun, fields.month_jul, fields.month_aug, fields.month_sep, fields.month_oct,
-        fields.month_nov, fields.month_dec,
-    ];
-    let months: Vec<i16> =
-        flags.iter().enumerate().filter(|&(_, &checked)| checked).map(|(i, _)| (i + 1) as i16).collect();
-    if months.is_empty() {
-        return Err(AppError::Validation(
-            "Bitte mindestens einen Monat auswählen, oder \"Nur saisonal verfügbar\" deaktivieren.".into(),
-        ));
+    let picked: Vec<i16> = (0..12).filter(|&i| months[i]).map(|i| i as i16 + 1).collect();
+    if picked.is_empty() {
+        return Err("error-season-month-required");
     }
-    Ok(Some(months))
+    Ok(Some(picked))
+}
+
+/// The server-side half of `from_form`: a submitted list must be a
+/// non-empty set of real months.
+#[cfg_attr(not(feature = "server"), allow(dead_code))]
+pub fn validate(months: Option<Vec<i16>>) -> Result<Option<Vec<i16>>, &'static str> {
+    match months {
+        None => Ok(None),
+        Some(mut m) => {
+            m.sort_unstable();
+            m.dedup();
+            if m.is_empty() || m.iter().any(|v| !(1..=12).contains(v)) {
+                Err("error-season-month-required")
+            } else {
+                Ok(Some(m))
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn summary_names_runs() {
+        assert_eq!(summary(Locale::En, None), "Jan..Dec");
+        assert_eq!(summary(Locale::En, Some(&[1, 2, 3, 9, 11, 12])), "Jan..Mar, Sep, Nov..Dec");
+    }
+
+    #[test]
+    fn form_needs_a_month_when_seasonal() {
+        assert_eq!(from_form(false, &[false; 12]), Ok(None));
+        assert_eq!(from_form(true, &[false; 12]), Err("error-season-month-required"));
+        let mut m = [false; 12];
+        m[7] = true;
+        assert_eq!(from_form(true, &m), Ok(Some(vec![8])));
+    }
 }

@@ -1,83 +1,47 @@
-//! DE/EN translations via Fluent (`.ftl` files in `locales/`, loaded at
-//! compile time by `fluent_templates::static_loader!`) and a custom
-//! Askama filter (`|t`) that reads the current request's locale through
-//! Askama's `render_with_values` side-channel — confirmed against the
-//! askama 0.16 source (`askama::Values`/`get_value`/`render_with_values`,
-//! and the `#[filter_fn]` signature convention
-//! `fn f(_: &dyn Display, _: &dyn askama::Values) -> askama::Result<String>`)
-//! rather than guessed, since Askama itself has no official i18n story
-//! and this crate combination isn't documented anywhere as a pair.
+//! DE/EN translations via Fluent (`locales/*.ftl`, embedded at compile
+//! time). Shared by the server and the WASM client: both render the same
+//! components, so both need the same strings.
 //!
-//! This avoids threading a `locale` field through every template struct
-//! (~20 of them): `templates::render()` passes the current locale once,
-//! as a value, and any template can pull a translated string with
-//! `{{ "key"|t }}` — same render call, no struct changes needed per
-//! string.
+//! The active locale comes from the `locale` cookie (set by
+//! `GET /locale/{code}`, see `server::routes`), is read on the server by
+//! `api::session::session_info`, and reaches every component as a
+//! `Locale` context provided at the app root. Server-rendered HTML and the
+//! hydrating client therefore always agree on the language.
 
-use askama::Values;
-use axum::{extract::Request, http::header, middleware::Next, response::Response};
-use fluent_templates::{static_loader, Loader};
 use std::collections::HashMap;
-use unic_langid::{langid, LanguageIdentifier};
 
-tokio::task_local! {
-    /// Set once per request by the locale-resolution middleware
-    /// (`main.rs`), read by `templates::render()` so every render call
-    /// gets the right language without threading a `locale` parameter
-    /// through the ~20 template structs and their handlers individually.
-    /// A `tokio::task_local!`, not a plain `thread_local!`, because a
-    /// single OS thread interleaves many concurrent requests' futures —
-    /// only a task-scoped local stays correctly isolated per request.
-    pub static CURRENT_LOCALE: Locale;
-}
-
-/// Falls back to German outside a request context (e.g. a unit test
-/// that renders a template directly).
-pub fn current_locale() -> Locale {
-    CURRENT_LOCALE.try_with(|l| *l).unwrap_or(Locale::De)
-}
-
-pub const LOCALE_COOKIE: &str = "locale";
-
-/// Reads the `locale` cookie (set by `GET /locale/{code}`, see
-/// `handlers::locale`) and makes it available to every `render()` call
-/// for the duration of this request via `CURRENT_LOCALE`. Applied as a
-/// blanket `axum::middleware::from_fn` layer in `main.rs` — every route
-/// needs it, including pages that don't otherwise touch locale-specific
-/// logic, so a per-route extractor would just mean repeating it
-/// everywhere for no benefit.
-pub async fn locale_middleware(request: Request, next: Next) -> Response {
-    let locale = request
-        .headers()
-        .get(header::COOKIE)
-        .and_then(|v| v.to_str().ok())
-        .and_then(|cookies| {
-            cookies.split(';').find_map(|kv| {
-                let (k, v) = kv.trim().split_once('=')?;
-                (k == LOCALE_COOKIE).then(|| v.to_string())
-            })
-        })
-        .map(|code| Locale::from_code(&code))
-        .unwrap_or(Locale::De);
-
-    CURRENT_LOCALE.scope(locale, next.run(request)).await
-}
+use dioxus::prelude::*;
+use fluent_templates::{
+    fluent_bundle::FluentValue, static_loader, LanguageIdentifier, Loader,
+};
+use serde::{Deserialize, Serialize};
+use unic_langid::langid;
 
 static_loader! {
     pub static LOCALES = {
         locales: "./locales",
         fallback_language: "de",
+        // No invisible bidi isolation marks around arguments (U+2068 … U+2069):
+        // both languages are left-to-right, and the marks end up in
+        // copied text and `title` attributes.
+        customise: |bundle| bundle.set_use_isolating(false),
     };
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(not(feature = "server"), allow(dead_code))]
+pub const LOCALE_COOKIE: &str = "locale";
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum Locale {
+    /// The app's original language, and the fallback for a missing or
+    /// unrecognised cookie.
+    #[default]
     De,
     En,
 }
 
 impl Locale {
-    pub fn langid(self) -> LanguageIdentifier {
+    fn langid(self) -> LanguageIdentifier {
         match self {
             Locale::De => langid!("de"),
             Locale::En => langid!("en"),
@@ -91,150 +55,54 @@ impl Locale {
         }
     }
 
-    /// Unrecognized/missing cookie values fall back to German — the
-    /// app's original language, not an arbitrary default.
+    #[cfg_attr(not(feature = "server"), allow(dead_code))]
     pub fn from_code(code: &str) -> Self {
         match code {
             "en" => Locale::En,
             _ => Locale::De,
         }
     }
-}
 
-/// For handler code building a message string directly — e.g. a
-/// `success_message` field — rather than a static label a template pulls
-/// via `{{ "key"|t }}`. Named `translate`, not `t`: the latter is already
-/// the askama filter function below, and Rust doesn't allow two `fn t` in
-/// one module regardless of arity.
-pub fn translate(locale: Locale, key: &str) -> String {
-    LOCALES.lookup(&locale.langid(), key)
-}
-
-/// The common case of `translate_with_args` — a message with exactly one
-/// `{ $name }` placeholder (confirmation panels, welcome messages).
-pub fn translate_with_name(locale: Locale, key: &str, name: &str) -> String {
-    let mut args = HashMap::new();
-    args.insert("name".to_string(), name.to_string());
-    translate_with_args(locale, key, &args)
-}
-
-/// As `translate`, with Fluent message arguments (e.g. `{ $name }`).
-pub fn translate_with_args(locale: Locale, key: &str, args: &HashMap<String, String>) -> String {
-    let fluent_args: HashMap<std::borrow::Cow<'static, str>, fluent_templates::fluent_bundle::FluentValue<'static>> = args
-        .iter()
-        .map(|(k, v)| (std::borrow::Cow::Owned(k.clone()), fluent_templates::fluent_bundle::FluentValue::String(std::borrow::Cow::Owned(v.clone()))))
-        .collect();
-    LOCALES.lookup_with_args(&locale.langid(), key, &fluent_args)
-}
-
-/// A message with a single `{ $count }` placeholder that also selects a
-/// plural form (`detail-product-count`).
-///
-/// Separate from `translate_with_args` on purpose: that one maps every
-/// argument to `FluentValue::String`, and Fluent's plural selectors only
-/// fire for a *numeric* value — a stringly-typed "1" silently falls
-/// through to the `*[other]` arm, which German then gets wrong
-/// ("1 Produkte").
-pub fn translate_with_count(locale: Locale, key: &str, count: i64) -> String {
-    let mut args: HashMap<std::borrow::Cow<'static, str>, fluent_templates::fluent_bundle::FluentValue<'static>> =
-        HashMap::new();
-    args.insert(
-        std::borrow::Cow::Borrowed("count"),
-        fluent_templates::fluent_bundle::FluentValue::from(count),
-    );
-    LOCALES.lookup_with_args(&locale.langid(), key, &args)
-}
-
-/// The `{{ "key"|t }}` template filter. Reads `"locale"` out of whatever
-/// `Values` the current `render_with_values()` call supplied; falls back
-/// to German if none was provided (e.g. a template rendered directly via
-/// `.render()` in a test, bypassing `templates::render()`).
-#[askama::filter_fn]
-pub fn t(key: &str, values: &dyn Values) -> askama::Result<String> {
-    let locale = askama::get_value::<Locale>(values, "locale")
-        .copied()
-        .unwrap_or(Locale::De);
-    Ok(LOCALES.lookup(&locale.langid(), key))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    /// The two count messages use Fluent plural selectors, which only
-    /// fire for a numeric argument — `translate_with_args` would stringify
-    /// the count and silently always pick `*[other]` ("1 Produkte").
-    /// This isn't in `ALL_KEYS` above because a bare `lookup` of a
-    /// message with a selector doesn't exercise the thing worth checking.
-    #[test]
-    fn count_messages_select_the_right_plural() {
-        for locale in [Locale::De, Locale::En] {
-            let key = "detail-product-count";
-            let one = translate_with_count(locale, key, 1);
-            let many = translate_with_count(locale, key, 3);
-            assert!(one.contains('1'), "{key}/{locale:?} dropped the count: {one}");
-            assert!(many.contains('3'), "{key}/{locale:?} dropped the count: {many}");
-            assert_ne!(one, many, "{key}/{locale:?} used one form for both counts");
-        }
+    pub fn t(self, key: &str) -> String {
+        LOCALES.lookup(&self.langid(), key)
     }
 
-    /// Fails loudly at test time (not silently at render time) if the
-    /// two catalogs drift — Fluent's own fallback would otherwise just
-    /// quietly show German text on an English page for a missing key.
-    #[test]
-    fn de_and_en_have_the_same_keys() {
-        let de = langid!("de");
-        let en = langid!("en");
-        // fluent-templates doesn't expose a direct "list all keys" API,
-        // so this walks the known key list instead — the single place
-        // that has to be kept honest as keys are added.
-        for key in ALL_KEYS {
-            let de_val = LOCALES.lookup(&de, key);
-            let en_val = LOCALES.lookup(&en, key);
-            assert_ne!(de_val, *key, "missing German translation for {key}");
-            assert_ne!(en_val, *key, "missing English translation for {key}");
-        }
+    /// A message with a single `{ $name }` placeholder.
+    pub fn t_name(self, key: &str, name: &str) -> String {
+        let mut args = HashMap::new();
+        args.insert("name".into(), FluentValue::from(name.to_string()));
+        LOCALES.lookup_with_args(&self.langid(), key, &args)
     }
 
-    const ALL_KEYS: &[&str] = &[
-        "nav-brand", "nav-login", "nav-logout", "nav-account", "nav-new-store",
-        "search-product", "search-distance", "search-all",
-        "search-no-results", "search-more", "search-location-unavailable", "search-pick-on-map",
-        "search-location-picked", "search-use-my-location",
-        "action-save", "action-delete", "action-cancel", "action-edit", "action-back",
-        "action-back-to-search",
-        "auth-login-heading", "auth-register-heading", "auth-email", "auth-password",
-        "auth-password-hint", "auth-name", "auth-no-account", "auth-have-account",
-        "account-heading", "account-change-password", "account-current-password",
-        "account-new-password", "account-pending-heading", "account-pending-empty",
-        "account-profile-saved", "account-password-changed",
-        "detail-open-in-maps", "detail-add-product", "detail-add-image", "detail-rate",
-        "detail-unrate", "detail-no-products", "detail-seasonal-availability", "opening-hours-closed",
-        "weekday-mon", "weekday-tue", "weekday-wed", "weekday-thu", "weekday-fri",
-        "weekday-sat", "weekday-sun",
-        "month-jan", "month-feb", "month-mar", "month-apr", "month-may", "month-jun",
-        "month-jul", "month-aug", "month-sep", "month-oct", "month-nov", "month-dec",
-        "store-form-new-heading", "store-form-edit-heading", "store-form-name",
-        "store-form-location", "store-form-opening-hours", "store-form-opening-hours-hint",
-        "store-form-product-heading",
-        "product-form-add-heading", "product-form-new-checkbox", "product-form-product",
-        "product-form-choose", "product-form-name",
-        "product-form-description-optional", "product-form-seasonal-checkbox",
-        "product-form-seasonal-hint",
-        "store-product-seasonality-form-heading",
-        "edit-product-form-heading", "edit-product-form-name",
-        "edit-product-form-description",
-        "image-form-heading", "image-form-file-label", "image-form-description-optional",
-        "image-form-upload", "image-form-alt-fallback",
-        "detail-edit-store", "detail-delete-store",
-        "detail-edit-product", "detail-edit-product-title",
-        "detail-edit-seasonality", "detail-edit-seasonality-title",
-        "detail-remove-offer", "detail-remove-offer-title",
-        "detail-store", "detail-products", "detail-season",
-        "detail-location", "detail-rating-label", "detail-photos",
-        "detail-get-directions",
-        "confirmation-image-pending",
-        "map-sidebar-collapse", "map-sidebar-expand", "map-sidebar-width",
-        "language-de", "language-en",
-    ];
+    /// A message with a numeric `{ $count }` that also selects a plural
+    /// form. Must go in as a number: Fluent's plural selectors only fire
+    /// for numeric values, and a stringly "1" silently falls through to
+    /// `*[other]` ("1 Produkte").
+    pub fn t_count(self, key: &str, count: i64) -> String {
+        let mut args = HashMap::new();
+        args.insert("count".into(), FluentValue::from(count));
+        LOCALES.lookup_with_args(&self.langid(), key, &args)
+    }
+
+    pub fn t_year(self, key: &str, year: i16) -> String {
+        let mut args = HashMap::new();
+        // A string, not a number: Fluent would group a numeric 2005 as
+        // "2.005" in German.
+        args.insert("year".into(), FluentValue::from(year.to_string()));
+        LOCALES.lookup_with_args(&self.langid(), key, &args)
+    }
+
+
+    /// Server errors travel as translation keys (see `api::error`); anything
+    /// that isn't a known key — a transport failure, say — is shown as-is.
+    pub fn t_error(self, message: &str) -> String {
+        LOCALES
+            .try_lookup(&self.langid(), message)
+            .unwrap_or_else(|| self.t("error-generic"))
+    }
+}
+
+/// The locale the app root provided. Cheap to call anywhere in a render.
+pub fn use_locale() -> Locale {
+    try_consume_context::<Locale>().unwrap_or_default()
 }

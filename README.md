@@ -1,110 +1,109 @@
-# BauernKarte
+# BauernKarte (Dioxus)
 
-Map-first store/product/rating finder. See `design.md` for the full
-design and spec. Admin operations (approve/reject/revert/restore —
-there's no admin UI in v1) are in `RUNBOOK.md`.
+Map-first finder for farm shops and what they sell — a port of
+[whati001/bauernkarte](https://github.com/whati001/bauernkarte) (Axum +
+Askama + Datastar) to a [Dioxus 0.7](https://dioxuslabs.com) fullstack
+app, with a redesigned store info panel.
 
-## Local development
+Same database, same features: search and map, product filter, store
+detail, community submissions with moderation, catalog editing with an
+edit log, hearts on offers, photo uploads, accounts, admin area,
+Impressum, DE/EN, PWA shell.
 
-The quickest path is `./bootstrap.py system` — it writes `.env`,
-starts the Postgres+PostGIS and app containers from
-`docker-compose.yml`, and applies migrations. See `bootstrap.md`.
+## Running it
 
-To run the app on the host instead: Rust (stable), a PostgreSQL 14+
-instance with the `postgis` and `citext` extensions installable,
-`sqlx-cli` (`cargo install sqlx-cli --no-default-features --features postgres`).
+Needs Rust (stable) with the `wasm32-unknown-unknown` target, the
+[`dx` CLI 0.7.10](https://github.com/DioxusLabs/dioxus/releases/tag/v0.7.10),
+`sqlx-cli`, and PostgreSQL with PostGIS:
 
 ```sh
-cp .env.example .env   # then set the DB_* values and DATABASE_URL
-sqlx migrate run
-cargo run
+podman run -d --name bauernkarte_new_db -p 5435:5432 \
+  -e POSTGRES_USER=bauernkarte -e POSTGRES_PASSWORD=dev -e POSTGRES_DB=bauernkarte \
+  docker.io/postgis/postgis:18-3.6-alpine
+cp .env.example .env        # set ADMIN_PASSWORD
+sqlx migrate run            # the server also runs pending migrations on start
+
+# optional data
+python3 scripts/seed_osm_farm_shops.py --live > /tmp/osm.sql && psql "$DATABASE_URL" -f /tmp/osm.sql
+psql "$DATABASE_URL" -f scripts/demo_store.sql   # one fully filled-in shop
+
+dx serve                    # http://127.0.0.1:8080
 ```
 
-The server listens on `BIND_ADDR` (default `0.0.0.0:3000`).
+`dx build --release --web` produces `target/dx/bauernkarte/release/web/`
+(a `server` binary plus `public/`). Queries are checked at compile time;
+without a database, `SQLX_OFFLINE=true` uses the `.sqlx/` cache
+(refresh it with `cargo sqlx prepare -- --no-default-features --features server`).
 
-### Env vars
+Tests: `cargo test --no-default-features --features server`.
 
-`.env` also carries `DB_USER`/`DB_PWD`/`DB_NAME`/`DB_HOST`/`DB_PORT` and
-`APP_PORT`, which the app itself doesn't read — they're what
-`docker-compose.yml` and `bootstrap.py` build connection strings and
-port publishes from. `DATABASE_URL` below is derived from them; keep the
-two in sync (`./bootstrap.py env --force` regenerates the file).
+### Loading
 
-| Var | Required | Default | Notes |
-|---|---|---|---|
-| `DATABASE_URL` | yes | — | `postgres://user:pass@host:port/db` |
-| `SESSION_SECRET` | no | — | not currently read (tower-sessions manages cookie signing internally); reserved |
-| `SECURE_COOKIES` | no | `true` | set `false` for local HTTP dev — otherwise the session cookie's `Secure` flag makes login silently fail without TLS |
-| `BIND_ADDR` | no | `0.0.0.0:3000` | |
-| `RUST_LOG` | no | — | tracing filter, e.g. `bauernkarte=debug` |
+A debug build's WASM bundle is ~160 MB (mostly debug info) and takes
+seconds to fetch and compile, so a dev page feels slow to come alive;
+the release bundle is ~5 MB before `wasm-opt` and compression. What the
+page does *not* wait for the bundle to do:
 
-### Migrations
+- **Styling.** `#[css_module]` inserts its stylesheet link the first
+  time one of its classes renders, but only once per process — so on the
+  server only the first page that used a module carried it, and every
+  later request restyled itself once the WASM booted. `ui::Stylesheets`
+  links all of them in the head instead.
+- **The map.** `bk-map.js` creates the Leaflet map as soon as it loads
+  (deferred, so it doesn't block parsing); the WASM only hands it the
+  channel back into Rust afterwards.
+- **The store list.** Loaded during server rendering, so the pins don't
+  need a round trip of their own.
 
-`migrations/` are plain `sqlx migrate` up/down pairs, applied in order:
-`sqlx migrate run`, reverted with `sqlx migrate revert`. The
-`tower_sessions` session table is **not** among them — it's created at
-process startup by `tower-sessions-sqlx-store`'s own `PostgresStore::migrate()`
-call in `main.rs`.
+Measured locally on a debug build: HTML 130 ms, navbar styled 138 ms,
+map tiles 183 ms, pins 1.5 s (that last one is the debug bundle).
 
-## Admin area
+## Layout
 
-Admins get a helmet button in the navbar leading to `/admin`: a full-page
-moderation UI (no map) with a section per moderated table — stores,
-products, offers, images — plus user management and **Seiteninfo**,
-which holds the operator/contact details rendered at `/impressum` (linked
-from the sidebar footer). Each section has
-**Offen** / **Änderungen** / **Gelöscht** tabs covering approve, reject,
-revert and restore. See `RUNBOOK.md`.
-
-`bauernkarte@rehka.dev` is seeded by a migration without a password; the
-first startup sets it from `ADMIN_PASSWORD` in `.env` and never touches
-it again, so changing it in-app sticks. Everything under `/admin`
-requires the `admin` flag and 404s otherwise.
-
-## Progressive web app
-
-The app is installable from the browser ("Add to home screen" / the
-install button in Chrome's address bar) and keeps working, in a limited
-way, without a connection.
-
-| Piece | Where |
+| Path | What |
 |---|---|
-| Manifest — name, icons, `display: standalone`, theme colours | `static/manifest.webmanifest`, linked from `templates/layout.html` |
-| Icons (`any` + `maskable` + iOS) | `static/icons/` — PNGs generated from two SVGs, see its `NOTICE.md` |
-| Service worker | `static/sw.js`, served at `/sw.js` by its own route in `main.rs` |
-| Registration | `static/pwa.js` |
-| Offline fallback page | `templates/offline.html` via `GET /offline` |
-| Status-bar/home-indicator insets | the "Installed app" section of `static/app.css` |
+| `src/app.rs` | Routes (`Route`), app root, session + locale context |
+| `src/api/` | Server functions — the whole HTTP API. Reads are `GET`, mutations `POST`/`PATCH`/`DELETE` |
+| `src/server/` | Server only: config, Postgres pool, `db/` (one module per table, compile-time checked SQL), auth, image processing, rate limiting, plain routes (`/image/{id}`, `/locale/{code}`, `/offline`) |
+| `src/components/` | The app's components; `store/` is the store info panel |
+| `src/ui/` | Official Dioxus component library (DioxusLabs/components), vendored as `dx components add` does |
+| `src/credentials.rs`, `opening_hours.rs`, `seasonality.rs` | Rules shared by server and browser |
+| `assets/app.css` | Tokens (light + dark), library theme mapping, shell layout |
+| `public/static/bk-map.js` | Small Leaflet bridge the `MapView` component drives |
+| `locales/` | Fluent translations (`de`, `en`) |
 
-**It needs HTTPS.** Service workers — and therefore installability —
-are limited to secure contexts. `http://localhost` and `http://127.0.0.1`
-count as secure, so local dev works as-is, but reaching the app from a
-phone over `http://<host>:3000` does **not**: no install prompt, no
-worker. Put a TLS-terminating reverse proxy in front of the `app` service
-and set `SECURE_COOKIES=true` in `.env` before trying to install it from
-anywhere but the machine it runs on.
+Server errors travel as i18n keys (`api::error::AppError`) and are
+translated in the browser.
 
-What the worker does and doesn't cache is deliberate and documented at
-the top of `static/sw.js`. The short version: shell assets under
-`/static/` are cached (stale-while-revalidate), the `/offline` page is
-precached, page navigations are network-first and never cached, and
-everything else — Datastar's SSE streams under `/api/`, uploaded images,
-every mutation, the OSM tiles — is left entirely alone. This app is a
-live view of a live database; stale content would be worse than none.
+## The store info panel
 
-Editing a shell asset takes effect on the *second* reload (the first
-serves the cached copy and fetches the new one in the background). Adding
-or removing a file in `PRECACHE_URLS` needs `CACHE_VERSION` bumped in
-`static/sw.js`. In DevTools, "Update on reload" under Application →
-Service Workers skips both while you're working.
+Redesigned after the mockup: header photo (or the drawn farm scene)
+with the name set over it in a serif; product chips; a 1–5 star rating
+with count; address (links to directions); a short hours summary
+("Fr–So 9:00–17:00") with the full week on tap; an owner block with
+portrait, "farming since" and phone; and product rows with an "in
+season" badge, each opening to its season bar, hearts and edit actions.
 
-## Known simplifications vs. the full design
+The schema had no place for most of that, so
+`migrations/20260921120000_store_info_redesign` adds, all optional:
+`store.address/phone/owner_name/owner_since/owner_bio`, `image.kind`
+(`photo` | `owner` — an owner portrait becomes the avatar), and a
+`store_review` table (one 1–5 star rating per user and shop). The store
+form edits the new fields; reverting a logged edit covers them too.
 
-- Position entry on the store form is plain lat/lon number inputs, not
-  click-to-place-a-pin-on-the-map.
-- Uploaded images are always re-encoded to JPEG regardless of source
-  format (JPEG/PNG/WebP in, JPEG out) — one code path instead of a
-  format-preserving one.
-- `SESSION_SECRET` is defined as a config value but not yet wired to
-  anything — tower-sessions' Postgres store doesn't need an app-level
-  secret the way a signed-cookie-only store would.
+## Differences from the original
+
+- UI built from Dioxus components instead of server-rendered HTML
+  fragments patched in over SSE; navigation is client-side routing with
+  real URLs for every panel (`/store/3/edit`, `/login`, …).
+- Password and email rules are one Rust implementation running on both
+  sides (was Rust + a hand-mirrored JS copy).
+- Uploaded transparent PNGs are flattened before JPEG encoding (the
+  original failed on them).
+- A "new" product whose name already exists is matched to the existing
+  one instead of hitting the unique index; profile updates check email
+  uniqueness first.
+- Rate limiting (same 8-burst / 500 ms budget) keys on the peer IP in
+  release builds; under `dx serve` all requests share one bucket, since
+  the dev server doesn't pass peer addresses through.
+- No web fonts are loaded: the display serif is the system's.

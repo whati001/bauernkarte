@@ -1,0 +1,9 @@
+[application]
+name = "bauernkarte"
+
+[web.app]
+title = "BauernKarte"
+
+[components]
+# Where `dx components add` puts library components (see src/ui/mod.rs).
+components_dir = "src/ui"

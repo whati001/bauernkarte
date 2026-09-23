@@ -137,7 +137,7 @@ store-product-seasonality-form-heading = Saisonalität bearbeiten: { $name }
 ## Edit product form
 edit-product-form-heading = Produkt bearbeiten
 edit-product-form-name = Name
-edit-edit-product-form-description = Beschreibung
+edit-product-form-description = Beschreibung
 
 ## Image form
 image-form-heading = Bild hinzufügen
@@ -282,3 +282,62 @@ admin-site-info-country = Land
 admin-site-info-optional = Alles hier ist optional — ohne Gewerbe gibt es weder UID noch Firmenbucheintrag.
 admin-site-info-purpose = Grundlegende Ausrichtung der Website
 admin-site-info-saved = Seiteninfo gespeichert.
+
+## Store info (redesigned detail panel)
+detail-close = Schließen
+detail-shop-owner = Betrieben von
+detail-owner-since = Am Hof seit { $year }
+detail-call = Anrufen: { $name }
+detail-reviews-count = { $count ->
+    [one] ({ $count } Bewertung)
+   *[other] ({ $count } Bewertungen)
+  }
+detail-no-reviews = Noch keine Bewertungen
+detail-your-rating = Deine Bewertung
+detail-rate-store = Hof bewerten
+detail-remove-review = Bewertung entfernen
+detail-stars = { $count ->
+    [one] { $count } Stern
+   *[other] { $count } Sterne
+  }
+detail-in-season-count = { $count } in Saison
+detail-in-season = In Saison
+detail-out-of-season = Außer Saison
+detail-year-round = Ganzjährig
+detail-hours-daily = Täglich
+detail-hours-show-week = Ganze Woche
+detail-more-actions = Mehr zu diesem Produkt
+## Store form — new fields
+store-form-contact-heading = Adresse und Kontakt
+store-form-address = Adresse
+store-form-phone = Telefon
+store-form-owner-heading = Betreiber·in (optional)
+store-form-owner-name = Name
+store-form-owner-since = Am Hof seit (Jahr)
+store-form-owner-bio = Kurzvorstellung
+## Image form — owner portrait
+image-form-is-owner = Das ist ein Porträt der Betreiberin / des Betreibers
+## Validation
+error-generic = Etwas ist schiefgelaufen. Bitte versuche es erneut.
+error-login-required = Bitte zuerst einloggen.
+error-name-required = Bitte einen Namen angeben.
+error-email-invalid = Bitte eine gültige E-Mail-Adresse angeben.
+error-email-taken = Diese E-Mail-Adresse ist bereits registriert.
+error-login-failed = E-Mail oder Passwort ist falsch.
+error-current-password-wrong = Aktuelles Passwort ist falsch.
+error-product-required = Bitte ein Produkt wählen.
+error-product-name-required = Bitte einen Produktnamen angeben.
+error-product-name-taken = Ein Produkt mit diesem Namen gibt es schon — bitte aus der Liste wählen.
+error-products-min-one = Bitte mindestens ein Produkt angeben.
+error-season-month-required = Bitte mindestens einen Monat auswählen, oder „Nur saisonal verfügbar" deaktivieren.
+error-hours-order = Öffnungszeiten: Beginn muss vor Ende liegen.
+error-hours-incomplete = Öffnungszeiten: Bitte für jeden Tag entweder Beginn und Ende angeben oder beides leer lassen.
+error-location-required = Bitte den Standort auf der Karte wählen.
+error-image-required = Bitte eine Bilddatei auswählen.
+error-image-too-large = Die Datei ist zu groß (max. 15 MB).
+error-image-format = Nur JPEG, PNG oder WebP werden unterstützt.
+error-image-decode = Bild konnte nicht gelesen werden (zu groß oder beschädigt).
+error-owner-since-invalid = Bitte ein Jahr zwischen 1800 und heute angeben.
+error-stars-range = Bitte 1 bis 5 Sterne vergeben.
+error-not-found = Dieser Eintrag existiert nicht (mehr).
+error-deleted = Dieser Eintrag wurde gelöscht.
