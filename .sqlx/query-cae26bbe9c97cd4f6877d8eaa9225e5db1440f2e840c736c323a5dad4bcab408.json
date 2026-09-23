@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select id from image\n           where store = $1 and kind = 'owner' and approved and not deleted\n           order by created desc limit 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "cae26bbe9c97cd4f6877d8eaa9225e5db1440f2e840c736c323a5dad4bcab408"
+}

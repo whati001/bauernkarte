@@ -1,0 +1,65 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select sp.id as \"store_product_id!\", p.id as \"product_id!\", p.name as \"name!\",\n                  p.description, p.icon,\n                  sp.seasonal_months as \"seasonal_months: Json<Vec<i16>>\",\n                  count(r.id) as \"hearts!\",\n                  coalesce(bool_or(r.created_by = $2), false) as \"viewer_has_rated_up!\"\n           from store_product sp\n           join product p on p.id = sp.product and p.approved and not p.deleted\n           left join rating r on r.store_product = sp.id\n           where sp.store = $1 and sp.approved and not sp.deleted\n           group by sp.id, p.id\n           order by p.name",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "store_product_id!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "product_id!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "name!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "icon",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "seasonal_months: Json<Vec<i16>>",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 6,
+        "name": "hearts!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 7,
+        "name": "viewer_has_rated_up!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      null,
+      null
+    ]
+  },
+  "hash": "71405dedcf1cf89e66a195f139f881d023be55f9f0cfb26646937e5b96fc0a23"
+}

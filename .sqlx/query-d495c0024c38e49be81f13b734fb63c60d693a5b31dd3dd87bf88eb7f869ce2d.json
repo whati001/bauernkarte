@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update store_product set deleted = true, modified_by = $2, modified = now() where id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d495c0024c38e49be81f13b734fb63c60d693a5b31dd3dd87bf88eb7f869ce2d"
+}

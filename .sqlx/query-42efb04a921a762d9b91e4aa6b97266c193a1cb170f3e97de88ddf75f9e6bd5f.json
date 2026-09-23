@@ -1,0 +1,53 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "insert into \"user\" (name, email, pwd_hash, verified) values ($1, $2, $3, false)\n           returning id, name, email::text as \"email!\", pwd_hash, admin",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "email!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "pwd_hash",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "admin",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        {
+          "Custom": {
+            "name": "citext",
+            "kind": "Simple"
+          }
+        },
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      null,
+      false,
+      false
+    ]
+  },
+  "hash": "42efb04a921a762d9b91e4aa6b97266c193a1cb170f3e97de88ddf75f9e6bd5f"
+}

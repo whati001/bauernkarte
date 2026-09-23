@@ -1,0 +1,27 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "insert into image (store, image, mime_type, description, kind, approved, created_by, modified_by)\n           values ($1, $2, $3, $4, $5, false, $6, $6)\n           returning id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Bytea",
+        "Text",
+        "Text",
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "0be10f0780eea971f6f505c5faee371318a8049e380fcb85bea28aaa34c7ccd0"
+}

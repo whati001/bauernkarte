@@ -1,0 +1,54 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update store_product set seasonal_months = $2, modified_by = $3, modified = now()\n           where id = $1\n           returning id, store, product, seasonal_months as \"seasonal_months: Json<Vec<i16>>\",\n                     approved, deleted",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "store",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "product",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 3,
+        "name": "seasonal_months: Json<Vec<i16>>",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 4,
+        "name": "approved",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 5,
+        "name": "deleted",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Jsonb",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "709aa6a46941068798aac1d968975db8b6d9544481fd89186f1f6760a5a1efc4"
+}

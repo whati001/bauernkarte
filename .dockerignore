@@ -7,3 +7,5 @@
 .agents/
 /scripts
 bootstrap.py
+docker-compose.yml
+Dockerfile

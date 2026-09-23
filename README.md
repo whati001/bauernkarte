@@ -10,30 +10,73 @@ detail, community submissions with moderation, catalog editing with an
 edit log, hearts on offers, photo uploads, accounts, admin area,
 Impressum, DE/EN, PWA shell.
 
-## Running it
+## Quick start (Docker)
+
+Needs `docker` with the compose plugin (or `podman compose`) and
+[`uv`](https://docs.astral.sh/uv/):
+
+```sh
+./bootstrap.py env       # .env with generated DB + admin passwords (printed once)
+./bootstrap.py up        # build the image, start db + app, wait until healthy
+./bootstrap.py stores    # optional: seed farm shops from OpenStreetMap (--demo: + one demo shop)
+```
+
+The app is on <http://127.0.0.1:3000>. Sign in as `bauernkarte@rehka.dev`
+with the `ADMIN_PASSWORD` from `.env`. Without `uv`, `cp .env.example .env`,
+edit it, and run `docker compose up -d --build`.
+
+## Deployment
+
+`docker-compose.yml` is the production stack. It has two services:
+
+- **`db`**: Postgres 18 + PostGIS. Data lives in the `pgdata` volume,
+  and the port is published on `127.0.0.1` only.
+- **`app`**: the image from `Dockerfile`. It's multi-stage: `dx bundle`
+  builds the server binary and the WASM client, and a slim
+  `debian:trixie-slim` runtime runs them as a non-root user. On start
+  the app applies pending migrations and sets the admin password.
+  `/healthz` backs the container healthcheck, and `restart:
+  unless-stopped` brings it back after a crash or reboot.
+
+Deploying to a server is the same `env` + `up` as above. The app is
+then served over plain HTTP on `APP_PORT`. For updates, backups and
+restores, see [`bootstrap.md`](bootstrap.md).
+
+Without HTTPS, browsers treat the app as insecure: the PWA (service
+worker, install prompt) and the "you are here" location dot only work
+on `localhost`.
+
+### Configuration
+
+The app reads these at runtime. Compose sets them from `.env`:
+
+| Var | Default | Notes |
+|---|---|---|
+| `DATABASE_URL` | required | `postgres://user:pass@host:port/db`. Compose builds it from `DB_USER`/`DB_PWD`/`DB_NAME` |
+| `ADMIN_PASSWORD` | unset | Applied once to `bauernkarte@rehka.dev` if it has no password yet. It must pass the password policy, or startup fails |
+| `SECURE_COOKIES` | `true` | Set `false` for plain HTTP, or login silently fails |
+| `IP`, `PORT` | `127.0.0.1`, `8080` | Listen address of the release server. The image sets `0.0.0.0:8080` |
+
+`.env` also carries values only compose and `bootstrap.py` use:
+`DB_HOST`/`DB_PORT` (host-side db access) and `APP_PORT` (where the
+app is published). Release builds log at `INFO`.
+
+## Local development
 
 Needs Rust (stable) with the `wasm32-unknown-unknown` target, the
 [`dx` CLI 0.7.10](https://github.com/DioxusLabs/dioxus/releases/tag/v0.7.10),
-`sqlx-cli`, and PostgreSQL with PostGIS:
+and `sqlx-cli` (only to refresh the query cache):
 
 ```sh
-podman run -d --name bauernkarte_new_db -p 5435:5432 \
-  -e POSTGRES_USER=bauernkarte -e POSTGRES_PASSWORD=dev -e POSTGRES_DB=bauernkarte \
-  docker.io/postgis/postgis:18-3.6-alpine
-cp .env.example .env        # set ADMIN_PASSWORD
-sqlx migrate run            # the server also runs pending migrations on start
-
-# optional data
-python3 scripts/seed_osm_farm_shops.py --live > /tmp/osm.sql && psql "$DATABASE_URL" -f /tmp/osm.sql
-psql "$DATABASE_URL" -f scripts/demo_store.sql   # one fully filled-in shop
-
-dx serve                    # http://127.0.0.1:8080
+./bootstrap.py env       # once
+./bootstrap.py db        # just the database, on 127.0.0.1:5434
+dx serve                 # http://127.0.0.1:8080, reads .env, migrates on start
 ```
 
-`dx build --release --web` produces `target/dx/bauernkarte/release/web/`
-(a `server` binary plus `public/`). Queries are checked at compile time;
-without a database, `SQLX_OFFLINE=true` uses the `.sqlx/` cache
-(refresh it with `cargo sqlx prepare -- --no-default-features --features server`).
+Queries are checked at compile time against `DATABASE_URL`. Without a
+database, and in the Docker build, `SQLX_OFFLINE=true` uses the
+checked-in `.sqlx/` cache. After changing a query or migration, run
+`./bootstrap.py prepare` and commit `.sqlx/`, or the image build fails.
 
 Tests: `cargo test --no-default-features --features server`.
 

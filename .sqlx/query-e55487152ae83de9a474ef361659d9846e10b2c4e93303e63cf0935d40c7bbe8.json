@@ -1,0 +1,32 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select id, name, icon from product where approved and not deleted order by name",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "icon",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "e55487152ae83de9a474ef361659d9846e10b2c4e93303e63cf0935d40c7bbe8"
+}

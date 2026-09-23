@@ -1,0 +1,27 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select exists(select 1 from \"user\" where email = $1 and pwd_hash = '') as \"exists!\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "exists!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        {
+          "Custom": {
+            "name": "citext",
+            "kind": "Simple"
+          }
+        }
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "84a9b063336e174e6899bba216211ddd6665b1909238383b2989ea7704a01f2b"
+}

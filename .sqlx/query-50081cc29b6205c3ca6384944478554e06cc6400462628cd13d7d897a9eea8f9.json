@@ -1,0 +1,70 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select id, store, image, mime_type, description, kind, approved, deleted, created_by\n           from image where id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "store",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "image",
+        "type_info": "Bytea"
+      },
+      {
+        "ordinal": 3,
+        "name": "mime_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "kind",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "approved",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 7,
+        "name": "deleted",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 8,
+        "name": "created_by",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "50081cc29b6205c3ca6384944478554e06cc6400462628cd13d7d897a9eea8f9"
+}

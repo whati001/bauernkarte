@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "delete from store_review where store = $1 and created_by = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "fa88ae8ebd1c7541e9397762d878dd97c52a208641711b4d2836ce9faf085e00"
+}

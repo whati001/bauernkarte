@@ -1,0 +1,49 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update product set name = $2, description = $3, modified_by = $4, modified = now()\n           where id = $1\n           returning id, name, description, approved, deleted",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "approved",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "deleted",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text",
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "d57755bbb6e009a08043994b03e9635d7be52fea70ac3162fa3557b04edde434"
+}

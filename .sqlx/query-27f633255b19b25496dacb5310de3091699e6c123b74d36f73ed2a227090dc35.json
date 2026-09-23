@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "insert into store_review (store, stars, created_by) values ($1, $2, $3)\n           on conflict (store, created_by) do update set stars = excluded.stars, modified = now()",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int2",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "27f633255b19b25496dacb5310de3091699e6c123b74d36f73ed2a227090dc35"
+}

@@ -1,0 +1,48 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "insert into product (name, description, approved, created_by, modified_by)\n           values ($1, $2, false, $3, $3)\n           returning id, name, description, approved, deleted",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "approved",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "deleted",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "4cec8a10123ec58c12a95107b6a30b2b3de9144deb12384d59d07367c5f233f0"
+}

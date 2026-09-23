@@ -1,0 +1,52 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select id, store, product, seasonal_months as \"seasonal_months: Json<Vec<i16>>\",\n                  approved, deleted\n           from store_product where id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "store",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "product",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 3,
+        "name": "seasonal_months: Json<Vec<i16>>",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 4,
+        "name": "approved",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 5,
+        "name": "deleted",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "475dcaa93743e64530808922adca6f3c79f44a7d996ad1876b87e9ca323a6069"
+}

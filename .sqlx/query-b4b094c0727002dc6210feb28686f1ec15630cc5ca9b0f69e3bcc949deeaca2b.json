@@ -1,0 +1,51 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select id, name, email::text as \"email!\", pwd_hash, admin from \"user\" where email = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "email!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "pwd_hash",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "admin",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        {
+          "Custom": {
+            "name": "citext",
+            "kind": "Simple"
+          }
+        }
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      null,
+      false,
+      false
+    ]
+  },
+  "hash": "b4b094c0727002dc6210feb28686f1ec15630cc5ca9b0f69e3bcc949deeaca2b"
+}

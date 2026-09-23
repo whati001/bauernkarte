@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select i.id, s.name as store_name from image i join store s on s.id = i.store\n           where i.created_by = $1 and not i.approved and not i.deleted",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "store_name",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "70cf1a89dbb0ffd9924348afcf4e60dd640f10c3c6f1d82089e1b4399eda5bad"
+}
