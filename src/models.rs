@@ -39,12 +39,53 @@ pub struct ProductSummary {
     pub rating_count: i64,
 }
 
+/// What kind of place a store is; decides its map pin. Stored as text
+/// (`store.kind`), spelled as `as_str` returns — the serde names match,
+/// which is what `bk-map.js` receives.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum StoreKind {
+    #[default]
+    Market,
+    VendingMachine,
+    Shop,
+}
+
+impl StoreKind {
+    pub const ALL: [StoreKind; 3] = [StoreKind::Market, StoreKind::VendingMachine, StoreKind::Shop];
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            StoreKind::Market => "market",
+            StoreKind::VendingMachine => "vending_machine",
+            StoreKind::Shop => "shop",
+        }
+    }
+
+    /// The column's CHECK constraint admits only `as_str` values; anything
+    /// else (an edit_log snapshot from before the column existed) is the
+    /// column's default.
+    #[cfg_attr(not(feature = "server"), allow(dead_code))]
+    pub fn from_db(value: &str) -> Self {
+        Self::ALL.into_iter().find(|kind| kind.as_str() == value).unwrap_or_default()
+    }
+
+    pub fn label_key(self) -> &'static str {
+        match self {
+            StoreKind::Market => "store-kind-market",
+            StoreKind::VendingMachine => "store-kind-vending-machine",
+            StoreKind::Shop => "store-kind-shop",
+        }
+    }
+}
+
 /// One matching store — the same rows drive the results list and the
 /// map's pins. `distance_m` is `None` until geolocation resolves.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct StoreSearchResult {
     pub id: i64,
     pub name: String,
+    pub kind: StoreKind,
     pub lat: f64,
     pub lon: f64,
     pub distance_m: Option<f64>,
@@ -103,6 +144,7 @@ pub struct ImageSummary {
 pub struct StoreDetail {
     pub id: i64,
     pub name: String,
+    pub kind: StoreKind,
     pub lat: f64,
     pub lon: f64,
     /// Sparse; empty means "not specified" and the hours line is hidden.
@@ -125,6 +167,7 @@ pub struct StoreDetail {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct StoreFields {
     pub name: String,
+    pub kind: StoreKind,
     pub lat: Option<f64>,
     pub lon: Option<f64>,
     pub openinghours: Vec<DayHours>,
@@ -377,4 +420,20 @@ pub struct AdminUserRow {
     /// False for the viewing admin's own row, the last admin and the seed
     /// account — acting on any of those locks the door from inside.
     pub protected: bool,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // `bk-map.js` keys its pin icons on the serialized name, the database
+    // on `as_str` — the two must stay one spelling.
+    #[test]
+    fn store_kind_spellings_agree() {
+        for kind in StoreKind::ALL {
+            assert_eq!(serde_json::to_value(kind).unwrap(), kind.as_str());
+            assert_eq!(StoreKind::from_db(kind.as_str()), kind);
+        }
+        assert_eq!(StoreKind::from_db("unknown"), StoreKind::Market);
+    }
 }

@@ -4,7 +4,7 @@
 
 use sqlx::{types::Json, PgPool};
 
-use crate::models::{OfferDetail, StoreDetail};
+use crate::models::{OfferDetail, StoreDetail, StoreKind};
 use crate::server::db::{image, review, store};
 
 pub async fn get_store_detail(pool: &PgPool, store_id: i64, viewer_id: Option<i64>) -> sqlx::Result<Option<StoreDetail>> {
@@ -47,6 +47,7 @@ pub async fn get_store_detail(pool: &PgPool, store_id: i64, viewer_id: Option<i6
     Ok(Some(StoreDetail {
         id: s.id,
         name: s.name,
+        kind: StoreKind::from_db(&s.kind),
         lat: s.lat,
         lon: s.lon,
         openinghours: s.openinghours.map(|j| j.0).unwrap_or_default(),

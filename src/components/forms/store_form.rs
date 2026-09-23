@@ -19,7 +19,7 @@ use crate::{
         map::{use_map, Picker},
     },
     i18n::use_locale,
-    models::{DayHours, StoreFields},
+    models::{DayHours, StoreFields, StoreKind},
     opening_hours,
     ui::{
         button::{Button, ButtonVariant},
@@ -70,6 +70,7 @@ fn StoreForm(id: Option<i64>, initial: StoreFields) -> Element {
     let toasts = use_toast();
 
     let mut name = use_signal(|| initial.name.clone());
+    let kind = use_signal(|| initial.kind);
     let mut address = use_signal(|| initial.address.clone());
     let mut phone = use_signal(|| initial.phone.clone());
     let mut owner_name = use_signal(|| initial.owner_name.clone());
@@ -98,6 +99,7 @@ fn StoreForm(id: Option<i64>, initial: StoreFields) -> Element {
             };
             let fields = StoreFields {
                 name: name(),
+                kind: kind(),
                 lat: Some(lat),
                 lon: Some(lon),
                 openinghours: if has_hours() { week_to_hours(&hours()) } else { Vec::new() },
@@ -151,6 +153,9 @@ fn StoreForm(id: Option<i64>, initial: StoreFields) -> Element {
                         value: "{name}",
                         oninput: move |e: FormEvent| name.set(e.value()),
                     }
+                }
+                Section { title: locale.t("store-form-kind"),
+                    KindSelect { kind }
                 }
                 Section { title: locale.t("store-form-location"),
                     p { class: "picker-status",
@@ -277,6 +282,29 @@ fn HoursFields(hours: Signal<[(String, String); 7]>) -> Element {
                         times: times.clone(),
                         on_change: move |v: String| hours.write()[i].1 = v,
                     }
+                }
+            }
+        }
+    }
+}
+
+/// Market, vending machine or shop — what the map pin shows.
+#[component]
+fn KindSelect(kind: Signal<StoreKind>) -> Element {
+    let locale = use_locale();
+    let current = use_memo(move || Some(kind()));
+    rsx! {
+        Select::<StoreKind> {
+            "aria-label": locale.t("store-form-kind"),
+            value: Some(current.into()),
+            on_value_change: move |v: Option<StoreKind>| kind.set(v.unwrap_or_default()),
+            for (i , option) in StoreKind::ALL.into_iter().enumerate() {
+                SelectOption::<StoreKind> {
+                    key: "{option.as_str()}",
+                    index: i,
+                    value: option,
+                    text_value: locale.t(option.label_key()),
+                    {locale.t(option.label_key())}
                 }
             }
         }

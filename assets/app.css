@@ -33,6 +33,10 @@
   --mint-strong: #d9efdf;
 
   --user-dot: #1a6bd8;
+  /* Map pin per store kind — see .map-pin-dot below. */
+  --pin-market: #c25e00;
+  --pin-vending-machine: #7446c2;
+  --pin-shop: var(--accent);
   --critical: #d03b3b;
   --critical-wash: rgba(208, 59, 59, 0.08);
 
@@ -93,6 +97,8 @@
     --mint: #17231b;
     --mint-strong: #20382a;
     --user-dot: #5b9bff;
+    --pin-market: #e07a1f;
+    --pin-vending-machine: #9b72e0;
     --critical: #e66767;
     --critical-wash: rgba(230, 103, 103, 0.12);
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
@@ -488,23 +494,34 @@ a:hover { text-decoration: underline; }
 
 /* ---- Map pins (drawn by public/static/bk-map.js) ---------------- */
 .map-pin-dot {
+  --pin: var(--accent);
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--pin);
+  color: #fff;
   border: 3px solid #fff;
   box-shadow: var(--shadow-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 21px;
   line-height: 1;
 }
+.map-pin-dot svg {
+  width: 20px;
+  height: 20px;
+}
+.map-pin-dot.kind-market { --pin: var(--pin-market); }
+.map-pin-dot.kind-vending_machine { --pin: var(--pin-vending-machine); }
+.map-pin-dot.kind-shop { --pin: var(--pin-shop); }
 .map-pin-dot.selected {
   width: 52px;
   height: 52px;
-  font-size: 28px;
-  box-shadow: 0 0 0 5px var(--accent-wash), var(--shadow-md);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--pin) 18%, transparent), var(--shadow-md);
+}
+.map-pin-dot.selected svg {
+  width: 26px;
+  height: 26px;
 }
 .user-location-dot {
   width: 18px;

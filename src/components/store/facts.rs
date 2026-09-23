@@ -12,6 +12,7 @@ use crate::{
     api::store::{remove_review, review_store},
     app::use_session,
     i18n::use_locale,
+    models::StoreKind,
     opening_hours,
     ui::{
         badge::{Badge, BadgeVariant},
@@ -48,6 +49,10 @@ pub fn StoreFacts() -> Element {
             if session.is_logged_in() {
                 ReviewPicker {}
             }
+            div { class: Styles::fact,
+                span { class: Styles::fact_icon, "aria-hidden": "true", KindIcon { kind: d.kind } }
+                span { {locale.t(d.kind.label_key())} }
+            }
             a {
                 class: Styles::fact,
                 href: directions_url(d.lat, d.lon),
@@ -71,6 +76,16 @@ pub fn StoreFacts() -> Element {
                 }
             }
         }
+    }
+}
+
+/// The same icon the store's map pin shows (`public/static/bk-map.js`).
+#[component]
+fn KindIcon(kind: StoreKind) -> Element {
+    match kind {
+        StoreKind::Market => rsx! { lucide::ShoppingBasket { size: 18 } },
+        StoreKind::VendingMachine => rsx! { lucide::Refrigerator { size: 18 } },
+        StoreKind::Shop => rsx! { lucide::Store { size: 18 } },
     }
 }
 

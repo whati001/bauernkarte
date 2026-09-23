@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "update store\n           set name = $2, position = ST_SetSRID(ST_MakePoint($4, $3), 4326)::geography,\n               openinghours = $5, address = $6, phone = $7,\n               owner_name = $8, owner_since = $9, owner_bio = $10,\n               modified_by = $11, modified = now()\n           where id = $1\n           returning id, name, openinghours as \"openinghours: Json<Vec<DayHours>>\",\n                     ST_Y(position::geometry) as \"lat!\", ST_X(position::geometry) as \"lon!\",\n                     address, phone, owner_name, owner_since, owner_bio,\n                     approved, deleted",
+  "query": "select id, name, kind, openinghours as \"openinghours: Json<Vec<DayHours>>\",\n                  ST_Y(position::geometry) as \"lat!\", ST_X(position::geometry) as \"lon!\",\n                  address, phone, owner_name, owner_since, owner_bio,\n                  approved, deleted\n           from store where id = $1",
   "describe": {
     "columns": [
       {
@@ -15,71 +15,67 @@
       },
       {
         "ordinal": 2,
+        "name": "kind",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
         "name": "openinghours: Json<Vec<DayHours>>",
         "type_info": "Jsonb"
       },
       {
-        "ordinal": 3,
+        "ordinal": 4,
         "name": "lat!",
         "type_info": "Float8"
       },
       {
-        "ordinal": 4,
+        "ordinal": 5,
         "name": "lon!",
         "type_info": "Float8"
       },
       {
-        "ordinal": 5,
+        "ordinal": 6,
         "name": "address",
         "type_info": "Text"
       },
       {
-        "ordinal": 6,
+        "ordinal": 7,
         "name": "phone",
         "type_info": "Text"
       },
       {
-        "ordinal": 7,
+        "ordinal": 8,
         "name": "owner_name",
         "type_info": "Text"
       },
       {
-        "ordinal": 8,
+        "ordinal": 9,
         "name": "owner_since",
         "type_info": "Int2"
       },
       {
-        "ordinal": 9,
+        "ordinal": 10,
         "name": "owner_bio",
         "type_info": "Text"
       },
       {
-        "ordinal": 10,
+        "ordinal": 11,
         "name": "approved",
         "type_info": "Bool"
       },
       {
-        "ordinal": 11,
+        "ordinal": 12,
         "name": "deleted",
         "type_info": "Bool"
       }
     ],
     "parameters": {
       "Left": [
-        "Int8",
-        "Text",
-        "Float8",
-        "Float8",
-        "Jsonb",
-        "Text",
-        "Text",
-        "Text",
-        "Int2",
-        "Text",
         "Int8"
       ]
     },
     "nullable": [
+      false,
       false,
       false,
       true,
@@ -94,5 +90,5 @@
       false
     ]
   },
-  "hash": "e18d4e2e288e3f09b1cded3eae05d75b85fea310657dec7d50fa8bfa25ab166f"
+  "hash": "49ce2b4f4416c7178f8d66845ac8b7ac426f56e7b617332eb0aa152df7f3234d"
 }

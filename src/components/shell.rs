@@ -97,6 +97,32 @@ pub fn MapShell() -> Element {
         map.selected.set(store_id);
     }));
 
+    // Escape closes an open store, like its back button. Skipped while
+    // typing, and while a menu, list or dialog is open — Escape closes
+    // that first, and only the next one leaves the store.
+    let router = router();
+    let nav = navigator();
+    use_effect(move || {
+        spawn(async move {
+            let mut escapes = document::eval(
+                r#"
+                window.addEventListener("keydown", (e) => {
+                    if (e.key !== "Escape" || e.defaultPrevented) return;
+                    const t = e.target;
+                    if (t.closest?.("input, textarea, select, [contenteditable], [role=menu], [role=listbox], [role=dialog], [role=alertdialog]")) return;
+                    dioxus.send(true);
+                });
+                await new Promise(() => {});
+                "#,
+            );
+            while escapes.recv::<bool>().await.is_ok() {
+                if matches!(router.current::<Route>(), Route::StorePanel { .. }) {
+                    nav.push(Route::SearchPanel {});
+                }
+            }
+        });
+    });
+
     let mut width = use_signal(|| SIDEBAR_WIDTHS[1]);
     use_effect(move || {
         spawn(async move {

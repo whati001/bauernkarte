@@ -134,6 +134,16 @@ The schema had no place for most of that, so
 `store_review` table (one 1–5 star rating per user and shop). The store
 form edits the new fields; reverting a logged edit covers them too.
 
+## Store types
+
+Every store is a farmers' market, a vending machine or a farm shop
+(`store.kind`, `models::StoreKind`), set in the store form. The type
+decides the map pin: a basket, a machine or a shop front, each in its
+own colour (`--pin-*` tokens in `assets/app.css`, icons in
+`public/static/bk-map.js`). The store panel shows it too. The OSM seed
+derives it from the tags (see `bootstrap.md`). Stores that existed
+before types did default to market.
+
 ## Differences from the original
 
 - UI built from Dioxus components instead of server-rendered HTML

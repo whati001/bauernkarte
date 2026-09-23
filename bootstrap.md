@@ -127,6 +127,12 @@ a minute or two) and pipes the SQL into `psql` inside the running `db`
 container, so no host `psql` is needed. `--demo` also applies
 `scripts/demo_store.sql`, one fully filled-in fictional shop.
 
+Each location's OSM tags decide its type, and with it its map pin:
+`amenity=vending_machine` is a vending machine, `amenity=marketplace` a
+market and `shop=farm` a farm shop. Anything else is a market. Re-running
+`stores` also classifies the shops an earlier run created, as long as
+nobody has edited them in the app.
+
 ### `backup`
 
 `pg_dump -Fc` from inside the `db` container to a local file. Restore

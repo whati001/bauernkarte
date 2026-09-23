@@ -23,11 +23,12 @@ BEGIN
         RETURN;
     END IF;
 
-    INSERT INTO store (name, position, openinghours, approved,
+    INSERT INTO store (name, position, kind, openinghours, approved,
                        address, phone, owner_name, owner_since, owner_bio)
     VALUES (
         'Obstgarten Maier',
         ST_SetSRID(ST_MakePoint(15.7086, 47.1043), 4326)::geography,
+        'shop',
         '[{"day":5,"open":"09:00","close":"17:00"},
           {"day":6,"open":"09:00","close":"17:00"},
           {"day":7,"open":"09:00","close":"17:00"}]'::jsonb,

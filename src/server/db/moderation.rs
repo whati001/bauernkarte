@@ -7,7 +7,7 @@ use serde_json::Value;
 use sqlx::PgPool;
 use time::OffsetDateTime;
 
-use crate::models::{Entity, FieldDiff, QueueCounts};
+use crate::models::{Entity, FieldDiff, QueueCounts, StoreKind};
 use crate::server::db::{self, edit_log::EditAction};
 
 /// The table name, which is also `edit_log.entity_type`.
@@ -316,6 +316,7 @@ pub async fn revert(pool: &PgPool, entity: Entity, log_id: i64, by: i64) -> sqlx
             let (owner_name, owner_bio) = (str_field("owner_name"), str_field("owner_bio"));
             let write = db::store::StoreWrite {
                 name: &name,
+                kind: StoreKind::from_db(&str_field("kind").unwrap_or(before.kind.clone())),
                 lat: old.get("lat").and_then(Value::as_f64).unwrap_or(before.lat),
                 lon: old.get("lon").and_then(Value::as_f64).unwrap_or(before.lon),
                 openinghours: json_field("openinghours").and_then(|v| serde_json::from_value(v).ok()),

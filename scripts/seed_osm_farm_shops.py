@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate a SQL seed file from OpenStreetMap farm-produce data in Austria.
 
-Source: Overpass API, two tags:
+Source: Overpass API, three tags:
 
   * `shop=farm` — https://wiki.openstreetmap.org/wiki/DE:Tag:shop%3Dfarm —
     farm shops selling agricultural products either at the farm itself or
@@ -10,6 +10,12 @@ Source: Overpass API, two tags:
     (see VENDING_TOKENS) — https://wiki.openstreetmap.org/wiki/DE:Tag:amenity%3Dvending_machine
     — the self-service "Regiomat"/milk-and-egg machines that sell the same
     goods around the clock, and belong on the same map.
+  * `amenity=marketplace` — https://wiki.openstreetmap.org/wiki/DE:Tag:amenity%3Dmarketplace
+    — markets, including farmers' markets ("Bauernmarkt").
+
+Each location's tags also decide its `store.kind`, i.e. its map pin
+(see store_kind): a vending machine, a market or a farm shop, and a
+market whenever the tags don't say.
 
 Per-shop `name` becomes `store.name` and the coordinates become
 `store.position`. OSM's `website=`/`contact:website=` tag is dropped —
@@ -83,6 +89,8 @@ area["ISO3166-1"="AT"][admin_level=2]->.at;
   way["shop"="farm"](area.at);
   node["amenity"="vending_machine"]["vending"~"%(vending)s"](area.at);
   way["amenity"="vending_machine"]["vending"~"%(vending)s"](area.at);
+  node["amenity"="marketplace"](area.at);
+  way["amenity"="marketplace"](area.at);
 );
 out center tags;
 """ % {"vending": "|".join(VENDING_TOKENS)}
@@ -252,6 +260,19 @@ def display_name(tags):
     return tags.get("name") or tags.get("operator")
 
 
+def store_kind(tags):
+    """`store.kind` from the OSM tags. A machine is a machine even when
+    it is also tagged `shop=farm` (the farm it belongs to); `shop=farm`
+    alone is a farm shop; anything without a telling tag is a market."""
+    if tags.get("amenity") == "vending_machine" or tags.get("shop") == "vending_machine":
+        return "vending_machine"
+    if tags.get("amenity") == "marketplace":
+        return "market"
+    if tags.get("shop") == "farm":
+        return "shop"
+    return "market"
+
+
 def parse_products(tags):
     """Collect the distinct German product names named by
     produce=/product=/vending= on one shop, splitting each on the mix of
@@ -298,8 +319,12 @@ def main():
             continue
         named.append((el, name, lat, lon, tags))
 
+    kinds = {}
+    for _, _, _, _, tags in named:
+        kinds[store_kind(tags)] = kinds.get(store_kind(tags), 0) + 1
     print(f"-- Generated from {len(named)} named OSM shop=farm / farm-produce")
-    print(f"-- amenity=vending_machine elements in Austria")
+    print(f"-- amenity=vending_machine / amenity=marketplace elements in Austria")
+    print(f"-- by kind: {', '.join(f'{k} {n}' for k, n in sorted(kinds.items()))}")
     print(f"-- (of {len(elements)} total; the rest had no name or operator tag, no "
           f"coordinates, or no mappable product — {skipped_no_product} skipped for "
           "the latter)")
@@ -343,6 +368,16 @@ def main():
 
     for el, name, lat, lon, tags in named:
         point = f"ST_SetSRID(ST_MakePoint({lon}, {lat}), 4326)::geography"
+        kind = store_kind(tags)
+        # Classifies a row an earlier run created, before stores had a
+        # kind (they all defaulted to `market`). Only rows no one has
+        # touched in the app — `modified_by` is set by every in-app edit
+        # — so a kind someone corrected by hand stays corrected.
+        print(
+            f"UPDATE store SET kind = {sql_str(kind)}\n"
+            f"WHERE name = {sql_str(name)} AND ST_DWithin(position, {point}, 1)\n"
+            f"  AND created_by IS NULL AND modified_by IS NULL AND kind <> {sql_str(kind)};"
+        )
         # The whole per-shop statement hangs off this guard: if a store
         # with this name already sits on this spot, the store INSERT
         # selects no row, so `new_store` is empty, so the store_product
@@ -356,8 +391,8 @@ def main():
         # column.
         print("WITH new_store AS (")
         print(
-            f"  INSERT INTO store (name, position, approved, created_by)\n"
-            f"  SELECT {sql_str(name)}, {point}, true, NULL\n"
+            f"  INSERT INTO store (name, position, kind, approved, created_by)\n"
+            f"  SELECT {sql_str(name)}, {point}, {sql_str(kind)}, true, NULL\n"
             f"  WHERE NOT EXISTS (\n"
             f"    SELECT 1 FROM store s\n"
             f"    WHERE s.name = {sql_str(name)} AND ST_DWithin(s.position, {point}, 1)\n"

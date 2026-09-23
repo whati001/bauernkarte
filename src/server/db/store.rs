@@ -1,7 +1,7 @@
 use serde_json::json;
 use sqlx::{types::Json, PgPool};
 
-use crate::models::{DayHours, ProductSummary, StoreSearchResult};
+use crate::models::{DayHours, ProductSummary, StoreKind, StoreSearchResult};
 
 /// `position` is a PostGIS geography with no sqlx mapping, so every query
 /// projects it as `lat`/`lon` via `ST_Y`/`ST_X` instead.
@@ -9,6 +9,8 @@ use crate::models::{DayHours, ProductSummary, StoreSearchResult};
 pub struct Store {
     pub id: i64,
     pub name: String,
+    /// A `StoreKind::as_str` value (the column's CHECK constraint).
+    pub kind: String,
     pub openinghours: Option<Json<Vec<DayHours>>>,
     pub lat: f64,
     pub lon: f64,
@@ -24,6 +26,7 @@ pub struct Store {
 /// What `insert`/`update` write — already validated.
 pub struct StoreWrite<'a> {
     pub name: &'a str,
+    pub kind: StoreKind,
     pub lat: f64,
     pub lon: f64,
     pub openinghours: Option<Vec<DayHours>>,
@@ -37,6 +40,7 @@ pub struct StoreWrite<'a> {
 struct SearchRow {
     id: i64,
     name: String,
+    kind: String,
     lat: f64,
     lon: f64,
     distance_m: Option<f64>,
@@ -60,6 +64,7 @@ pub async fn search(
         select
             s.id,
             s.name,
+            s.kind,
             ST_Y(s.position::geometry) as "lat!",
             ST_X(s.position::geometry) as "lon!",
             case when $1::float8 is null or $2::float8 is null then null
@@ -116,6 +121,7 @@ pub async fn search(
         .map(|r| StoreSearchResult {
             id: r.id,
             name: r.name,
+            kind: StoreKind::from_db(&r.kind),
             lat: r.lat,
             lon: r.lon,
             distance_m: r.distance_m,
@@ -129,7 +135,7 @@ pub async fn search(
 pub async fn find(pool: &PgPool, id: i64) -> sqlx::Result<Option<Store>> {
     sqlx::query_as!(
         Store,
-        r#"select id, name, openinghours as "openinghours: Json<Vec<DayHours>>",
+        r#"select id, name, kind, openinghours as "openinghours: Json<Vec<DayHours>>",
                   ST_Y(position::geometry) as "lat!", ST_X(position::geometry) as "lon!",
                   address, phone, owner_name, owner_since, owner_bio,
                   approved, deleted
@@ -149,9 +155,9 @@ pub async fn insert(pool: &PgPool, store: &StoreWrite<'_>, created_by: i64) -> s
     sqlx::query_as!(
         Store,
         r#"insert into store (name, position, openinghours, address, phone,
-                              owner_name, owner_since, owner_bio, approved, created_by, modified_by)
-           values ($1, ST_SetSRID(ST_MakePoint($3, $2), 4326)::geography, $4, $5, $6, $7, $8, $9, false, $10, $10)
-           returning id, name, openinghours as "openinghours: Json<Vec<DayHours>>",
+                              owner_name, owner_since, owner_bio, kind, approved, created_by, modified_by)
+           values ($1, ST_SetSRID(ST_MakePoint($3, $2), 4326)::geography, $4, $5, $6, $7, $8, $9, $10, false, $11, $11)
+           returning id, name, kind, openinghours as "openinghours: Json<Vec<DayHours>>",
                      ST_Y(position::geometry) as "lat!", ST_X(position::geometry) as "lon!",
                      address, phone, owner_name, owner_since, owner_bio,
                      approved, deleted"#,
@@ -164,6 +170,7 @@ pub async fn insert(pool: &PgPool, store: &StoreWrite<'_>, created_by: i64) -> s
         store.owner_name,
         store.owner_since,
         store.owner_bio,
+        store.kind.as_str(),
         created_by
     )
     .fetch_one(pool)
@@ -177,10 +184,10 @@ pub async fn update(pool: &PgPool, id: i64, store: &StoreWrite<'_>, changed_by: 
         r#"update store
            set name = $2, position = ST_SetSRID(ST_MakePoint($4, $3), 4326)::geography,
                openinghours = $5, address = $6, phone = $7,
-               owner_name = $8, owner_since = $9, owner_bio = $10,
-               modified_by = $11, modified = now()
+               owner_name = $8, owner_since = $9, owner_bio = $10, kind = $11,
+               modified_by = $12, modified = now()
            where id = $1
-           returning id, name, openinghours as "openinghours: Json<Vec<DayHours>>",
+           returning id, name, kind, openinghours as "openinghours: Json<Vec<DayHours>>",
                      ST_Y(position::geometry) as "lat!", ST_X(position::geometry) as "lon!",
                      address, phone, owner_name, owner_since, owner_bio,
                      approved, deleted"#,
@@ -194,6 +201,7 @@ pub async fn update(pool: &PgPool, id: i64, store: &StoreWrite<'_>, changed_by: 
         store.owner_name,
         store.owner_since,
         store.owner_bio,
+        store.kind.as_str(),
         changed_by
     )
     .fetch_one(pool)
@@ -215,7 +223,7 @@ pub async fn soft_delete(pool: &PgPool, id: i64, changed_by: i64) -> sqlx::Resul
 /// be reverted by feeding it back through `update`.
 pub fn snapshot(store: &Store) -> serde_json::Value {
     json!({
-        "id": store.id, "name": store.name, "lat": store.lat, "lon": store.lon,
+        "id": store.id, "name": store.name, "kind": store.kind, "lat": store.lat, "lon": store.lon,
         "openinghours": store.openinghours,
         "address": store.address, "phone": store.phone,
         "owner_name": store.owner_name, "owner_since": store.owner_since, "owner_bio": store.owner_bio,

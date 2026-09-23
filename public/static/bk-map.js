@@ -30,7 +30,17 @@
   const TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
   const TILE_ATTRIBUTION =
     '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors';
-  const GENERIC_SHOP_GLYPH = "🏬";
+  // One icon per store kind (`StoreKind` in src/models.rs) — Lucide's
+  // shopping-basket, refrigerator and store (ISC licence), the same ones
+  // the store panel shows next to the kind.
+  const KIND_ICONS = {
+    market:
+      '<path d="m15 11-1 9"/><path d="m19 11-4-7"/><path d="M2 11h20"/><path d="m3.5 11 1.6 7.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6l1.7-7.4"/><path d="M4.5 15.5h15"/><path d="m5 11 4-7"/><path d="m9 11 1 9"/>',
+    vending_machine:
+      '<path d="M5 6a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6Z"/><path d="M5 10h14"/><path d="M15 7v6"/>',
+    shop:
+      '<path d="M15 21v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5"/><path d="M17.774 10.31a1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.451 0 1.12 1.12 0 0 0-1.548 0 2.5 2.5 0 0 1-3.452 0 1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.77-3.248l2.889-4.184A2 2 0 0 1 7 2h10a2 2 0 0 1 1.653.873l2.895 4.192a2.5 2.5 0 0 1-3.774 3.244"/><path d="M4 10.95V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8.05"/>',
+  };
 
   const state = {
     map: null,
@@ -49,20 +59,21 @@
     return div.innerHTML;
   }
 
-  // A store selling exactly one product shows that product's emoji;
-  // anything more is a generic shop, since a pin can't show them all.
+  // The store's kind decides the pin: its icon, and (via the `kind-*`
+  // class) its colour. The location picker's pin has no store and stays
+  // a plain dot.
   function pinGlyph(store) {
-    if (!store) return "";
-    if (store.product_total === 1) return (store.products[0] && store.products[0].icon) || "📦";
-    if (store.product_total > 1) return GENERIC_SHOP_GLYPH;
-    return "";
+    const paths = store && KIND_ICONS[store.kind];
+    if (!paths) return "";
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
   }
 
   function pinIcon(selected, store) {
     const size = selected ? PIN_SIZE_SELECTED : PIN_SIZE;
+    const kind = store && KIND_ICONS[store.kind] ? ` kind-${store.kind}` : "";
     return L.divIcon({
       className: "map-pin",
-      html: `<div class="map-pin-dot${selected ? " selected" : ""}">${pinGlyph(store)}</div>`,
+      html: `<div class="map-pin-dot${kind}${selected ? " selected" : ""}">${pinGlyph(store)}</div>`,
       iconSize: [size, size],
       iconAnchor: [size / 2, size / 2],
     });

@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "insert into store (name, position, openinghours, address, phone,\n                              owner_name, owner_since, owner_bio, approved, created_by, modified_by)\n           values ($1, ST_SetSRID(ST_MakePoint($3, $2), 4326)::geography, $4, $5, $6, $7, $8, $9, false, $10, $10)\n           returning id, name, openinghours as \"openinghours: Json<Vec<DayHours>>\",\n                     ST_Y(position::geometry) as \"lat!\", ST_X(position::geometry) as \"lon!\",\n                     address, phone, owner_name, owner_since, owner_bio,\n                     approved, deleted",
+  "query": "update store\n           set name = $2, position = ST_SetSRID(ST_MakePoint($4, $3), 4326)::geography,\n               openinghours = $5, address = $6, phone = $7,\n               owner_name = $8, owner_since = $9, owner_bio = $10, kind = $11,\n               modified_by = $12, modified = now()\n           where id = $1\n           returning id, name, kind, openinghours as \"openinghours: Json<Vec<DayHours>>\",\n                     ST_Y(position::geometry) as \"lat!\", ST_X(position::geometry) as \"lon!\",\n                     address, phone, owner_name, owner_since, owner_bio,\n                     approved, deleted",
   "describe": {
     "columns": [
       {
@@ -15,57 +15,63 @@
       },
       {
         "ordinal": 2,
+        "name": "kind",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
         "name": "openinghours: Json<Vec<DayHours>>",
         "type_info": "Jsonb"
       },
       {
-        "ordinal": 3,
+        "ordinal": 4,
         "name": "lat!",
         "type_info": "Float8"
       },
       {
-        "ordinal": 4,
+        "ordinal": 5,
         "name": "lon!",
         "type_info": "Float8"
       },
       {
-        "ordinal": 5,
+        "ordinal": 6,
         "name": "address",
         "type_info": "Text"
       },
       {
-        "ordinal": 6,
+        "ordinal": 7,
         "name": "phone",
         "type_info": "Text"
       },
       {
-        "ordinal": 7,
+        "ordinal": 8,
         "name": "owner_name",
         "type_info": "Text"
       },
       {
-        "ordinal": 8,
+        "ordinal": 9,
         "name": "owner_since",
         "type_info": "Int2"
       },
       {
-        "ordinal": 9,
+        "ordinal": 10,
         "name": "owner_bio",
         "type_info": "Text"
       },
       {
-        "ordinal": 10,
+        "ordinal": 11,
         "name": "approved",
         "type_info": "Bool"
       },
       {
-        "ordinal": 11,
+        "ordinal": 12,
         "name": "deleted",
         "type_info": "Bool"
       }
     ],
     "parameters": {
       "Left": [
+        "Int8",
         "Text",
         "Float8",
         "Float8",
@@ -75,10 +81,12 @@
         "Text",
         "Int2",
         "Text",
+        "Text",
         "Int8"
       ]
     },
     "nullable": [
+      false,
       false,
       false,
       true,
@@ -93,5 +101,5 @@
       false
     ]
   },
-  "hash": "dc4229fe50766bd16dda225c4c4330b9aa5f09e175ddf0fc0e15fc38dc6fb450"
+  "hash": "34695ce235c2804e2752c8c4af174781c54d6501f46c8ccfe3d5f4b9244553f8"
 }

@@ -8,6 +8,7 @@ use crate::models::{OfferInput, ReviewSummary, StoreDetail, StoreFields};
 #[cfg(feature = "server")]
 use crate::{
     api::{error::AppError, non_empty, offer::{parse_offer, resolve_product}},
+    models::StoreKind,
     opening_hours,
     server::{
         auth,
@@ -34,6 +35,7 @@ pub async fn store_for_edit(id: i64) -> ApiResult<StoreFields> {
     }
     Ok(StoreFields {
         name: s.name,
+        kind: StoreKind::from_db(&s.kind),
         lat: Some(s.lat),
         lon: Some(s.lon),
         openinghours: s.openinghours.map(|j| j.0).unwrap_or_default(),
@@ -66,6 +68,7 @@ fn parse_store(fields: &StoreFields) -> ApiResult<StoreWrite<'_>> {
     };
     Ok(StoreWrite {
         name,
+        kind: fields.kind,
         lat,
         lon,
         openinghours: (!hours.is_empty()).then_some(hours),
