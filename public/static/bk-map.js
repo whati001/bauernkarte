@@ -30,14 +30,15 @@
   const TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
   const TILE_ATTRIBUTION =
     '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors';
-  // One icon per store kind (`StoreKind` in src/models.rs) — Lucide's
-  // shopping-basket, refrigerator and store (ISC licence), the same ones
-  // the store panel shows next to the kind.
+  // One icon per store kind (`StoreKind` in src/models.rs), the same ones
+  // the store panel shows next to the kind: Lucide's shopping-basket and
+  // store (ISC licence), and a vending machine drawn in Lucide's style,
+  // since Lucide has none (compartments, coin slot, pickup tray).
   const KIND_ICONS = {
     market:
       '<path d="m15 11-1 9"/><path d="m19 11-4-7"/><path d="M2 11h20"/><path d="m3.5 11 1.6 7.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6l1.7-7.4"/><path d="M4.5 15.5h15"/><path d="m5 11 4-7"/><path d="m9 11 1 9"/>',
     vending_machine:
-      '<path d="M5 6a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6Z"/><path d="M5 10h14"/><path d="M15 7v6"/>',
+      '<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M14 2v20"/><path d="M4 8h10"/><path d="M4 14h10"/><path d="M17 6v2"/><path d="M8 18h2"/>',
     shop:
       '<path d="M15 21v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5"/><path d="M17.774 10.31a1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.451 0 1.12 1.12 0 0 0-1.548 0 2.5 2.5 0 0 1-3.452 0 1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.77-3.248l2.889-4.184A2 2 0 0 1 7 2h10a2 2 0 0 1 1.653.873l2.895 4.192a2.5 2.5 0 0 1-3.774 3.244"/><path d="M4 10.95V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8.05"/>',
   };
@@ -79,13 +80,22 @@
     });
   }
 
+  // A small card like the sidebar's result cards: name, distance once
+  // there's a location fix, and the first few products as chips.
+  const TOOLTIP_CHIPS = 3;
   function tooltipHtml(store) {
-    const lines = (store.products || [])
-      .map((p) => escapeHtml(`${p.icon || "📦"} ${p.name}${p.rating_count > 0 ? ` · ${p.rating_count} ❤️` : ""}`))
-      .join("<br>");
-    const more = Math.max(0, store.product_total - store.products.length);
-    const moreLine = more > 0 ? `<br><span class="map-tooltip-more">+${more}</span>` : "";
-    return `<div class="map-tooltip-inner"><strong>${escapeHtml(store.name)}</strong>${lines ? `<br>${lines}` : ""}${moreLine}</div>`;
+    const products = store.products || [];
+    const chips = products
+      .slice(0, TOOLTIP_CHIPS)
+      .map((p) => `<span class="map-tooltip-chip">${escapeHtml(`${p.icon || "📦"} ${p.name}`)}</span>`);
+    const more = Math.max(0, store.product_total - Math.min(products.length, TOOLTIP_CHIPS));
+    if (more > 0) chips.push(`<span class="map-tooltip-chip">+${more}</span>`);
+    const distance =
+      store.distance_m != null ? `<span class="map-tooltip-distance">${(store.distance_m / 1000).toFixed(1)} km</span>` : "";
+    return `<div class="map-tooltip-card">
+      <div class="map-tooltip-head"><strong>${escapeHtml(store.name)}</strong>${distance}</div>
+      ${chips.length ? `<div class="map-tooltip-chips">${chips.join("")}</div>` : ""}
+    </div>`;
   }
 
   function clusterIcon(count) {
@@ -271,7 +281,14 @@
       window.addEventListener("resize", redraw);
       // The panel's width/collapse animates; Leaflet only notices the new
       // map size if told once the transition ends.
-      document.getElementById("sidebar-column")?.addEventListener("transitionend", () => map.invalidateSize());
+      // The open store may then sit outside what's left, so it's brought
+      // back into view. Transitions inside the panel bubble up here too;
+      // only the column's own count.
+      document.getElementById("sidebar-column")?.addEventListener("transitionend", (e) => {
+        if (e.target !== e.currentTarget) return;
+        map.invalidateSize();
+        this.focusSelected();
+      });
       redraw();
       applyPicker();
     },

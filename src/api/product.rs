@@ -37,7 +37,7 @@ pub async fn update_product(id: i64, name: String, description: String) -> ApiRe
     if db::product::find_live_by_name(pool(), name).await?.is_some_and(|other| other.id != id) {
         return Err(AppError::invalid("error-product-name-taken"));
     }
-    let after = db::product::update(pool(), id, name, non_empty(&description), user.id).await?;
+    let after = db::product::update(pool(), id, name, non_empty(&description), before.icon.as_deref(), user.id).await?;
     db::edit_log::write(
         pool(),
         "product",

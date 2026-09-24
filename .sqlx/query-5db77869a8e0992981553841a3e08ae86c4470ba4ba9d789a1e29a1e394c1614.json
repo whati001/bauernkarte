@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "select id, name, description, approved, deleted from product where id = $1",
+  "query": "select id, name, description, icon, approved, deleted from product\n         where lower(name) = lower($1) and not deleted limit 1",
   "describe": {
     "columns": [
       {
@@ -20,27 +20,33 @@
       },
       {
         "ordinal": 3,
+        "name": "icon",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
         "name": "approved",
         "type_info": "Bool"
       },
       {
-        "ordinal": 4,
+        "ordinal": 5,
         "name": "deleted",
         "type_info": "Bool"
       }
     ],
     "parameters": {
       "Left": [
-        "Int8"
+        "Text"
       ]
     },
     "nullable": [
       false,
       false,
       true,
+      true,
       false,
       false
     ]
   },
-  "hash": "59ec129fec3572665ebd6b0a2f0a0eb69e4480d1704b3e8cc1b803eea865d505"
+  "hash": "5db77869a8e0992981553841a3e08ae86c4470ba4ba9d789a1e29a1e394c1614"
 }

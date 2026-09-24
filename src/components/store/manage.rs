@@ -1,4 +1,4 @@
-//! The panel's closing parts: the photo strip, and the actions — route
+//! The panel's closing parts: the photo strip (opening the viewer), and the actions — route
 //! planning for everyone, editing for signed-in visitors.
 
 use dioxus::prelude::*;
@@ -20,13 +20,19 @@ use crate::{
 pub fn PhotoStrip() -> Element {
     let locale = use_locale();
     let store = use_store();
+    let mut viewing = store.viewing;
     let d = store.detail.read();
     rsx! {
         section { class: Styles::section, "aria-labelledby": "photos-heading",
             h3 { id: "photos-heading", class: Styles::section_label, {locale.t("detail-photos")} }
             div { class: Styles::photos,
-                for photo in d.photos.iter() {
-                    a { key: "{photo.id}", class: Styles::photo, href: "/image/{photo.id}", target: "_blank", rel: "noopener",
+                for (i , photo) in d.photos.iter().enumerate() {
+                    button {
+                        key: "{photo.id}",
+                        class: Styles::photo,
+                        r#type: "button",
+                        title: locale.t("detail-photo-open"),
+                        onclick: move |_| viewing.set(Some(i)),
                         img {
                             src: "/image/{photo.id}",
                             alt: photo.description.clone().unwrap_or_else(|| d.name.clone()),

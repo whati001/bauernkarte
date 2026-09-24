@@ -41,6 +41,9 @@ struct SearchRow {
     id: i64,
     name: String,
     kind: String,
+    address: Option<String>,
+    openinghours: Option<Json<Vec<DayHours>>>,
+    photo_id: Option<i64>,
     lat: f64,
     lon: f64,
     distance_m: Option<f64>,
@@ -65,6 +68,12 @@ pub async fn search(
             s.id,
             s.name,
             s.kind,
+            s.address,
+            s.openinghours as "openinghours: Json<Vec<DayHours>>",
+            -- The store image: see `image::list_photos` for the order.
+            (select i.id from image i
+             where i.store = s.id and i.kind = 'photo' and i.approved and not i.deleted
+             order by (case when i.cover then i.id end) desc nulls last, i.id limit 1) as "photo_id?",
             ST_Y(s.position::geometry) as "lat!",
             ST_X(s.position::geometry) as "lon!",
             case when $1::float8 is null or $2::float8 is null then null
@@ -127,8 +136,19 @@ pub async fn search(
             distance_m: r.distance_m,
             products: r.products.0,
             product_total: r.product_total,
+            photo_id: r.photo_id,
+            place: r.address.as_deref().and_then(place_from_address),
+            openinghours: r.openinghours.map(|j| j.0).unwrap_or_default(),
         })
         .collect())
+}
+
+/// The town in a free-text address — its last comma-separated part,
+/// without the postcode: "Apfelweg 3, 8200 Gleisdorf" -> "Gleisdorf".
+fn place_from_address(address: &str) -> Option<String> {
+    let last = address.rsplit(',').next()?.trim();
+    let town = last.trim_start_matches(|c: char| c.is_ascii_digit()).trim();
+    (!town.is_empty()).then(|| town.to_string())
 }
 
 /// Unfiltered — for edit/delete, which act on any existing row.
@@ -229,4 +249,17 @@ pub fn snapshot(store: &Store) -> serde_json::Value {
         "owner_name": store.owner_name, "owner_since": store.owner_since, "owner_bio": store.owner_bio,
         "approved": store.approved, "deleted": store.deleted,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::place_from_address;
+
+    #[test]
+    fn place_is_the_town_without_postcode() {
+        assert_eq!(place_from_address("Apfelweg 3, 8200 Gleisdorf").as_deref(), Some("Gleisdorf"));
+        assert_eq!(place_from_address("8200 Gleisdorf").as_deref(), Some("Gleisdorf"));
+        assert_eq!(place_from_address("Hart bei Eggersdorf").as_deref(), Some("Hart bei Eggersdorf"));
+        assert_eq!(place_from_address("Apfelweg 3, 8200").as_deref(), None);
+    }
 }

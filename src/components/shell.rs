@@ -12,6 +12,7 @@ use crate::{
         map::{MapCtx, MapView, Picker},
         navbar::Navbar,
     },
+    fuzzy,
     i18n::use_locale,
     models::CatalogProduct,
     ui::button::{Button, ButtonSize, ButtonVariant},
@@ -41,6 +42,8 @@ pub fn MapShell() -> Element {
     let mut map = use_context_provider(|| MapCtx {
         results: Signal::new(None),
         product: Signal::new(None),
+        kind: Signal::new(None),
+        name: Signal::new(String::new()),
         geo: Signal::new(None),
         selected: Signal::new(None),
         picker: Signal::new(Picker::default()),
@@ -69,7 +72,12 @@ pub fn MapShell() -> Element {
         geo.map(|g| g.1)
     )))?;
     use_effect(use_reactive!(|found| {
-        if let Some(Ok(results)) = found {
+        if let Some(Ok(mut results)) = found {
+            if let Some(kind) = (map.kind)() {
+                results.retain(|s| s.kind == kind);
+            }
+            let name = (map.name)();
+            results.retain(|s| fuzzy::matches(&name, &s.name));
             map.results.set(Some(results));
         }
     }));
@@ -152,7 +160,9 @@ pub fn MapShell() -> Element {
             Navbar { with_search: true }
             div {
                 id: "layout",
-                class: if !open { "sidebar-collapsed" },
+                // On phones an open store takes most of the height: whoever
+                // opens one wants the store, with the map as a strip above.
+                class: if !open { "sidebar-collapsed" } else if store_id.is_some() { "store-open" },
                 style: "--sidebar-width: {width}px",
                 div { id: "sidebar-column",
                     div { id: "sidebar",

@@ -91,6 +91,11 @@ pub struct StoreSearchResult {
     pub distance_m: Option<f64>,
     pub products: Vec<ProductSummary>,
     pub product_total: i64,
+    /// The first approved photo, for the list's thumbnail.
+    pub photo_id: Option<i64>,
+    /// The town from the address ("Gleisdorf"), when there is one.
+    pub place: Option<String>,
+    pub openinghours: Vec<DayHours>,
 }
 
 /// An approved catalog product: the filter `<select>`, the navbar's
@@ -105,8 +110,46 @@ pub struct CatalogProduct {
 
 impl CatalogProduct {
     pub fn icon_or_default(&self) -> &str {
-        self.icon.as_deref().unwrap_or("📦")
+        self.icon.as_deref().unwrap_or(DEFAULT_PRODUCT_ICON)
     }
+}
+
+/// What a product without an icon of its own shows.
+pub const DEFAULT_PRODUCT_ICON: &str = "📦";
+
+/// The admin icon picker's choices: every icon the catalog uses, plus
+/// common farm produce. Any other emoji can still be typed in.
+pub const PRODUCT_ICONS: &[&str] = &[
+    "🍎", "🍏", "🍐", "🍑", "🍒", "🍓", "🫐", "🍇", "🍋", "🍉", "🥝", "🍅",
+    "🥦", "🥕", "🥔", "🧅", "🧄", "🥬", "🥒", "🫑", "🌽", "🎃", "🍄", "🌰",
+    "🥜", "🫘", "🌾", "🌿", "🌻", "💐", "🎄", "🥚", "🥛", "🧀", "🧈", "🥣",
+    "🥩", "🍖", "🍗", "🥓", "🌭", "🐄", "🐷", "🐑", "🐐", "🐔", "🦃", "🐟",
+    "🌊", "🍯", "🐝", "🍞", "🥐", "🍝", "🍲", "🫙", "🧂", "🛢️", "🧃", "🍵",
+    "🍷", "🍺", "🥃", "🧴", "📦",
+];
+
+/// A live image on the admin "existing" tab.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct AdminImageRow {
+    pub id: i64,
+    pub store_id: i64,
+    pub store_name: String,
+    pub description: Option<String>,
+    /// A portrait of whoever runs the shop, not a photo of the place.
+    pub is_owner: bool,
+    /// The uploader or an admin picked it as the store image.
+    pub cover: bool,
+}
+
+/// A live product on the admin "existing" tab.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct AdminProductRow {
+    pub id: i64,
+    pub name: String,
+    pub description: Option<String>,
+    pub icon: Option<String>,
+    /// Stores currently offering it (approved, live offers).
+    pub stores: i64,
 }
 
 /// The shop's 1–5 star rating: average and count over every review, plus
@@ -318,16 +361,25 @@ impl Entity {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum QueueTab {
     Pending,
+    /// Products and images only: everything live, to edit or delete.
+    Existing,
     Changes,
     Deleted,
 }
 
 impl QueueTab {
-    pub const ALL: [QueueTab; 3] = [QueueTab::Pending, QueueTab::Changes, QueueTab::Deleted];
+    pub const ALL: [QueueTab; 4] = [QueueTab::Pending, QueueTab::Existing, QueueTab::Changes, QueueTab::Deleted];
+
+    /// The tabs a section shows.
+    pub fn for_entity(entity: Entity) -> Vec<QueueTab> {
+        let has_existing = matches!(entity, Entity::Product | Entity::Image);
+        Self::ALL.into_iter().filter(|t| *t != QueueTab::Existing || has_existing).collect()
+    }
 
     pub fn key(self) -> &'static str {
         match self {
             QueueTab::Pending => "pending",
+            QueueTab::Existing => "existing",
             QueueTab::Changes => "changes",
             QueueTab::Deleted => "deleted",
         }
@@ -335,6 +387,7 @@ impl QueueTab {
 
     pub fn from_key(key: &str) -> Self {
         match key {
+            "existing" => QueueTab::Existing,
             "changes" => QueueTab::Changes,
             "deleted" => QueueTab::Deleted,
             _ => QueueTab::Pending,
@@ -344,6 +397,7 @@ impl QueueTab {
     pub fn label_key(self) -> &'static str {
         match self {
             QueueTab::Pending => "admin-tab-pending",
+            QueueTab::Existing => "admin-tab-existing",
             QueueTab::Changes => "admin-tab-changes",
             QueueTab::Deleted => "admin-tab-deleted",
         }
@@ -353,6 +407,7 @@ impl QueueTab {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueueCounts {
     pub pending: i64,
+    pub existing: i64,
     pub changes: i64,
     pub deleted: i64,
 }
@@ -361,6 +416,7 @@ impl QueueCounts {
     pub fn for_tab(&self, tab: QueueTab) -> i64 {
         match tab {
             QueueTab::Pending => self.pending,
+            QueueTab::Existing => self.existing,
             QueueTab::Changes => self.changes,
             QueueTab::Deleted => self.deleted,
         }
@@ -375,6 +431,9 @@ pub struct QueueRow {
     pub author: Option<String>,
     pub at_human: String,
     pub at_iso: String,
+    /// Images only: marked as the store image (it shows at the top of the
+    /// store once approved).
+    pub store_image: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -400,6 +459,9 @@ pub struct QueuePage {
     pub counts: QueueCounts,
     pub rows: Vec<QueueRow>,
     pub changes: Vec<ChangeRow>,
+    /// The "existing" tab's rows, for products and images respectively.
+    pub products: Vec<AdminProductRow>,
+    pub images: Vec<AdminImageRow>,
 }
 
 /// The admin rail's pending badge per section.

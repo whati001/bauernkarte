@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "insert into product (name, description, approved, created_by, modified_by)\n           values ($1, $2, false, $3, $3)\n           returning id, name, description, approved, deleted",
+  "query": "insert into product (name, description, approved, created_by, modified_by)\n           values ($1, $2, false, $3, $3)\n           returning id, name, description, icon, approved, deleted",
   "describe": {
     "columns": [
       {
@@ -20,11 +20,16 @@
       },
       {
         "ordinal": 3,
+        "name": "icon",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
         "name": "approved",
         "type_info": "Bool"
       },
       {
-        "ordinal": 4,
+        "ordinal": 5,
         "name": "deleted",
         "type_info": "Bool"
       }
@@ -40,9 +45,10 @@
       false,
       false,
       true,
+      true,
       false,
       false
     ]
   },
-  "hash": "4cec8a10123ec58c12a95107b6a30b2b3de9144deb12384d59d07367c5f233f0"
+  "hash": "9b579a1c6a486fc95bc7b5efd5c37f8d3bd9f159ccae1e891ad084a6aaaf8136"
 }

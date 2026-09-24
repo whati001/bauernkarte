@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update store_product set deleted = true, modified_by = $2, modified = now()\n         where product = $1 and not deleted\n         returning id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "9de1fe6adcf201a4ac9bf21a64456a2289b9094946d8ca731ca4d7d20cac45bd"
+}

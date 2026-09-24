@@ -1,5 +1,5 @@
 //! The admin area: moderation queues (approve, reject, revert, restore),
-//! accounts, and the Impressum's contents. Every function 404s for
+//! the live product catalog, accounts, and the Impressum's contents. Every function 404s for
 //! anyone who isn't an admin (`auth::require_admin`).
 
 use dioxus::prelude::*;
@@ -9,12 +9,12 @@ use crate::models::{AdminUserRow, QueuePage, RailCount, SiteInfo};
 
 #[cfg(feature = "server")]
 use crate::{
-    api::error::AppError,
+    api::{error::AppError, non_empty},
     credentials,
     models::{ChangeRow, Entity, QueueRow, QueueTab},
     server::{
         auth::{self, SEED_ADMIN_EMAIL},
-        db::{self, moderation::Outcome},
+        db::{self, edit_log::EditAction, moderation::Outcome},
         pool,
     },
 };
@@ -45,7 +45,7 @@ pub async fn admin_rail() -> ApiResult<Vec<RailCount>> {
     Ok(rail)
 }
 
-/// One queue tab. Only the visible tab's rows are loaded; the other two
+/// One queue tab. Only the visible tab's rows are loaded; the others
 /// are just counts.
 #[get("/api/admin/queue/{slug}?tab", session: tower_sessions::Session)]
 pub async fn admin_queue(slug: String, tab: String) -> ApiResult<QueuePage> {
@@ -59,9 +59,16 @@ pub async fn admin_queue(slug: String, tab: String) -> ApiResult<QueuePage> {
         author: r.author,
         at_human: human(r.at),
         at_iso: iso(r.at),
+        store_image: r.store_image,
     };
-    let (rows, changes) = match QueueTab::from_key(&tab) {
+    let tab = QueueTab::from_key(&tab);
+    let existing = tab == QueueTab::Existing;
+    let products =
+        if existing && entity == Entity::Product { db::product::list_live_for_admin(pool()).await? } else { vec![] };
+    let images = if existing && entity == Entity::Image { db::image::list_live_for_admin(pool()).await? } else { vec![] };
+    let (rows, changes) = match tab {
         QueueTab::Pending => (db::moderation::pending(pool(), entity).await?.into_iter().map(to_row).collect(), vec![]),
+        QueueTab::Existing => (vec![], vec![]),
         QueueTab::Deleted => (db::moderation::deleted(pool(), entity).await?.into_iter().map(to_row).collect(), vec![]),
         QueueTab::Changes => (
             vec![],
@@ -79,7 +86,70 @@ pub async fn admin_queue(slug: String, tab: String) -> ApiResult<QueuePage> {
                 .collect(),
         ),
     };
-    Ok(QueuePage { counts, rows, changes })
+    Ok(QueuePage { counts, rows, changes, products, images })
+}
+
+/// An emoji, not text: short, no spaces, no letters or digits. Empty
+/// means "no icon" (the default package shows).
+#[cfg(feature = "server")]
+fn valid_icon(icon: &str) -> ApiResult<Option<&str>> {
+    let icon = icon.trim();
+    if icon.is_empty() {
+        return Ok(None);
+    }
+    if icon.chars().count() > 8 || icon.chars().any(|c| c.is_whitespace() || c.is_ascii_alphanumeric()) {
+        return Err(AppError::invalid("admin-product-error-icon"));
+    }
+    Ok(Some(icon))
+}
+
+/// The "existing" tab's edit: like a member's product edit, plus the icon.
+#[patch("/api/admin/products/{id}", session: tower_sessions::Session)]
+pub async fn admin_update_product(id: i64, name: String, description: String, icon: String) -> ApiResult<()> {
+    let admin = auth::require_admin(&session).await?;
+    let before = db::product::find(pool(), id).await?.ok_or_else(AppError::not_found)?;
+    if before.deleted {
+        return Err(AppError::deleted());
+    }
+    let name = non_empty(&name).ok_or_else(|| AppError::invalid("error-name-required"))?;
+    if db::product::find_live_by_name(pool(), name).await?.is_some_and(|other| other.id != id) {
+        return Err(AppError::invalid("error-product-name-taken"));
+    }
+    let icon = valid_icon(&icon)?;
+    let after = db::product::update(pool(), id, name, non_empty(&description), icon, admin.id).await?;
+    db::edit_log::write(
+        pool(),
+        "product",
+        id,
+        EditAction::Update,
+        &db::product::snapshot(&before),
+        Some(&db::product::snapshot(&after)),
+        admin.id,
+    )
+    .await?;
+    tracing::info!(admin_id = admin.id, product_id = id, "admin updated product");
+    Ok(())
+}
+
+/// Deletes the product and takes it off every store that offered it.
+/// Both are soft deletes, each logged, so both can be restored from the
+/// "deleted" tabs.
+#[delete("/api/admin/products/{id}", session: tower_sessions::Session)]
+pub async fn admin_delete_product(id: i64) -> ApiResult<()> {
+    let admin = auth::require_admin(&session).await?;
+    let before = db::product::find(pool(), id).await?.ok_or_else(AppError::not_found)?;
+    if before.deleted {
+        return Err(AppError::deleted());
+    }
+    let offers = db::product::soft_delete_with_offers(pool(), id, admin.id).await?;
+    db::edit_log::write(pool(), "product", id, EditAction::Delete, &db::product::snapshot(&before), None, admin.id)
+        .await?;
+    for offer in &offers {
+        let entry = serde_json::json!({ "id": offer, "product": id, "reason": "product deleted" });
+        db::edit_log::write(pool(), "store_product", *offer, EditAction::Delete, &entry, None, admin.id).await?;
+    }
+    tracing::info!(admin_id = admin.id, product_id = id, offers = offers.len(), "admin deleted product");
+    Ok(())
 }
 
 /// `action` is `approve`, `reject` or `restore`. Every one is reversible —
@@ -203,5 +273,44 @@ pub async fn admin_save_site_info(info: SiteInfo) -> ApiResult<()> {
     let admin = auth::require_admin(&session).await?;
     db::site_info::update(pool(), &info, admin.id).await?;
     tracing::info!(admin_id = admin.id, "site info updated");
+    Ok(())
+}
+
+/// The images "existing" tab's edit: description and store-image flag.
+#[patch("/api/admin/images/{id}", session: tower_sessions::Session)]
+pub async fn admin_update_image(id: i64, description: String, cover: bool) -> ApiResult<()> {
+    let admin = auth::require_admin(&session).await?;
+    let before = db::image::find(pool(), id).await?.ok_or_else(AppError::not_found)?;
+    if before.deleted {
+        return Err(AppError::deleted());
+    }
+    db::image::update(pool(), id, non_empty(&description), cover, admin.id).await?;
+    let after = db::image::find(pool(), id).await?.ok_or_else(AppError::not_found)?;
+    db::edit_log::write(
+        pool(),
+        "image",
+        id,
+        EditAction::Update,
+        &db::image::snapshot(&before),
+        Some(&db::image::snapshot(&after)),
+        admin.id,
+    )
+    .await?;
+    tracing::info!(admin_id = admin.id, image_id = id, "admin updated image");
+    Ok(())
+}
+
+/// Takes the image off its store (panel and search list). A soft delete,
+/// logged, restorable from the "deleted" tab.
+#[delete("/api/admin/images/{id}", session: tower_sessions::Session)]
+pub async fn admin_delete_image(id: i64) -> ApiResult<()> {
+    let admin = auth::require_admin(&session).await?;
+    let before = db::image::find(pool(), id).await?.ok_or_else(AppError::not_found)?;
+    if before.deleted {
+        return Err(AppError::deleted());
+    }
+    db::image::soft_delete(pool(), id, admin.id).await?;
+    db::edit_log::write(pool(), "image", id, EditAction::Delete, &db::image::snapshot(&before), None, admin.id).await?;
+    tracing::info!(admin_id = admin.id, image_id = id, "admin deleted image");
     Ok(())
 }

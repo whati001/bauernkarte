@@ -29,6 +29,19 @@
   display: block;
 }
 
+/* The header photo opens the viewer; the scrim and title above it let
+   clicks through, the button bar stays on top. */
+.hero-open {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: zoom-in;
+}
+.hero::after,
+.hero-title { pointer-events: none; }
+
 /* The scrim that makes a white name legible over any photo. */
 .hero::after {
   content: "";
@@ -484,6 +497,7 @@ a.fact:hover { color: var(--text-primary); text-decoration: none; }
   scroll-snap-align: start;
 }
 .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+button.photo { padding: 0; border: none; background: none; cursor: zoom-in; }
 .photo-caption {
   position: absolute;
   inset: auto 0 0 0;
@@ -534,3 +548,71 @@ a.fact:hover { color: var(--text-primary); text-decoration: none; }
   text-decoration: none;
 }
 .manage-link:hover { background: var(--surface-2); color: var(--text-primary); text-decoration: none; }
+
+/* ---- Photo viewer ------------------------------------------------- */
+
+/* Full screen over navbar and map; fixed, so the sidebar's scrolling
+   doesn't matter. */
+.viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  background: rgb(0 0 0 / 0.9);
+  outline: none;
+}
+.viewer-figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  max-width: 100%;
+  /* Horizontal swipes are the viewer's, not the browser's. */
+  touch-action: pan-y pinch-zoom;
+}
+.viewer-image {
+  display: block;
+  max-width: calc(100vw - 144px);
+  max-height: calc(100dvh - 96px);
+  object-fit: contain;
+  border-radius: 6px;
+  user-select: none;
+}
+.viewer-caption {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  color: rgb(255 255 255 / 0.9);
+  font-size: 0.875rem;
+  text-align: center;
+}
+.viewer-counter { color: rgb(255 255 255 / 0.6); font-variant-numeric: tabular-nums; }
+.viewer-button {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.14);
+  color: #fff;
+  cursor: pointer;
+}
+.viewer-button:hover { background: rgb(255 255 255 / 0.26); }
+.viewer-button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.viewer-close { top: calc(12px + env(safe-area-inset-top)); right: calc(12px + env(safe-area-inset-right)); }
+.viewer-prev { left: calc(12px + env(safe-area-inset-left)); top: 50%; transform: translateY(-50%); }
+.viewer-next { right: calc(12px + env(safe-area-inset-right)); top: 50%; transform: translateY(-50%); }
+
+/* Phones: the photo takes the full width, the buttons float over it. */
+@media (max-width: 700px) {
+  .viewer-image { max-width: 100vw; max-height: calc(100dvh - 120px); border-radius: 0; }
+  .viewer-button { background: rgb(0 0 0 / 0.45); }
+}

@@ -84,8 +84,33 @@ pub fn StoreFacts() -> Element {
 fn KindIcon(kind: StoreKind) -> Element {
     match kind {
         StoreKind::Market => rsx! { lucide::ShoppingBasket { size: 18 } },
-        StoreKind::VendingMachine => rsx! { lucide::Refrigerator { size: 18 } },
+        StoreKind::VendingMachine => rsx! { VendingMachineIcon {} },
         StoreKind::Shop => rsx! { lucide::Store { size: 18 } },
+    }
+}
+
+/// Lucide has no vending machine; this one is drawn on its grid and
+/// stroke so it sits with the others: compartments, coin slot, tray.
+#[component]
+fn VendingMachineIcon() -> Element {
+    rsx! {
+        svg {
+            width: "18",
+            height: "18",
+            view_box: "0 0 24 24",
+            fill: "none",
+            stroke: "currentColor",
+            stroke_width: "2",
+            stroke_linecap: "round",
+            stroke_linejoin: "round",
+            "aria-hidden": "true",
+            rect { x: "4", y: "2", width: "16", height: "20", rx: "2" }
+            path { d: "M14 2v20" }
+            path { d: "M4 8h10" }
+            path { d: "M4 14h10" }
+            path { d: "M17 6v2" }
+            path { d: "M8 18h2" }
+        }
     }
 }
 

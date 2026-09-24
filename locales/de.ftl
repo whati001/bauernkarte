@@ -12,6 +12,7 @@ nav-account-of = Konto von { $name }
 nav-new-store = Neues Geschäft
 nav-search-label = Produkt suchen
 nav-search-placeholder = Produkt…
+nav-search-close = Suche schließen
 nav-search-no-matches = Kein passendes Produkt
 nav-search-clear = Suche zurücksetzen
 nav-search-toggle = Suche öffnen oder schließen
@@ -20,14 +21,21 @@ nav-products-all = Alle Produkte
 
 ## Search sidebar
 search-filter-heading = Filter
-search-product = Produkt
+search-product = Produkte
 search-all = Alle
 search-results-count = { $count ->
-    [one] { $count } Ergebnis
-   *[other] { $count } Ergebnisse
+    [one] { $count } Ort in deiner Umgebung
+   *[other] { $count } Orte in deiner Umgebung
 }
 search-no-results = Keine Geschäfte für diese Auswahl.
-search-more = mehr
+search-name = Nach Namen suchen
+search-name-placeholder = Hofladen, Automat oder Markt suchen…
+search-sort = Sortierung
+search-sort-distance = Entfernung ↑
+search-sort-name = Name A–Z
+search-open-until = Heute bis { $name }
+search-opens-at = Heute ab { $name }
+search-closed-today = Heute geschlossen
 search-location-unavailable = Standort nicht verfügbar
 search-pick-on-map = 👆 Auf der Karte klicken, um den Standort zu wählen
 search-location-picked = 📍 Position gewählt
@@ -73,6 +81,9 @@ detail-no-products = Noch keine Produkte für dieses Geschäft.
 detail-seasonal-availability = Saisonale Verfügbarkeit
 detail-location = Standort
 detail-rating-label = Bewertung
+detail-photo-open = Foto öffnen
+detail-photo-previous = Vorheriges Foto
+detail-photo-next = Nächstes Foto
 detail-photos = Fotos
 detail-get-directions = Route berechnen
 detail-store = Geschäft
@@ -212,6 +223,7 @@ admin-blurb-offers = Die Verbindung „dieses Geschäft führt dieses Produkt“
 admin-blurb-images = Hochgeladene Produktbilder — das Einzige, was Besucher unverändert zu sehen bekommen.
 
 admin-tab-pending = Offen
+admin-tab-existing = Bestehend
 admin-tab-changes = Änderungen
 admin-tab-deleted = Gelöscht
 admin-queue-empty = Hier ist gerade nichts zu tun.
@@ -225,6 +237,25 @@ admin-action-approve = Freigeben
 admin-action-reject = Ablehnen
 admin-action-restore = Wiederherstellen
 admin-action-revert = Zurücknehmen
+admin-action-edit = Bearbeiten
+admin-product-stores = { $count ->
+    [one] von 1 Geschäft angeboten
+   *[other] von { $count } Geschäften angeboten
+}
+admin-product-delete-warning = { $count ->
+    [0] Das Produkt wird aus dem Katalog entfernt. Kein Geschäft bietet es an.
+    [one] Das Produkt wird aus dem Katalog und aus dem 1 Geschäft entfernt, das es anbietet. Beides lässt sich unter „Gelöscht“ wiederherstellen.
+   *[other] Das Produkt wird aus dem Katalog und aus den { $count } Geschäften entfernt, die es anbieten. Alles lässt sich unter „Gelöscht“ wiederherstellen.
+}
+admin-product-deleted = Produkt gelöscht.
+admin-image-cover = Bild des Geschäfts
+admin-image-owner = Porträt
+admin-image-saved = Bild gespeichert.
+admin-image-deleted = Bild gelöscht.
+admin-image-delete-warning = Das Bild wird beim Geschäft entfernt und nicht mehr angezeigt. Es lässt sich unter „Gelöscht“ wiederherstellen.
+admin-product-icon = Symbol
+admin-product-icon-hint = Eines auswählen oder ein beliebiges Emoji eingeben bzw. einfügen. Leer zeigt 📦.
+admin-product-error-icon = Das Symbol muss ein einzelnes Emoji sein.
 
 admin-error-name-taken = Der Name ist inzwischen wieder vergeben. Benenne den bestehenden Eintrag um und versuche es erneut.
 
@@ -320,6 +351,8 @@ store-form-owner-name = Name
 store-form-owner-since = Am Hof seit (Jahr)
 store-form-owner-bio = Kurzvorstellung
 ## Image form — owner portrait
+image-form-is-cover = Als Bild des Geschäfts verwenden
+image-form-is-cover-hint = Wird oben beim Geschäft und in der Suchliste gezeigt, sobald das Bild freigegeben ist.
 image-form-is-owner = Das ist ein Porträt der Betreiberin / des Betreibers
 ## Validation
 error-generic = Etwas ist schiefgelaufen. Bitte versuche es erneut.

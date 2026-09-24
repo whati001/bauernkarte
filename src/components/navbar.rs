@@ -10,6 +10,7 @@ use crate::{
     api::{search::top_products, session::logout},
     app::{use_session, Route},
     components::{map::MapCtx, shell::use_catalog},
+    fuzzy,
     i18n::{use_locale, Locale},
     models::CatalogProduct,
     ui::{
@@ -24,9 +25,17 @@ use crate::{
 #[component]
 pub fn Navbar(with_search: bool) -> Element {
     let locale = use_locale();
+    // Phones only: the picker hides behind a magnifier and, once opened,
+    // takes over the whole top row. Wider screens always show it.
+    let mut search_open = use_signal(|| false);
+    use_effect(move || {
+        if search_open() {
+            document::eval("document.querySelector('.nav-search input')?.focus();");
+        }
+    });
     rsx! {
         nav { id: "navbar",
-            div { class: "nav-main",
+            div { class: if search_open() { "nav-main search-open" } else { "nav-main" },
                 Link { class: "brand", to: Route::SearchPanel {},
                     span { class: "brand-mark", lucide::Sprout { size: 20 } }
                     span { class: "brand-text",
@@ -35,7 +44,24 @@ pub fn Navbar(with_search: bool) -> Element {
                     }
                 }
                 if with_search {
-                    ProductPicker {}
+                    button {
+                        class: "nav-icon-link nav-search-close",
+                        r#type: "button",
+                        title: locale.t("nav-search-close"),
+                        "aria-label": locale.t("nav-search-close"),
+                        onclick: move |_| search_open.set(false),
+                        lucide::ArrowLeft { size: 18 }
+                    }
+                    ProductPicker { on_pick: move |_| search_open.set(false) }
+                    button {
+                        class: "nav-icon-link nav-search-toggle",
+                        r#type: "button",
+                        title: locale.t("nav-search-label"),
+                        "aria-label": locale.t("nav-search-label"),
+                        "aria-expanded": "{search_open}",
+                        onclick: move |_| search_open.set(true),
+                        lucide::Search { size: 18 }
+                    }
                 }
                 AccountActions {}
             }
@@ -50,7 +76,7 @@ pub fn Navbar(with_search: bool) -> Element {
 /// list, and the filter changes when an entry is chosen. Choosing lands
 /// on the search panel from wherever the visitor was.
 #[component]
-fn ProductPicker() -> Element {
+fn ProductPicker(on_pick: EventHandler) -> Element {
     let locale = use_locale();
     let mut map = use_context::<MapCtx>();
     let catalog = use_catalog();
@@ -72,10 +98,12 @@ fn ProductPicker() -> Element {
                 value: Some(selected.into()),
                 on_value_change: move |id: Option<i64>| {
                     map.product.set(id);
+                    on_pick.call(());
                     if route != (Route::SearchPanel {}) {
                         nav.push(Route::SearchPanel {});
                     }
                 },
+                filter: Callback::new(|(query, text): (String, String)| fuzzy::matches(&query, &text)),
                 placeholder: locale.t("nav-search-placeholder"),
                 aria_label: locale.t("nav-search-label"),
                 list_aria_label: locale.t("nav-search-label"),
@@ -163,9 +191,9 @@ fn AccountActions() -> Element {
     let Some(user) = session.user() else {
         return rsx! {
             div { class: "nav-actions",
-                Link { class: "nav-cta", to: Route::Login {},
-                    lucide::LogIn { size: 16 }
-                    {locale.t("nav-login")}
+                Link { class: "nav-cta", to: Route::Login {}, title: locale.t("nav-login"),
+                    lucide::LogIn { size: 18 }
+                    span { class: "sr-only", {locale.t("nav-login")} }
                 }
                 LangSwitch {}
             }

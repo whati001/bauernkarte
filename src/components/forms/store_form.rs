@@ -166,6 +166,7 @@ fn StoreForm(id: Option<i64>, initial: StoreFields) -> Element {
                         }
                     }
                     Button {
+                        class: "full-width",
                         r#type: "button",
                         variant: ButtonVariant::Outline,
                         onclick: move |_| {
@@ -295,6 +296,7 @@ fn KindSelect(kind: Signal<StoreKind>) -> Element {
     let current = use_memo(move || Some(kind()));
     rsx! {
         Select::<StoreKind> {
+            class: "full-width",
             "aria-label": locale.t("store-form-kind"),
             value: Some(current.into()),
             on_value_change: move |v: Option<StoreKind>| kind.set(v.unwrap_or_default()),

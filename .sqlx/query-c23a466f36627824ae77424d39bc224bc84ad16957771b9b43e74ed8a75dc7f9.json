@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "insert into image (store, image, mime_type, description, kind, approved, created_by, modified_by)\n           values ($1, $2, $3, $4, $5, false, $6, $6)\n           returning id",
+  "query": "insert into image (store, image, mime_type, description, kind, cover, approved, created_by, modified_by)\n           values ($1, $2, $3, $4, $5, $6, false, $7, $7)\n           returning id",
   "describe": {
     "columns": [
       {
@@ -16,6 +16,7 @@
         "Text",
         "Text",
         "Text",
+        "Bool",
         "Int8"
       ]
     },
@@ -23,5 +24,5 @@
       false
     ]
   },
-  "hash": "0be10f0780eea971f6f505c5faee371318a8049e380fcb85bea28aaa34c7ccd0"
+  "hash": "c23a466f36627824ae77424d39bc224bc84ad16957771b9b43e74ed8a75dc7f9"
 }

@@ -26,7 +26,7 @@
 
 // Bump on any change to PRECACHE_URLS or to a file it names — that's what
 // evicts the old cache in `activate` and gets clients the new shell.
-const CACHE_VERSION = "v4";
+const CACHE_VERSION = "v8";
 const CACHE_NAME = `bauernkarte-shell-${CACHE_VERSION}`;
 
 const OFFLINE_URL = "/offline";

@@ -8,6 +8,7 @@ mod api;
 mod app;
 mod components;
 mod credentials;
+mod fuzzy;
 mod i18n;
 mod models;
 mod opening_hours;

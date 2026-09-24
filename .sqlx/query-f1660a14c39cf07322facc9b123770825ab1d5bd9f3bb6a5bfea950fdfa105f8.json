@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "update product set name = $2, description = $3, modified_by = $4, modified = now()\n           where id = $1\n           returning id, name, description, approved, deleted",
+  "query": "select id, name, description, icon, approved, deleted from product where id = $1",
   "describe": {
     "columns": [
       {
@@ -20,20 +20,22 @@
       },
       {
         "ordinal": 3,
+        "name": "icon",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
         "name": "approved",
         "type_info": "Bool"
       },
       {
-        "ordinal": 4,
+        "ordinal": 5,
         "name": "deleted",
         "type_info": "Bool"
       }
     ],
     "parameters": {
       "Left": [
-        "Int8",
-        "Text",
-        "Text",
         "Int8"
       ]
     },
@@ -41,9 +43,10 @@
       false,
       false,
       true,
+      true,
       false,
       false
     ]
   },
-  "hash": "d57755bbb6e009a08043994b03e9635d7be52fea70ac3162fa3557b04edde434"
+  "hash": "f1660a14c39cf07322facc9b123770825ab1d5bd9f3bb6a5bfea950fdfa105f8"
 }

@@ -49,14 +49,16 @@ pub async fn switch_locale(Path(code): Path<String>, headers: HeaderMap) -> Resp
 }
 
 /// `GET /image/{id}` — the stored bytes, if approved and not deleted, or
-/// if the requester uploaded it (so they can preview their pending one).
+/// if the requester uploaded it (so they can preview their pending one),
+/// or is an admin (the moderation queue's "view" links to pending and
+/// deleted images).
 pub async fn image(Path(id): Path<i64>, session: Session) -> Response {
     let Ok(Some(image)) = db::image::find(pool(), id).await else {
         return StatusCode::NOT_FOUND.into_response();
     };
     let viewer = auth::current_user(&session).await.ok().flatten();
-    let is_owner = viewer.is_some_and(|u| Some(u.id) == image.created_by);
-    if !(image.approved && !image.deleted) && !is_owner {
+    let may_see_unpublished = viewer.is_some_and(|u| u.admin || Some(u.id) == image.created_by);
+    if !(image.approved && !image.deleted) && !may_see_unpublished {
         return StatusCode::NOT_FOUND.into_response();
     }
     ([(header::CONTENT_TYPE, image.mime_type)], image.image).into_response()

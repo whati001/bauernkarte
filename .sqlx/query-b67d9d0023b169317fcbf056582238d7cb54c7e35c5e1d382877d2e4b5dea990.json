@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update image set deleted = true, modified_by = $2, modified = now() where id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b67d9d0023b169317fcbf056582238d7cb54c7e35c5e1d382877d2e4b5dea990"
+}

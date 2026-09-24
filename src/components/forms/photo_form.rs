@@ -2,7 +2,10 @@
 
 use dioxus::prelude::*;
 use dioxus_icons::lucide;
-use dioxus_primitives::toast::{use_toast, ToastOptions};
+use dioxus_primitives::{
+    checkbox::CheckboxState,
+    toast::{use_toast, ToastOptions},
+};
 
 use crate::{
     api::{error::AppError, image::upload_image},
@@ -22,6 +25,10 @@ pub fn AddPhoto(id: i64) -> Element {
     let toasts = use_toast();
     let mut error = use_signal(|| None::<AppError>);
     let mut uploading = use_signal(|| false);
+    // A portrait is never the store image, so ticking one clears the other.
+    let mut is_owner = use_signal(|| false);
+    let mut is_cover = use_signal(|| false);
+    let state = |on: bool| Some(if on { CheckboxState::Checked } else { CheckboxState::Unchecked });
 
     // Sent as-is as multipart: the file never passes through Rust on the
     // client side.
@@ -60,7 +67,29 @@ pub fn AddPhoto(id: i64) -> Element {
                         Input { id: "image-description", name: "description" }
                     }
                     div { class: "switch-field",
-                        Checkbox { id: "image-owner", name: "is_owner" }
+                        Checkbox {
+                            id: "image-cover",
+                            name: "is_cover",
+                            checked: state(is_cover()),
+                            disabled: is_owner(),
+                            on_checked_change: move |s| is_cover.set(s == CheckboxState::Checked),
+                        }
+                        Label { html_for: "image-cover", {locale.t("image-form-is-cover")} }
+                    }
+                    p { class: "field-hint", {locale.t("image-form-is-cover-hint")} }
+                    div { class: "switch-field",
+                        Checkbox {
+                            id: "image-owner",
+                            name: "is_owner",
+                            checked: state(is_owner()),
+                            on_checked_change: move |s| {
+                                let on = s == CheckboxState::Checked;
+                                is_owner.set(on);
+                                if on {
+                                    is_cover.set(false);
+                                }
+                            },
+                        }
                         Label { html_for: "image-owner", {locale.t("image-form-is-owner")} }
                     }
                     FormError { error }

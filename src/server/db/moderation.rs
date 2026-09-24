@@ -26,6 +26,8 @@ pub struct QueueRow {
     pub subtitle: Option<String>,
     pub author: Option<String>,
     pub at: OffsetDateTime,
+    /// Images only: marked as the store image.
+    pub store_image: bool,
 }
 
 pub struct ChangeRow {
@@ -42,7 +44,8 @@ pub async fn pending(pool: &PgPool, entity: Entity) -> sqlx::Result<Vec<QueueRow
             sqlx::query_as!(
                 QueueRow,
                 r#"select s.id, s.name as "title!", s.address as "subtitle?",
-                          u.name as "author?", s.created as "at!"
+                          u.name as "author?", s.created as "at!",
+                          false as "store_image!"
                    from store s left join "user" u on u.id = s.created_by
                    where not s.approved and not s.deleted order by s.created"#
             )
@@ -53,7 +56,8 @@ pub async fn pending(pool: &PgPool, entity: Entity) -> sqlx::Result<Vec<QueueRow
             sqlx::query_as!(
                 QueueRow,
                 r#"select p.id, p.name as "title!", p.description as "subtitle?",
-                          u.name as "author?", p.created as "at!"
+                          u.name as "author?", p.created as "at!",
+                          false as "store_image!"
                    from product p left join "user" u on u.id = p.created_by
                    where not p.approved and not p.deleted order by p.created"#
             )
@@ -64,7 +68,8 @@ pub async fn pending(pool: &PgPool, entity: Entity) -> sqlx::Result<Vec<QueueRow
             sqlx::query_as!(
                 QueueRow,
                 r#"select sp.id, p.name as "title!", s.name as "subtitle?",
-                          u.name as "author?", sp.created as "at!"
+                          u.name as "author?", sp.created as "at!",
+                          false as "store_image!"
                    from store_product sp
                    join product p on p.id = sp.product
                    join store s on s.id = sp.store
@@ -80,7 +85,8 @@ pub async fn pending(pool: &PgPool, entity: Entity) -> sqlx::Result<Vec<QueueRow
             sqlx::query_as!(
                 QueueRow,
                 r#"select i.id, s.name as "title!", i.description as "subtitle?",
-                          u.name as "author?", i.created as "at!"
+                          u.name as "author?", i.created as "at!",
+                          i.cover as "store_image!"
                    from image i
                    join store s on s.id = i.store
                    left join "user" u on u.id = i.created_by
@@ -100,7 +106,8 @@ pub async fn deleted(pool: &PgPool, entity: Entity) -> sqlx::Result<Vec<QueueRow
             sqlx::query_as!(
                 QueueRow,
                 r#"select s.id, s.name as "title!", s.address as "subtitle?",
-                          u.name as "author?", s.modified as "at!"
+                          u.name as "author?", s.modified as "at!",
+                          false as "store_image!"
                    from store s left join "user" u on u.id = s.modified_by
                    where s.deleted order by s.modified desc"#
             )
@@ -111,7 +118,8 @@ pub async fn deleted(pool: &PgPool, entity: Entity) -> sqlx::Result<Vec<QueueRow
             sqlx::query_as!(
                 QueueRow,
                 r#"select p.id, p.name as "title!", p.description as "subtitle?",
-                          u.name as "author?", p.modified as "at!"
+                          u.name as "author?", p.modified as "at!",
+                          false as "store_image!"
                    from product p left join "user" u on u.id = p.modified_by
                    where p.deleted order by p.modified desc"#
             )
@@ -122,7 +130,8 @@ pub async fn deleted(pool: &PgPool, entity: Entity) -> sqlx::Result<Vec<QueueRow
             sqlx::query_as!(
                 QueueRow,
                 r#"select sp.id, p.name as "title!", s.name as "subtitle?",
-                          u.name as "author?", sp.modified as "at!"
+                          u.name as "author?", sp.modified as "at!",
+                          false as "store_image!"
                    from store_product sp
                    join product p on p.id = sp.product
                    join store s on s.id = sp.store
@@ -136,7 +145,8 @@ pub async fn deleted(pool: &PgPool, entity: Entity) -> sqlx::Result<Vec<QueueRow
             sqlx::query_as!(
                 QueueRow,
                 r#"select i.id, s.name as "title!", i.description as "subtitle?",
-                          u.name as "author?", i.modified as "at!"
+                          u.name as "author?", i.modified as "at!",
+                          i.cover as "store_image!"
                    from image i
                    join store s on s.id = i.store
                    left join "user" u on u.id = i.modified_by
@@ -215,14 +225,16 @@ pub async fn counts(pool: &PgPool, entity: Entity) -> sqlx::Result<QueueCounts> 
     // table name is a `&'static str` from `table`, never request input.
     let sql = format!(
         "select (select count(*) from {t} where not approved and not deleted),
+                (select count(*) from {t} where approved and not deleted),
                 (select count(*) from edit_log where entity_type = $1 and action = 'update'),
                 (select count(*) from {t} where deleted)",
         t = table(entity)
     );
-    let (pending, changes, deleted): (Option<i64>, Option<i64>, Option<i64>) =
+    let (pending, existing, changes, deleted): (Option<i64>, Option<i64>, Option<i64>, Option<i64>) =
         sqlx::query_as(&sql).bind(table(entity)).fetch_one(pool).await?;
     Ok(QueueCounts {
         pending: pending.unwrap_or(0),
+        existing: existing.unwrap_or(0),
         changes: changes.unwrap_or(0),
         deleted: deleted.unwrap_or(0),
     })
@@ -333,7 +345,10 @@ pub async fn revert(pool: &PgPool, entity: Entity, log_id: i64, by: i64) -> sqlx
             let Some(before) = db::product::find(pool, id).await? else { return Ok(()) };
             let name = str_field("name").unwrap_or_default();
             let description = str_field("description");
-            let after = db::product::update(pool, id, &name, description.as_deref(), by).await?;
+            // Entries logged before icons were part of the snapshot have
+            // no "icon" key: those leave the current icon alone.
+            let icon = if old.get("icon").is_some() { str_field("icon") } else { before.icon.clone() };
+            let after = db::product::update(pool, id, &name, description.as_deref(), icon.as_deref(), by).await?;
             (db::product::snapshot(&before), db::product::snapshot(&after))
         }
         Entity::Offer => {
@@ -345,7 +360,9 @@ pub async fn revert(pool: &PgPool, entity: Entity, log_id: i64, by: i64) -> sqlx
         Entity::Image => {
             let Some(before) = db::image::find(pool, id).await? else { return Ok(()) };
             let description = str_field("description");
-            db::image::update_description(pool, id, description.as_deref(), by).await?;
+            // Entries from before the flag existed leave it alone.
+            let cover = old.get("cover").and_then(Value::as_bool).unwrap_or(before.cover);
+            db::image::update(pool, id, description.as_deref(), cover, by).await?;
             let Some(after) = db::image::find(pool, id).await? else { return Ok(()) };
             (db::image::snapshot(&before), db::image::snapshot(&after))
         }

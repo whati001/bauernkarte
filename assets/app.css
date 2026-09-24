@@ -35,7 +35,9 @@
   --user-dot: #1a6bd8;
   /* Map pin per store kind — see .map-pin-dot below. */
   --pin-market: #c25e00;
-  --pin-vending-machine: #7446c2;
+  /* Light, so its icon is dark (--pin-vending-machine-ink), not white. */
+  --pin-vending-machine: #8fd3f4;
+  --pin-vending-machine-ink: #0b4a6b;
   --pin-shop: var(--accent);
   --critical: #d03b3b;
   --critical-wash: rgba(208, 59, 59, 0.08);
@@ -98,7 +100,8 @@
     --mint-strong: #20382a;
     --user-dot: #5b9bff;
     --pin-market: #e07a1f;
-    --pin-vending-machine: #9b72e0;
+    --pin-vending-machine: #7cc8ee;
+    --pin-vending-machine-ink: #062f45;
     --critical: #e66767;
     --critical-wash: rgba(230, 103, 103, 0.12);
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
@@ -270,13 +273,14 @@ a:hover { text-decoration: underline; }
   margin-left: auto;
 }
 
+/* Icon-only login button; the label is sr-only. */
 .nav-cta {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  justify-content: center;
+  width: 44px;
   height: 44px;
-  padding: 0 1.1rem;
-  border-radius: 999px;
+  border-radius: 50%;
   background: var(--accent);
   color: var(--accent-contrast);
   font-weight: 600;
@@ -372,13 +376,46 @@ a:hover { text-decoration: underline; }
   color: var(--accent-contrast) !important;
 }
 
+/* Phone-only search controls: the magnifier that opens the picker and
+   the back arrow that closes it again. */
+.nav-search-toggle,
+.nav-search-close {
+  display: none;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* Narrow screens: one row. The picker hides behind a magnifier; opened,
+   it replaces the brand and actions. The brand name gives way
+   (ellipsis) so the actions never wrap. */
 @media (max-width: 700px) {
   .brand-tagline { display: none; }
-  .nav-main { flex-wrap: wrap; }
-  .nav-search { order: 3; flex-basis: 100%; max-width: none; margin: 0 0 0.25rem; }
+  .nav-main { gap: 0.5rem; padding: 0.25rem 0.75rem; }
+  .brand { flex: 0 1 auto; margin-right: 0; min-width: 0; }
+  .brand-text { min-width: 0; }
+  .brand-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nav-search { display: none; max-width: none; }
   .nav-search input { height: 40px !important; }
+  .nav-search-toggle { display: inline-flex; margin-left: auto; }
+  .nav-search-toggle + .nav-actions { margin-left: 0; }
+  .nav-main.search-open > .brand,
+  .nav-main.search-open > .nav-search-toggle,
+  .nav-main.search-open > .nav-actions { display: none; }
+  .nav-main.search-open > .nav-search { display: flex; }
+  .nav-main.search-open > .nav-search-close { display: inline-flex; flex: none; }
   .lang-switch, .nav-cta, .nav-user, .nav-icon-link { height: 40px; }
-  .nav-icon-link { width: 40px; }
+  .nav-icon-link, .nav-cta { width: 40px; }
+}
+
+/* Phones: text labels give way to icons (names stay in title/aria). */
+@media (max-width: 440px) {
+  .nav-actions { gap: 0.375rem; }
+  .nav-user { padding: 0 0.6rem; }
+  .nav-user-name { display: none; }
+  .lang-link { min-width: 2.25rem; padding: 0 0.5rem; }
 }
 
 /* ============================================================
@@ -487,6 +524,11 @@ a:hover { text-decoration: underline; }
   #map { order: 1; }
   .map-fab { left: 0.75rem; }
   #layout.sidebar-collapsed #sidebar-column { flex-basis: 0; width: 100%; border-top: none; }
+  /* A store fills most of the screen; the map shrinks to a strip that
+     keeps only the panel toggle (no room for the rest of the stack). */
+  #layout.store-open #sidebar-column { flex-basis: 80%; }
+  #layout.store-open #map-locate,
+  #layout.store-open .leaflet-control-zoom { display: none; }
   #sidebar-width { display: none; }
   .leaflet-top.leaflet-left { margin-top: calc(2 * var(--map-fab-step)); }
   input, select, textarea { font-size: 16px !important; }
@@ -495,11 +537,12 @@ a:hover { text-decoration: underline; }
 /* ---- Map pins (drawn by public/static/bk-map.js) ---------------- */
 .map-pin-dot {
   --pin: var(--accent);
+  --pin-ink: #fff;
   width: 40px;
   height: 40px;
   border-radius: 50%;
   background: var(--pin);
-  color: #fff;
+  color: var(--pin-ink);
   border: 3px solid #fff;
   box-shadow: var(--shadow-sm);
   display: flex;
@@ -512,7 +555,10 @@ a:hover { text-decoration: underline; }
   height: 20px;
 }
 .map-pin-dot.kind-market { --pin: var(--pin-market); }
-.map-pin-dot.kind-vending_machine { --pin: var(--pin-vending-machine); }
+.map-pin-dot.kind-vending_machine {
+  --pin: var(--pin-vending-machine);
+  --pin-ink: var(--pin-vending-machine-ink);
+}
 .map-pin-dot.kind-shop { --pin: var(--pin-shop); }
 .map-pin-dot.selected {
   width: 52px;
@@ -544,18 +590,35 @@ a:hover { text-decoration: underline; }
   font-size: 16px;
   line-height: 1;
 }
+/* The pin hover card — styled like the sidebar's result cards. */
 .map-tooltip.leaflet-tooltip {
+  padding: 0.6rem 0.75rem;
   background: var(--surface);
   color: var(--text-primary);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
-  padding: 0.25rem 0.5rem;
+  font-family: var(--font-body);
   font-size: 0.8125rem;
   white-space: nowrap;
-  line-height: 1.6;
 }
-.map-tooltip-more { color: var(--text-muted); font-style: italic; }
+/* Leaflet draws the arrow in white; follow the theme instead. */
+.map-tooltip.leaflet-tooltip-top::before { border-top-color: var(--surface); }
+.map-tooltip.leaflet-tooltip-bottom::before { border-bottom-color: var(--surface); }
+.map-tooltip.leaflet-tooltip-left::before { border-left-color: var(--surface); }
+.map-tooltip.leaflet-tooltip-right::before { border-right-color: var(--surface); }
+.map-tooltip-card { display: flex; flex-direction: column; gap: 0.4rem; }
+.map-tooltip-head { display: flex; align-items: baseline; gap: 0.75rem; }
+.map-tooltip-head strong { font-size: 0.9375rem; font-weight: 650; }
+.map-tooltip-distance { margin-left: auto; color: var(--text-secondary); }
+.map-tooltip-chips { display: flex; gap: 0.3rem; }
+.map-tooltip-chip {
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
 
 /* ============================================================
    Panels & forms
@@ -597,24 +660,128 @@ a:hover { text-decoration: underline; }
   color: var(--text-secondary);
 }
 
-.filter {
+/* ---- Search panel: toolbar and result cards --------------------- */
+/* Stays put while the list scrolls under it (#sidebar is the scroller).
+   The negative margins take it across the panel's padding, so cards
+   disappear cleanly beneath it instead of peeking out at the sides. */
+.search-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   display: flex;
-  flex-direction: column;
-  gap: 0.375rem;
-  padding: 0.75rem;
-  margin-bottom: 1rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: -1rem -1rem 0.75rem;
+  padding: 1rem 1rem 0.75rem;
+  background: var(--shell);
+  border-bottom: 1px solid var(--border);
+}
+.toolbar-sort { margin-left: auto; }
+/* Full width, above the pills; the icon sits inside the field. */
+.toolbar-search {
+  position: relative;
+  flex: 1 0 100%;
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+}
+.toolbar-search svg { position: absolute; left: 0.75rem; z-index: 1; pointer-events: none; }
+.toolbar-search input {
+  width: 100%;
+  min-height: 40px;
+  padding-left: 2.25rem;
+  border-radius: 999px;
   background: var(--surface);
 }
-.filter label { display: inline-flex; align-items: center; gap: 0.35rem; font-weight: 600; }
+/* The select's trigger, reshaped into a pill like the navbar chips. */
+.toolbar-select > button {
+  min-height: 36px;
+  padding: 0.3rem 0.6rem 0.3rem 0.75rem;
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+.toolbar-select .dx-select-expand-icon { width: 16px; height: 16px; }
+.toolbar-select > button:hover,
+.toolbar-select > button:focus-visible { background: var(--shell-2); color: var(--text-primary); }
 
-.result-count { margin: 0 0 0.5rem; font-size: 0.8125rem; color: var(--text-secondary); }
-.results { gap: 0.5rem !important; }
-.result { background: var(--surface) !important; cursor: pointer; }
-.result:hover { border-color: var(--accent) !important; }
-.result-products { display: flex !important; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.25rem; }
-.result-distance { display: inline-flex; align-items: center; gap: 0.2rem; color: var(--text-secondary); font-size: 0.8125rem; }
+.result-count { margin: 0 0 0.5rem; font-size: 0.875rem; color: var(--text-secondary); }
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.result-card {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.75rem;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: border-color 0.12s var(--ease), background 0.12s var(--ease);
+}
+.result-card:hover,
+.result-card:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+}
+.result-thumb {
+  flex: none;
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--mint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+}
+.result-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.result-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+.result-head { display: flex; align-items: baseline; gap: 0.5rem; }
+.result-name {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 650;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.result-distance { flex: none; color: var(--text-secondary); font-size: 0.875rem; }
+.result-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.result-chip { font-weight: 500; }
+.result-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 1rem;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+}
+.result-place { display: inline-flex; align-items: center; gap: 0.25rem; }
+.result-status { display: inline-flex; align-items: center; gap: 0.4rem; }
+.result-status::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+.result-status.open::before { background: var(--accent); }
+.result-status.later::before { background: var(--pin-market); }
+.result-chevron { flex: none; color: var(--text-muted); display: inline-flex; }
 
 .form { display: flex; flex-direction: column; gap: 0.25rem; }
 .field { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 0.75rem; }
@@ -622,6 +789,13 @@ a:hover { text-decoration: underline; }
 .field-hint { margin: 0 0 0.75rem; font-size: 0.8125rem; color: var(--text-muted); }
 .form-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .form button[type="submit"] { align-self: flex-start; }
+/* Controls straight in a section, without a .field around them to
+   stretch them. For a select, the class lands on its wrapper; the
+   trigger button inside has to follow. The name input goes by id: Input
+   sets its own class, which an extra one could replace. */
+.form .full-width,
+.form .full-width > button,
+.form #store-name { width: 100%; }
 
 .switch-field {
   display: flex;
@@ -771,6 +945,29 @@ a:hover { text-decoration: underline; }
 .admin-diff-field { font-weight: 600; min-width: 7rem; }
 .admin-diff-old { color: var(--critical); text-decoration: line-through; }
 .admin-diff-new { color: var(--accent); }
+
+/* The "existing" tab: a product row that opens its edit form below. */
+.admin-product { flex-direction: column; gap: 0.75rem; }
+.admin-product-head { display: flex; align-items: flex-start; gap: 1rem; width: 100%; }
+.admin-product-icon { flex: none; font-size: 1.5rem; line-height: 1; }
+.admin-thumb { flex: none; width: 72px; height: 54px; border-radius: var(--radius-sm); overflow: hidden; background: var(--surface-2); }
+.admin-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.admin-product-form { width: 100%; max-width: 720px; padding-top: 0.75rem; border-top: 1px solid var(--border); }
+.admin-product-form .dx-input, .admin-product-form input, .admin-product-form textarea { width: 100%; }
+.icon-picker { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-bottom: 0.4rem; }
+.icon-choice {
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.icon-choice:hover { background: var(--surface-2); }
+.icon-choice.selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-wash); background: var(--accent-wash); }
 
 .admin-card { margin-bottom: 1.5rem; max-width: 720px; }
 .admin-inline-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0 0.75rem; align-items: end; }

@@ -12,6 +12,7 @@ nav-account-of = Account of { $name }
 nav-new-store = New Store
 nav-search-label = Search product
 nav-search-placeholder = Product…
+nav-search-close = Close search
 nav-search-no-matches = No matching product
 nav-search-clear = Reset search
 nav-search-toggle = Open or close search
@@ -20,14 +21,21 @@ nav-products-all = All products
 
 ## Search sidebar
 search-filter-heading = Filter
-search-product = Product
+search-product = Products
 search-all = All
 search-results-count = { $count ->
-    [one] { $count } result
-   *[other] { $count } results
+    [one] { $count } place near you
+   *[other] { $count } places near you
 }
 search-no-results = No stores match this selection.
-search-more = more
+search-name = Search by name
+search-name-placeholder = Search farm shops, machines or markets…
+search-sort = Sort order
+search-sort-distance = Distance ↑
+search-sort-name = Name A–Z
+search-open-until = Open until { $name }
+search-opens-at = Opens at { $name }
+search-closed-today = Closed today
 search-location-unavailable = Location unavailable
 search-pick-on-map = 👆 Click the map to choose a location
 search-location-picked = 📍 Location picked
@@ -74,6 +82,9 @@ detail-seasonal-availability = Seasonal availability
 detail-location = Location
 detail-rating-label = Rating
 detail-photos = Photos
+detail-photo-open = Open photo
+detail-photo-previous = Previous photo
+detail-photo-next = Next photo
 detail-get-directions = Get directions
 detail-store = Store
 detail-products = Products
@@ -212,6 +223,7 @@ admin-blurb-offers = The link "this store sells this product", with its season. 
 admin-blurb-images = Uploaded product photos — the one thing visitors see exactly as submitted.
 
 admin-tab-pending = Pending
+admin-tab-existing = Existing
 admin-tab-changes = Changes
 admin-tab-deleted = Deleted
 admin-queue-empty = Nothing to do here right now.
@@ -225,6 +237,25 @@ admin-action-approve = Approve
 admin-action-reject = Reject
 admin-action-restore = Restore
 admin-action-revert = Revert
+admin-action-edit = Edit
+admin-product-stores = { $count ->
+    [one] offered by 1 store
+   *[other] offered by { $count } stores
+}
+admin-product-delete-warning = { $count ->
+    [0] The product is removed from the catalog. No store offers it.
+    [one] The product is removed from the catalog and from the 1 store that offers it. Both can be restored from the "Deleted" tabs.
+   *[other] The product is removed from the catalog and from the { $count } stores that offer it. All can be restored from the "Deleted" tabs.
+}
+admin-product-deleted = Product deleted.
+admin-image-cover = Store image
+admin-image-owner = Owner portrait
+admin-image-saved = Image saved.
+admin-image-deleted = Image deleted.
+admin-image-delete-warning = The image is removed from the store and no longer shown. It can be restored from the "Deleted" tab.
+admin-product-icon = Icon
+admin-product-icon-hint = Pick one, or type or paste any emoji. Empty shows 📦.
+admin-product-error-icon = The icon must be a single emoji.
 
 admin-error-name-taken = That name is in use again. Rename the existing entry and try once more.
 
@@ -321,6 +352,8 @@ store-form-owner-since = Farming since (year)
 store-form-owner-bio = Short introduction
 ## Image form — owner portrait
 image-form-is-owner = This is a portrait of the owner
+image-form-is-cover = Use as store image
+image-form-is-cover-hint = Shown at the top of the store and in the search list, once the image is approved.
 ## Validation
 error-generic = Something went wrong. Please try again.
 error-login-required = Please log in first.

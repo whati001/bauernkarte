@@ -16,6 +16,7 @@ const HUE_SPAN: i64 = 58;
 pub fn StoreHero() -> Element {
     let locale = use_locale();
     let store = use_store();
+    let mut viewing = store.viewing;
     let mut map = use_map();
     let nav = navigator();
     let d = store.detail.read();
@@ -29,7 +30,13 @@ pub fn StoreHero() -> Element {
     rsx! {
         header { class: Styles::hero,
             if let Some(photo) = d.photos.first() {
-                img { class: Styles::hero_image, src: "/image/{photo.id}", alt: "{d.name}" }
+                button {
+                    class: Styles::hero_open,
+                    r#type: "button",
+                    title: locale.t("detail-photo-open"),
+                    onclick: move |_| viewing.set(Some(0)),
+                    img { class: Styles::hero_image, src: "/image/{photo.id}", alt: "{d.name}" }
+                }
             } else {
                 FarmScene { hue, icons }
             }

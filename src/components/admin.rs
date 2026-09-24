@@ -9,8 +9,9 @@ use dioxus_primitives::toast::{use_toast, ToastOptions};
 use crate::{
     api::{
         admin::{
-            admin_create_user, admin_delete_user, admin_moderate, admin_queue, admin_rail, admin_revert,
-            admin_save_site_info, admin_set_admin, admin_site_info, admin_users,
+            admin_create_user, admin_delete_image, admin_delete_product, admin_delete_user, admin_moderate,
+            admin_queue, admin_rail, admin_revert, admin_save_site_info, admin_set_admin, admin_site_info,
+            admin_update_image, admin_update_product, admin_users,
         },
         error::AppError,
     },
@@ -20,7 +21,7 @@ use crate::{
         navbar::Navbar,
     },
     i18n::use_locale,
-    models::{AdminUserRow, Entity, QueuePage, QueueTab, SiteInfo},
+    models::{AdminImageRow, AdminProductRow, AdminUserRow, Entity, QueuePage, QueueTab, SiteInfo, DEFAULT_PRODUCT_ICON, PRODUCT_ICONS},
     ui::{
         alert_dialog::{AlertDialog, AlertDialogAction, AlertDialogActions, AlertDialogCancel, AlertDialogDescription, AlertDialogTitle},
         badge::{Badge, BadgeVariant},
@@ -138,7 +139,8 @@ pub fn AdminQueue(slug: String, tab: String) -> Element {
     let Some(entity) = Entity::from_slug(&slug) else {
         return rsx! { p { class: "admin-empty", {locale.t("error-not-found")} } };
     };
-    let tab = QueueTab::from_key(&tab);
+    let tabs = QueueTab::for_entity(entity);
+    let tab = Some(QueueTab::from_key(&tab)).filter(|t| tabs.contains(t)).unwrap_or(QueueTab::Pending);
     let mut rail_refresh = use_context::<RailRefresh>().0;
     let mut page = use_resource(use_reactive!(|slug, tab| async move { admin_queue(slug, tab.key().to_string()).await }));
     let mut error = use_signal(|| None::<AppError>);
@@ -171,7 +173,7 @@ pub fn AdminQueue(slug: String, tab: String) -> Element {
             },
             horizontal: true,
             TabList {
-                for (i , t) in QueueTab::ALL.into_iter().enumerate() {
+                for (i , t) in tabs.iter().copied().enumerate() {
                     TabTrigger { key: "{t.key()}", value: t.key().to_string(), index: i,
                         {locale.t(t.label_key())}
                         " "
@@ -179,16 +181,36 @@ pub fn AdminQueue(slug: String, tab: String) -> Element {
                     }
                 }
             }
-            for (i , t) in QueueTab::ALL.into_iter().enumerate() {
+            for (i , t) in tabs.iter().copied().enumerate() {
                 TabContent { key: "{t.key()}", value: t.key().to_string(), index: i,
                     if t == tab {
                         match &data {
                             None => rsx! {},
-                            Some(d) if d.rows.is_empty() && d.changes.is_empty() => rsx! {
+                            Some(d) if d.rows.is_empty() && d.changes.is_empty() && d.products.is_empty() && d.images.is_empty() => rsx! {
                                 p { class: "admin-empty", {locale.t("admin-queue-empty")} }
                             },
                             Some(d) => rsx! {
                                 div { class: "admin-rows",
+                                    for product in d.products.clone() {
+                                        ProductRow {
+                                            key: "{product.id}",
+                                            product,
+                                            on_change: move |_| {
+                                                page.restart();
+                                                *rail_refresh.write() += 1;
+                                            },
+                                        }
+                                    }
+                                    for image in d.images.clone() {
+                                        ImageRow {
+                                            key: "{image.id}",
+                                            image,
+                                            on_change: move |_| {
+                                                page.restart();
+                                                *rail_refresh.write() += 1;
+                                            },
+                                        }
+                                    }
                                     for row in d.rows.clone() {
                                         article { key: "{row.id}", class: "admin-row",
                                             div { class: "admin-row-main",
@@ -196,6 +218,7 @@ pub fn AdminQueue(slug: String, tab: String) -> Element {
                                                     strong { "{row.title}" }
                                                     if tab == QueueTab::Pending { Badge { {locale.t("admin-pill-new")} } }
                                                     if tab == QueueTab::Deleted { Badge { variant: BadgeVariant::Destructive, {locale.t("admin-pill-deleted")} } }
+                                                    if row.store_image { Badge { variant: BadgeVariant::Outline, {locale.t("admin-image-cover")} } }
                                                 }
                                                 div { class: "admin-row-meta",
                                                     if let Some(s) = &row.subtitle { span { "{s}" } }
@@ -283,6 +306,278 @@ pub fn AdminQueue(slug: String, tab: String) -> Element {
                             },
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+/// One live product on the "existing" tab: edit in place, or delete it
+/// (which takes it off every store too).
+#[component]
+fn ProductRow(product: AdminProductRow, on_change: EventHandler<()>) -> Element {
+    let locale = use_locale();
+    let toasts = use_toast();
+    let mut editing = use_signal(|| false);
+    let mut confirm = use_signal(|| false);
+    let id = product.id;
+    let icon = product.icon.clone().unwrap_or_else(|| DEFAULT_PRODUCT_ICON.into());
+
+    rsx! {
+        article { class: "admin-row admin-product",
+            div { class: "admin-product-head",
+                span { class: "admin-product-icon", "aria-hidden": "true", "{icon}" }
+                div { class: "admin-row-main",
+                    div { class: "admin-row-title", strong { "{product.name}" } }
+                    div { class: "admin-row-meta",
+                        if let Some(d) = &product.description { span { "{d}" } }
+                        span { {locale.t_count("admin-product-stores", product.stores)} }
+                    }
+                }
+                div { class: "admin-row-actions",
+                    Button {
+                        size: ButtonSize::Sm,
+                        variant: ButtonVariant::Outline,
+                        "aria-expanded": "{editing}",
+                        onclick: move |_| editing.toggle(),
+                        lucide::Pencil { size: 14 }
+                        {locale.t("admin-action-edit")}
+                    }
+                    Button {
+                        size: ButtonSize::Sm,
+                        variant: ButtonVariant::Destructive,
+                        onclick: move |_| confirm.set(true),
+                        lucide::Trash2 { size: 14 }
+                        {locale.t("action-delete")}
+                    }
+                    AlertDialog { open: confirm(), on_open_change: move |v| confirm.set(v),
+                        AlertDialogTitle { {locale.t("action-delete")} ": {product.name}" }
+                        AlertDialogDescription { {locale.t_count("admin-product-delete-warning", product.stores)} }
+                        AlertDialogActions {
+                            AlertDialogCancel { {locale.t("action-cancel")} }
+                            AlertDialogAction {
+                                on_click: move |_| async move {
+                                    match admin_delete_product(id).await {
+                                        Ok(()) => toasts.success(locale.t("admin-product-deleted"), ToastOptions::new()),
+                                        Err(err) => toasts.error(locale.t_error(&err.key), ToastOptions::new()),
+                                    }
+                                    on_change.call(());
+                                },
+                                {locale.t("action-delete")}
+                            }
+                        }
+                    }
+                }
+            }
+            if editing() {
+                ProductEditForm {
+                    product: product.clone(),
+                    on_done: move |saved: bool| {
+                        editing.set(false);
+                        if saved {
+                            on_change.call(());
+                        }
+                    },
+                }
+            }
+        }
+    }
+}
+
+#[component]
+fn ProductEditForm(product: AdminProductRow, on_done: EventHandler<bool>) -> Element {
+    let locale = use_locale();
+    let toasts = use_toast();
+    let id = product.id;
+    let mut name = use_signal(|| product.name.clone());
+    let mut description = use_signal(|| product.description.clone().unwrap_or_default());
+    let mut icon = use_signal(|| product.icon.clone().unwrap_or_default());
+    let mut error = use_signal(|| None::<AppError>);
+
+    let submit = move |evt: FormEvent| {
+        evt.prevent_default();
+        async move {
+            match admin_update_product(id, name(), description(), icon()).await {
+                Ok(()) => {
+                    toasts.success(locale.t_name("confirmation-updated", &name()), ToastOptions::new());
+                    on_done.call(true);
+                }
+                Err(err) => error.set(Some(err)),
+            }
+        }
+    };
+
+    rsx! {
+        form { class: "form admin-product-form", onsubmit: submit,
+            Field { label: locale.t("edit-product-form-name"), html_for: "product-{id}-name",
+                Input { id: "product-{id}-name", required: true, value: "{name}", oninput: move |e: FormEvent| name.set(e.value()) }
+            }
+            Field { label: locale.t("edit-product-form-description"), html_for: "product-{id}-description",
+                Textarea {
+                    id: "product-{id}-description",
+                    rows: 2,
+                    value: "{description}",
+                    oninput: move |e: FormEvent| description.set(e.value()),
+                }
+            }
+            Field { label: locale.t("admin-product-icon"), html_for: "product-{id}-icon",
+                div { class: "icon-picker", role: "group", "aria-label": locale.t("admin-product-icon"),
+                    for choice in PRODUCT_ICONS.iter().copied() {
+                        button {
+                            key: "{choice}",
+                            r#type: "button",
+                            class: if icon() == choice { "icon-choice selected" } else { "icon-choice" },
+                            "aria-pressed": "{icon() == choice}",
+                            onclick: move |_| icon.set(choice.to_string()),
+                            "{choice}"
+                        }
+                    }
+                }
+                Input {
+                    id: "product-{id}-icon",
+                    value: "{icon}",
+                    placeholder: DEFAULT_PRODUCT_ICON,
+                    oninput: move |e: FormEvent| icon.set(e.value()),
+                }
+                p { class: "field-hint", {locale.t("admin-product-icon-hint")} }
+            }
+            FormError { error }
+            div { class: "form-actions",
+                Button { r#type: "submit",
+                    lucide::CircleCheck { size: 16 }
+                    {locale.t("action-save")}
+                }
+                Button { r#type: "button", variant: ButtonVariant::Outline, onclick: move |_| on_done.call(false),
+                    {locale.t("action-cancel")}
+                }
+            }
+        }
+    }
+}
+
+/// One live image on the "existing" tab: a thumbnail, its store and
+/// flags; edit in place, or delete it (off the store for good, until
+/// restored).
+#[component]
+fn ImageRow(image: AdminImageRow, on_change: EventHandler<()>) -> Element {
+    let locale = use_locale();
+    let toasts = use_toast();
+    let mut editing = use_signal(|| false);
+    let mut confirm = use_signal(|| false);
+    let id = image.id;
+
+    rsx! {
+        article { class: "admin-row admin-product",
+            div { class: "admin-product-head",
+                a { class: "admin-thumb", href: "/image/{id}", target: "_blank", rel: "noopener",
+                    img { src: "/image/{id}", alt: image.description.clone().unwrap_or_default(), loading: "lazy" }
+                }
+                div { class: "admin-row-main",
+                    div { class: "admin-row-title",
+                        Link { to: Route::StorePanel { id: image.store_id }, strong { "{image.store_name}" } }
+                        if image.cover { Badge { {locale.t("admin-image-cover")} } }
+                        if image.is_owner { Badge { variant: BadgeVariant::Outline, {locale.t("admin-image-owner")} } }
+                    }
+                    div { class: "admin-row-meta",
+                        if let Some(d) = &image.description { span { "{d}" } }
+                    }
+                }
+                div { class: "admin-row-actions",
+                    Button {
+                        size: ButtonSize::Sm,
+                        variant: ButtonVariant::Outline,
+                        "aria-expanded": "{editing}",
+                        onclick: move |_| editing.toggle(),
+                        lucide::Pencil { size: 14 }
+                        {locale.t("admin-action-edit")}
+                    }
+                    Button {
+                        size: ButtonSize::Sm,
+                        variant: ButtonVariant::Destructive,
+                        onclick: move |_| confirm.set(true),
+                        lucide::Trash2 { size: 14 }
+                        {locale.t("action-delete")}
+                    }
+                    AlertDialog { open: confirm(), on_open_change: move |v| confirm.set(v),
+                        AlertDialogTitle { {locale.t("action-delete")} ": {image.store_name}" }
+                        AlertDialogDescription { {locale.t("admin-image-delete-warning")} }
+                        AlertDialogActions {
+                            AlertDialogCancel { {locale.t("action-cancel")} }
+                            AlertDialogAction {
+                                on_click: move |_| async move {
+                                    match admin_delete_image(id).await {
+                                        Ok(()) => toasts.success(locale.t("admin-image-deleted"), ToastOptions::new()),
+                                        Err(err) => toasts.error(locale.t_error(&err.key), ToastOptions::new()),
+                                    }
+                                    on_change.call(());
+                                },
+                                {locale.t("action-delete")}
+                            }
+                        }
+                    }
+                }
+            }
+            if editing() {
+                ImageEditForm {
+                    image: image.clone(),
+                    on_done: move |saved: bool| {
+                        editing.set(false);
+                        if saved {
+                            on_change.call(());
+                        }
+                    },
+                }
+            }
+        }
+    }
+}
+
+#[component]
+fn ImageEditForm(image: AdminImageRow, on_done: EventHandler<bool>) -> Element {
+    let locale = use_locale();
+    let toasts = use_toast();
+    let id = image.id;
+    let mut description = use_signal(|| image.description.clone().unwrap_or_default());
+    let mut cover = use_signal(|| image.cover);
+    let mut error = use_signal(|| None::<AppError>);
+
+    let submit = move |evt: FormEvent| {
+        evt.prevent_default();
+        async move {
+            match admin_update_image(id, description(), cover()).await {
+                Ok(()) => {
+                    toasts.success(locale.t("admin-image-saved"), ToastOptions::new());
+                    on_done.call(true);
+                }
+                Err(err) => error.set(Some(err)),
+            }
+        }
+    };
+
+    rsx! {
+        form { class: "form admin-product-form", onsubmit: submit,
+            Field { label: locale.t("edit-product-form-description"), html_for: "image-{id}-description",
+                Input { id: "image-{id}-description", value: "{description}", oninput: move |e: FormEvent| description.set(e.value()) }
+            }
+            // A portrait belongs to the owner block, never the header.
+            if !image.is_owner {
+                div { class: "switch-field",
+                    Checkbox {
+                        id: "image-{id}-cover",
+                        checked: Some(if cover() { dioxus_primitives::checkbox::CheckboxState::Checked } else { dioxus_primitives::checkbox::CheckboxState::Unchecked }),
+                        on_checked_change: move |s| cover.set(s == dioxus_primitives::checkbox::CheckboxState::Checked),
+                    }
+                    Label { html_for: "image-{id}-cover", {locale.t("image-form-is-cover")} }
+                }
+            }
+            FormError { error }
+            div { class: "form-actions",
+                Button { r#type: "submit",
+                    lucide::CircleCheck { size: 16 }
+                    {locale.t("action-save")}
+                }
+                Button { r#type: "button", variant: ButtonVariant::Outline, onclick: move |_| on_done.call(false),
+                    {locale.t("action-cancel")}
                 }
             }
         }

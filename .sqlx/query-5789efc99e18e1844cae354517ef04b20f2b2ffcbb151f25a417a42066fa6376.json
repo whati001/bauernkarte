@@ -1,0 +1,50 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select i.id, i.store as store_id, s.name as store_name, i.description,\n                  i.kind = 'owner' as \"is_owner!\", i.cover\n           from image i join store s on s.id = i.store\n           where i.approved and not i.deleted\n           order by i.id desc",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "store_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "store_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "is_owner!",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 5,
+        "name": "cover",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      null,
+      false
+    ]
+  },
+  "hash": "5789efc99e18e1844cae354517ef04b20f2b2ffcbb151f25a417a42066fa6376"
+}

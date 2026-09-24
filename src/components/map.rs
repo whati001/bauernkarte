@@ -5,7 +5,10 @@
 use dioxus::prelude::*;
 use serde::Deserialize;
 
-use crate::{app::Route, models::StoreSearchResult};
+use crate::{
+    app::Route,
+    models::{StoreKind, StoreSearchResult},
+};
 
 /// The location picker the store form turns on: while active, clicking
 /// the map drops (or moves) the new store's pin.
@@ -24,6 +27,11 @@ pub struct MapCtx {
     /// The product filter (navbar picker, quick-pick chips, sidebar select
     /// all write this one signal).
     pub product: Signal<Option<i64>>,
+    /// The results list's type filter. Applied to `results` itself, so
+    /// the pins follow it too.
+    pub kind: Signal<Option<StoreKind>>,
+    /// The results list's name search, applied the same way as `kind`.
+    pub name: Signal<String>,
     /// A real geolocation fix, once the browser has one. Only then are
     /// results ranked by distance.
     pub geo: Signal<Option<(f64, f64)>>,

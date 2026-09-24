@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "select i.id, s.name as \"title!\", i.description as \"subtitle?\",\n                          u.name as \"author?\", i.modified as \"at!\"\n                   from image i\n                   join store s on s.id = i.store\n                   left join \"user\" u on u.id = i.modified_by\n                   where i.deleted order by i.modified desc",
+  "query": "select i.id, s.name as \"title!\", i.description as \"subtitle?\",\n                          u.name as \"author?\", i.created as \"at!\",\n                          i.cover as \"store_image!\"\n                   from image i\n                   join store s on s.id = i.store\n                   left join \"user\" u on u.id = i.created_by\n                   where not i.approved and not i.deleted order by i.created",
   "describe": {
     "columns": [
       {
@@ -27,6 +27,11 @@
         "ordinal": 4,
         "name": "at!",
         "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 5,
+        "name": "store_image!",
+        "type_info": "Bool"
       }
     ],
     "parameters": {
@@ -37,8 +42,9 @@
       false,
       true,
       false,
+      false,
       false
     ]
   },
-  "hash": "4f9b3c5d6cd96582f1b3a76580b78b16c7144de2b987c15f37f99a59cf8dded1"
+  "hash": "a21ea6253fe4f28c5be35fa6c92a5a7e32a26e373bdb9ae42f067451d4ed17a0"
 }

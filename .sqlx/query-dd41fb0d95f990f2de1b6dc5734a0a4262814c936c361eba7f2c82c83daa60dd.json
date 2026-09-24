@@ -1,0 +1,50 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select sp.id, p.name as \"title!\", s.name as \"subtitle?\",\n                          u.name as \"author?\", sp.modified as \"at!\",\n                          false as \"store_image!\"\n                   from store_product sp\n                   join product p on p.id = sp.product\n                   join store s on s.id = sp.store\n                   left join \"user\" u on u.id = sp.modified_by\n                   where sp.deleted order by sp.modified desc",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "title!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "subtitle?",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "author?",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "at!",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 5,
+        "name": "store_image!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "dd41fb0d95f990f2de1b6dc5734a0a4262814c936c361eba7f2c82c83daa60dd"
+}

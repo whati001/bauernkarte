@@ -97,6 +97,29 @@ pub fn time_options() -> Vec<String> {
 }
 
 /// Validates a submitted week. Returns the i18n key of the first problem.
+/// Where a store stands today, for the one-line status in the results
+/// list ("Heute bis 18:00"). Times are shown short ("9:00").
+#[derive(Debug, Clone, PartialEq)]
+pub enum TodayStatus {
+    OpenUntil(String),
+    OpensAt(String),
+    Closed,
+}
+
+/// `None` when the store has no opening hours at all — then nothing is
+/// known, which isn't the same as closed. `day` is ISO (1 = Monday) and
+/// `now` is `"HH:MM"`, both in the visitor's local time.
+pub fn today_status(hours: &[DayHours], day: i16, now: &str) -> Option<TodayStatus> {
+    if hours.is_empty() {
+        return None;
+    }
+    Some(match find(hours, day) {
+        Some(h) if now < h.open.as_str() => TodayStatus::OpensAt(short_time(&h.open).to_string()),
+        Some(h) if now < h.close.as_str() => TodayStatus::OpenUntil(short_time(&h.close).to_string()),
+        _ => TodayStatus::Closed,
+    })
+}
+
 /// `"HH:MM"` strings compare chronologically as plain strings, `"24:00"`
 /// included.
 #[cfg_attr(not(feature = "server"), allow(dead_code))]
@@ -121,6 +144,22 @@ pub fn validate(hours: &[DayHours]) -> Result<Vec<DayHours>, &'static str> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn today_status_before_during_and_after_hours() {
+        let hours = [day(3, "09:00", "18:00")];
+        assert_eq!(today_status(&hours, 3, "08:15"), Some(TodayStatus::OpensAt("9:00".into())));
+        assert_eq!(today_status(&hours, 3, "09:00"), Some(TodayStatus::OpenUntil("18:00".into())));
+        assert_eq!(today_status(&hours, 3, "18:00"), Some(TodayStatus::Closed));
+        assert_eq!(today_status(&hours, 4, "12:00"), Some(TodayStatus::Closed));
+        assert_eq!(today_status(&[], 3, "12:00"), None);
+    }
+
+    #[test]
+    fn today_status_open_until_midnight() {
+        let hours = [day(1, "00:00", "24:00")];
+        assert_eq!(today_status(&hours, 1, "23:59"), Some(TodayStatus::OpenUntil("24:00".into())));
+    }
 
     fn day(day: i16, open: &str, close: &str) -> DayHours {
         DayHours { day, open: open.into(), close: close.into() }

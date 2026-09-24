@@ -17,8 +17,10 @@ Each location's tags also decide its `store.kind`, i.e. its map pin
 (see store_kind): a vending machine, a market or a farm shop, and a
 market whenever the tags don't say.
 
-Per-shop `name` becomes `store.name` and the coordinates become
-`store.position`. OSM's `website=`/`contact:website=` tag is dropped —
+Per-shop `name` becomes `store.name`, the coordinates become
+`store.position`, and the `addr:*` tags, where present, become
+`store.address` ("Apfelweg 3, 8200 Gleisdorf" — the results list shows
+the town from it). OSM's `website=`/`contact:website=` tag is dropped —
 there is nowhere to put it, the app has no store-level homepage field.
 Where OSM's `produce=`/`product=`/`vending=` tags name
 what's sold, those are mapped to this app's product catalog and a
@@ -260,6 +262,21 @@ def display_name(tags):
     return tags.get("name") or tags.get("operator")
 
 
+def address(tags):
+    """`store.address` from OSM's `addr:*` tags, in the form the store
+    form uses ("Apfelweg 3, 8200 Gleisdorf"), or None when there's no town.
+    `addr:place` stands in for the street in villages without street
+    names."""
+    street = tags.get("addr:street") or tags.get("addr:place")
+    house = tags.get("addr:housenumber")
+    town = tags.get("addr:city") or tags.get("addr:place")
+    if not town:
+        return None
+    first = " ".join(part for part in (street, house) if part)
+    last = " ".join(part for part in (tags.get("addr:postcode"), town) if part)
+    return ", ".join(part for part in (first, last) if part and part != town) or town
+
+
 def store_kind(tags):
     """`store.kind` from the OSM tags. A machine is a machine even when
     it is also tagged `shop=farm` (the farm it belongs to); `shop=farm`
@@ -369,14 +386,17 @@ def main():
     for el, name, lat, lon, tags in named:
         point = f"ST_SetSRID(ST_MakePoint({lon}, {lat}), 4326)::geography"
         kind = store_kind(tags)
-        # Classifies a row an earlier run created, before stores had a
-        # kind (they all defaulted to `market`). Only rows no one has
-        # touched in the app — `modified_by` is set by every in-app edit
-        # — so a kind someone corrected by hand stays corrected.
+        addr = address(tags)
+        # Brings a row an earlier run created up to date: its kind (rows
+        # from before stores had one all defaulted to `market`) and an
+        # address it lacks. Only rows no one has touched in the app —
+        # `modified_by` is set by every in-app edit — so nothing someone
+        # corrected by hand is overwritten.
         print(
-            f"UPDATE store SET kind = {sql_str(kind)}\n"
+            f"UPDATE store SET kind = {sql_str(kind)}, address = COALESCE(address, {sql_str(addr)})\n"
             f"WHERE name = {sql_str(name)} AND ST_DWithin(position, {point}, 1)\n"
-            f"  AND created_by IS NULL AND modified_by IS NULL AND kind <> {sql_str(kind)};"
+            f"  AND created_by IS NULL AND modified_by IS NULL\n"
+            f"  AND (kind <> {sql_str(kind)} OR (address IS NULL AND {sql_str(addr)} IS NOT NULL));"
         )
         # The whole per-shop statement hangs off this guard: if a store
         # with this name already sits on this spot, the store INSERT
@@ -391,8 +411,8 @@ def main():
         # column.
         print("WITH new_store AS (")
         print(
-            f"  INSERT INTO store (name, position, kind, approved, created_by)\n"
-            f"  SELECT {sql_str(name)}, {point}, {sql_str(kind)}, true, NULL\n"
+            f"  INSERT INTO store (name, position, kind, address, approved, created_by)\n"
+            f"  SELECT {sql_str(name)}, {point}, {sql_str(kind)}, {sql_str(addr)}, true, NULL\n"
             f"  WHERE NOT EXISTS (\n"
             f"    SELECT 1 FROM store s\n"
             f"    WHERE s.name = {sql_str(name)} AND ST_DWithin(s.position, {point}, 1)\n"

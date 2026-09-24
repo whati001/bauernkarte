@@ -3,6 +3,7 @@
 //! products and when they're in season — then photos and the actions.
 
 mod facts;
+mod gallery;
 mod hero;
 mod manage;
 mod offers;
@@ -26,6 +27,8 @@ pub(crate) struct Styles;
 #[derive(Clone, Copy)]
 pub struct StoreState {
     pub detail: Signal<StoreDetail>,
+    /// The photo open in the full-screen viewer, by index into `photos`.
+    pub viewing: Signal<Option<usize>>,
 }
 
 impl StoreState {
@@ -68,7 +71,8 @@ pub fn StorePanel(id: i64) -> Element {
 #[component]
 fn StoreView(detail: StoreDetail) -> Element {
     let detail = use_signal(|| detail);
-    use_context_provider(|| StoreState { detail });
+    let viewing = use_signal(|| None);
+    use_context_provider(|| StoreState { detail, viewing });
     let d = detail.read();
 
     rsx! {
@@ -88,6 +92,7 @@ fn StoreView(detail: StoreDetail) -> Element {
                 }
                 manage::StoreActions {}
             }
+            gallery::PhotoViewer {}
         }
     }
 }
