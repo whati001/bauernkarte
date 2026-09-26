@@ -1,5 +1,5 @@
 //! The header: the shop's first photo, or a drawn farm scene when it has
-//! none, with the name set over it and the two ways out on top.
+//! none, with the name set over it and the two ways out pinned on top.
 
 use dioxus::prelude::*;
 use dioxus_icons::lucide;
@@ -28,6 +28,28 @@ pub fn StoreHero() -> Element {
         d.offers.iter().take(3).map(|o| o.icon.clone().unwrap_or_else(|| "🌾".into())).collect();
 
     rsx! {
+        // Outside the header, which clips: the bar stays pinned to the top
+        // of the panel while the rest of the store scrolls beneath it.
+        div { class: Styles::hero_bar,
+            Link {
+                class: Styles::hero_button.to_string(),
+                to: Route::SearchPanel {},
+                title: locale.t("action-back-to-search"),
+                "aria-label": locale.t("action-back-to-search"),
+                lucide::ChevronLeft { size: 18 }
+            }
+            button {
+                class: Styles::hero_button,
+                r#type: "button",
+                title: locale.t("detail-close"),
+                "aria-label": locale.t("detail-close"),
+                onclick: move |_| {
+                    nav.push(Route::SearchPanel {});
+                    map.sidebar_open.set(false);
+                },
+                lucide::X { size: 18 }
+            }
+        }
         header { class: Styles::hero,
             if let Some(photo) = d.photos.first() {
                 button {
@@ -39,26 +61,6 @@ pub fn StoreHero() -> Element {
                 }
             } else {
                 FarmScene { hue, icons }
-            }
-            div { class: Styles::hero_bar,
-                Link {
-                    class: Styles::hero_button.to_string(),
-                    to: Route::SearchPanel {},
-                    title: locale.t("action-back-to-search"),
-                    "aria-label": locale.t("action-back-to-search"),
-                    lucide::ChevronLeft { size: 18 }
-                }
-                button {
-                    class: Styles::hero_button,
-                    r#type: "button",
-                    title: locale.t("detail-close"),
-                    "aria-label": locale.t("detail-close"),
-                    onclick: move |_| {
-                        nav.push(Route::SearchPanel {});
-                        map.sidebar_open.set(false);
-                    },
-                    lucide::X { size: 18 }
-                }
             }
             h2 { class: Styles::hero_title, "{d.name}" }
         }

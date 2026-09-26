@@ -84,6 +84,26 @@ fn ProductPicker(on_pick: EventHandler) -> Element {
     let route = use_route::<Route>();
     let selected = use_memo(move || (map.product)());
 
+    // Typing clears the combobox's highlight, so Enter alone picked
+    // nothing and the filter never changed. Moving to the first match
+    // just before Enter lands lets the combobox pick it as usual.
+    use_effect(|| {
+        document::eval(
+            r#"
+            if (!window.bkPickerEnter) {
+                window.bkPickerEnter = true;
+                document.addEventListener("keydown", (e) => {
+                    const input = e.target.closest?.(".nav-search input");
+                    if (!input || e.key !== "Enter" || input.getAttribute("aria-expanded") !== "true") return;
+                    const list = document.getElementById(input.getAttribute("aria-controls"));
+                    if (!list || list.querySelector('[role=option][data-highlighted="true"]')) return;
+                    input.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+                }, true);
+            }
+            "#,
+        );
+    });
+
     rsx! {
         div { class: "nav-search",
             span { class: "nav-search-icon", "aria-hidden": "true",

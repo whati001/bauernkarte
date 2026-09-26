@@ -707,6 +707,16 @@ a:hover { text-decoration: underline; }
 .toolbar-select .dx-select-expand-icon { width: 16px; height: 16px; }
 .toolbar-select > button:hover,
 .toolbar-select > button:focus-visible { background: var(--shell-2); color: var(--text-primary); }
+/* The product list is the whole catalog. Unbounded it ran far past the
+   sidebar's bottom, where it was clipped: the lower entries couldn't be
+   reached, and scrolling moved the cards beneath it instead (the list
+   rides along with the sticky toolbar), so taps landed on a shop. It
+   scrolls on its own instead, within what's left of the viewport. */
+.toolbar-select [role="listbox"] {
+  max-height: min(20rem, 50dvh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
 
 .result-count { margin: 0 0 0.5rem; font-size: 0.875rem; color: var(--text-secondary); }
 .results {
