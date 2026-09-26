@@ -16,9 +16,10 @@ Needs `docker` with the compose plugin (or `podman compose`) and
 [`uv`](https://docs.astral.sh/uv/):
 
 ```sh
-./bootstrap.py env       # .env with generated DB + admin passwords (printed once)
-./bootstrap.py up        # build the image, start db + app, wait until healthy
-./bootstrap.py stores    # optional: seed farm shops from OpenStreetMap (--demo: + one demo shop)
+./service.py env       # .env with generated DB + admin passwords (printed once)
+./service.py up        # build the image, start db + app, wait until healthy
+./service.py stores    # optional: seed farm shops from OpenStreetMap (--demo: + one demo shop)
+./service.py down      # stop the containers (data is kept)
 ```
 
 The app is on <http://127.0.0.1:3000>. Sign in as `bauernkarte@rehka.dev`
@@ -40,7 +41,7 @@ edit it, and run `docker compose up -d --build`.
 
 Deploying to a server is the same `env` + `up` as above. The app is
 then served over plain HTTP on `APP_PORT`. For updates, backups and
-restores, see [`bootstrap.md`](bootstrap.md).
+restores, see [`service.md`](service.md).
 
 Without HTTPS, browsers treat the app as insecure: the PWA (service
 worker, install prompt) and the "you are here" location dot only work
@@ -53,11 +54,11 @@ The app reads these at runtime. Compose sets them from `.env`:
 | Var | Default | Notes |
 |---|---|---|
 | `DATABASE_URL` | required | `postgres://user:pass@host:port/db`. Compose builds it from `DB_USER`/`DB_PWD`/`DB_NAME` |
-| `ADMIN_PASSWORD` | unset | Applied once to `bauernkarte@rehka.dev` if it has no password yet. It must pass the password policy, or startup fails |
+| `ADMIN_PASSWORD` | unset | Password of `bauernkarte@rehka.dev`, applied on every startup; it can't be changed in the app. It must pass the password policy, or startup fails |
 | `SECURE_COOKIES` | `true` | Set `false` for plain HTTP, or login silently fails |
 | `IP`, `PORT` | `127.0.0.1`, `8080` | Listen address of the release server. The image sets `0.0.0.0:8080` |
 
-`.env` also carries values only compose and `bootstrap.py` use:
+`.env` also carries values only compose and `service.py` use:
 `DB_HOST`/`DB_PORT` (host-side db access) and `APP_PORT` (where the
 app is published). Release builds log at `INFO`.
 
@@ -68,15 +69,15 @@ Needs Rust (stable) with the `wasm32-unknown-unknown` target, the
 and `sqlx-cli` (only to refresh the query cache):
 
 ```sh
-./bootstrap.py env       # once
-./bootstrap.py db        # just the database, on 127.0.0.1:5434
+./service.py env       # once
+./service.py db        # just the database, on 127.0.0.1:5434
 dx serve                 # http://127.0.0.1:8080, reads .env, migrates on start
 ```
 
 Queries are checked at compile time against `DATABASE_URL`. Without a
 database, and in the Docker build, `SQLX_OFFLINE=true` uses the
 checked-in `.sqlx/` cache. After changing a query or migration, run
-`./bootstrap.py prepare` and commit `.sqlx/`, or the image build fails.
+`./service.py prepare` and commit `.sqlx/`, or the image build fails.
 
 Tests: `cargo test --no-default-features --features server`.
 
@@ -141,7 +142,7 @@ Every store is a farmers' market, a vending machine or a farm shop
 decides the map pin: a basket, a machine or a shop front, each in its
 own colour (`--pin-*` tokens in `assets/app.css`, icons in
 `public/static/bk-map.js`). The store panel shows it too. The OSM seed
-derives it from the tags (see `bootstrap.md`). Stores that existed
+derives it from the tags (see `service.md`). Stores that existed
 before types did default to market.
 
 ## Differences from the original

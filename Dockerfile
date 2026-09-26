@@ -20,7 +20,7 @@ COPY . .
 # sqlx's query!/query_as! macros normally check each query against a
 # live database at compile time; SQLX_OFFLINE makes them read the
 # checked-in `.sqlx/` cache instead, since no database is reachable
-# during `docker build` (refresh it with `./bootstrap.py prepare`).
+# during `docker build` (refresh it with `./service.py prepare`).
 ENV SQLX_OFFLINE=true
 # Builds the WASM client (wasm-bindgen + wasm-opt, which dx fetches
 # itself) and the server binary, and lays them out as `server` plus

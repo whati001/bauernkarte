@@ -26,8 +26,8 @@ pub struct Config {
     /// The `Secure` cookie flag — only meaningful behind real TLS. Set
     /// `SECURE_COOKIES=false` for local HTTP dev, or login silently fails.
     pub secure_cookies: bool,
-    /// Applied once, to the seeded admin account, on the first startup
-    /// that finds it without a password (see `auth::seed_admin_password`).
+    /// The seeded admin account's password, re-applied on every startup
+    /// (see `auth::sync_admin_password`).
     pub admin_password: Option<String>,
 }
 
@@ -63,7 +63,7 @@ async fn init_once(config: &Config) -> anyhow::Result<PostgresStore> {
             let pool = PgPoolOptions::new().max_connections(10).connect(&config.database_url).await?;
             tracing::info!("database pool connected");
             sqlx::migrate!("./migrations").run(&pool).await?;
-            auth::seed_admin_password(&pool, config.admin_password.as_deref()).await?;
+            auth::sync_admin_password(&pool, config.admin_password.as_deref()).await?;
 
             let store = PostgresStore::new(pool.clone());
             store.migrate().await?;

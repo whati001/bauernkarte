@@ -362,6 +362,7 @@ error-email-invalid = Please enter a valid email address.
 error-email-taken = This email address is already registered.
 error-login-failed = Wrong email or password.
 error-current-password-wrong = Current password is wrong.
+error-admin-password-env = This account's password is set by ADMIN_PASSWORD in .env — change it there and restart the app.
 error-product-required = Please choose a product.
 error-product-name-required = Please enter a product name.
 error-product-name-taken = A product with this name already exists — please pick it from the list.

@@ -6,6 +6,6 @@
 .claude/
 .agents/
 /scripts
-bootstrap.py
+service.py
 docker-compose.yml
 Dockerfile

@@ -362,6 +362,7 @@ error-email-invalid = Bitte eine gültige E-Mail-Adresse angeben.
 error-email-taken = Diese E-Mail-Adresse ist bereits registriert.
 error-login-failed = E-Mail oder Passwort ist falsch.
 error-current-password-wrong = Aktuelles Passwort ist falsch.
+error-admin-password-env = Das Passwort dieses Kontos wird über ADMIN_PASSWORD in .env festgelegt — dort ändern und die App neu starten.
 error-product-required = Bitte ein Produkt wählen.
 error-product-name-required = Bitte einen Produktnamen angeben.
 error-product-name-taken = Ein Produkt mit diesem Namen gibt es schon — bitte aus der Liste wählen.

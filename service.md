@@ -1,6 +1,6 @@
 # Bootstrapping and deploying
 
-`bootstrap.py` drives the containerized stack in `docker-compose.yml`:
+`service.py` drives the containerized stack in `docker-compose.yml`:
 
 | Service | What | Notes |
 |---|---|---|
@@ -8,15 +8,15 @@
 | `app` | this repo, built by `Dockerfile` | runs pending migrations on startup; `/healthz` backs the container healthcheck |
 
 Everything is driven by `.env`, and no credentials live in
-`bootstrap.py` or `docker-compose.yml`. `DB_USER`/`DB_PWD`/`DB_NAME` are
+`service.py` or `docker-compose.yml`. `DB_USER`/`DB_PWD`/`DB_NAME` are
 the single source of truth: compose passes them to `db` and builds the
-container-side `DATABASE_URL` from them, and `bootstrap.py` builds the
+container-side `DATABASE_URL` from them, and `service.py` builds the
 host-side one from the same values plus `DB_HOST`/`DB_PORT`.
 
 ## Prerequisites
 
 - `docker` with the compose plugin, or `podman` with `podman compose` /
-  `podman-compose`. `bootstrap.py` uses whichever it finds.
+  `podman-compose`. `service.py` uses whichever it finds.
 - `uv`. The script's shebang runs it under `uv run --script`, which
   installs its one dependency (`click`) on the fly.
 - An x86_64 host with a few GB of RAM for the first image build. The
@@ -27,17 +27,18 @@ A Rust toolchain is **not** needed to deploy. Only `prepare` uses one.
 ## Usage
 
 ```sh
-./bootstrap.py env       # write .env (random secrets)
-./bootstrap.py up        # build + start the stack, wait until healthy
-./bootstrap.py stores    # seed OSM farm-shop/vending data (--demo: + one demo shop)
-./bootstrap.py backup    # pg_dump to bauernkarte-<timestamp>.dump
-./bootstrap.py db        # start only the db (for host-side `dx serve`)
-./bootstrap.py prepare   # refresh .sqlx/ (developers, after changing a query)
-./bootstrap.py cleanup   # remove containers, the app image and the pgdata volume
+./service.py env       # create .env once (random secrets)
+./service.py up        # build + start the stack, wait until healthy
+./service.py down      # stop + remove the containers (keeps data and image)
+./service.py stores    # seed OSM farm-shop/vending data (--demo: + one demo shop)
+./service.py backup    # pg_dump to bauernkarte-<timestamp>.dump
+./service.py db        # start only the db (for host-side `dx serve`)
+./service.py prepare   # refresh .sqlx/ (developers, after changing a query)
+./service.py cleanup   # remove containers, the app image and the pgdata volume
 ```
 
-A fresh local install is `./bootstrap.py env && ./bootstrap.py up`, then
-optionally `./bootstrap.py stores`. The app is on
+A fresh local install is `./service.py env && ./service.py up`, then
+optionally `./service.py stores`. The app is on
 `http://127.0.0.1:3000`. Every command is safe to re-run: `env` leaves
 an existing `.env` alone, `up` is a no-op for unchanged services,
 migrations are tracked in the database, and the seed SQL is idempotent.
@@ -48,15 +49,16 @@ Same as locally, on the server:
 
 ```sh
 git clone <repo> bauernkarte && cd bauernkarte
-./bootstrap.py env
-./bootstrap.py up
+./service.py env
+./service.py up
 ```
 
 The app is served over plain HTTP on `APP_PORT` (default `3000`), on
 every interface of the host. `env` prints the generated admin password
-(`bauernkarte@rehka.dev`), which also stays in `.env`. The app applies it
-once, on first start. Change it in the app afterwards; a password
-changed there survives restarts.
+(`bauernkarte@rehka.dev`), which also stays in `.env`. `.env` is the only
+place it lives: the app applies it on every start, and it can't be
+changed through the app. To change it, edit `ADMIN_PASSWORD` in `.env`
+and run `./service.py up`.
 
 > Docker's published ports bypass host firewalls such as `ufw`. The db
 > is therefore bound to `127.0.0.1`; the app port is public by design.
@@ -65,8 +67,8 @@ changed there survives restarts.
 
 ```sh
 git pull
-./bootstrap.py backup   # optional but cheap
-./bootstrap.py up       # rebuilds the image; new migrations run on start
+./service.py backup   # optional but cheap
+./service.py up       # rebuilds the image; new migrations run on start
 ```
 
 ## What each subcommand does
@@ -74,19 +76,19 @@ git pull
 ### `env`
 
 Writes `.env` (mode `600`) with a random `DB_PWD` and `ADMIN_PASSWORD`.
-`--force` overwrites an existing file. Without it, an existing file is
-left alone.
+It never touches an existing file — nothing does. From then on `.env` is
+edited by hand only.
 
 | Key | Default | Used by |
 |---|---|---|
-| `DB_USER`, `DB_PWD`, `DB_NAME` | `bauernkarte` / random / `bauernkarte` | compose (`db` env and `app`'s `DATABASE_URL`), bootstrap.py |
+| `DB_USER`, `DB_PWD`, `DB_NAME` | `bauernkarte` / random / `bauernkarte` | compose (`db` env and `app`'s `DATABASE_URL`), service.py |
 | `DB_HOST`, `DB_PORT` | `127.0.0.1` / `5434` | the host's view of the db |
 | `DATABASE_URL` | derived | host-side `dx serve`, `cargo sqlx` |
-| `ADMIN_PASSWORD` | random | the app, on first start |
+| `ADMIN_PASSWORD` | random | the app, on every start |
 | `APP_PORT` | `3000` | the host port compose publishes `app` on |
 | `SECURE_COOKIES` | `false` | the app. It must stay `false` over plain HTTP |
 
-`DATABASE_URL` is derived from the `DB_*` keys. `bootstrap.py`
+`DATABASE_URL` is derived from the `DB_*` keys. `service.py`
 recomputes it and warns if the file's copy has drifted.
 
 ### `db`
@@ -111,6 +113,12 @@ The image is built with `SQLX_OFFLINE=true`: the `query!` macros read
 the checked-in `.sqlx/` cache instead of a live database. A query
 changed without refreshing that cache fails the build with "no cached
 data for this query". Run `prepare` and commit `.sqlx/`.
+
+### `down`
+
+`compose down`: stops and removes both containers and the network. The
+`pgdata` volume and the built image stay, so `up` brings the stack back
+with its data. Use `cleanup` to remove those too.
 
 ### `prepare`
 
@@ -160,7 +168,8 @@ change the database's credentials. Either change them in Postgres too
 (`ALTER USER ... PASSWORD ...`), or start over:
 
 ```sh
-./bootstrap.py cleanup
-./bootstrap.py env --force
-./bootstrap.py up
+./service.py cleanup
+rm .env               # or edit the DB_* values by hand
+./service.py env
+./service.py up
 ```

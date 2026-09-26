@@ -44,7 +44,7 @@ Usage:
 By default this picks fetch-vs-replay from whether stdin is a tty, which
 only works when run directly in an interactive terminal. `--live` forces
 a fresh Overpass fetch regardless of stdin — needed for any programmatic
-caller (bootstrap.py's `stores` subcommand) whose own stdin isn't a real
+caller (service.py's `stores` subcommand) whose own stdin isn't a real
 tty either.
 
 Everything is inserted `approved = true, created_by = NULL` — this is

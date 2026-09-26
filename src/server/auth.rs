@@ -1,6 +1,6 @@
 //! Sessions and passwords: Argon2id hashing, the session's user id, the
 //! "who is asking" lookups every server function starts with, and the
-//! one-time password for the seeded admin account.
+//! seeded admin account's password, kept in sync with `ADMIN_PASSWORD`.
 
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
@@ -70,40 +70,32 @@ pub async fn require_admin(session: &Session) -> ApiResult<User> {
     }
 }
 
-/// Gives the seeded `bauernkarte@rehka.dev` account its password on the
-/// first startup that finds it without one. A migration can't: it has no
-/// access to `.env` and a committed hash would be a published password.
-/// Runs once — a password changed through the account page sticks.
-pub async fn seed_admin_password(pool: &PgPool, admin_password: Option<&str>) -> anyhow::Result<()> {
-    let needs_password = sqlx::query_scalar!(
-        r#"select exists(select 1 from "user" where email = $1 and pwd_hash = '') as "exists!""#,
-        SEED_ADMIN_EMAIL
-    )
-    .fetch_one(pool)
-    .await?;
-    if !needs_password {
+/// Makes the seeded `bauernkarte@rehka.dev` account's password match
+/// `ADMIN_PASSWORD` on every startup — `.env` is the one place it lives,
+/// so editing it there and restarting is how it changes. A migration
+/// can't do this: it has no access to `.env` and a committed hash would
+/// be a published password.
+pub async fn sync_admin_password(pool: &PgPool, admin_password: Option<&str>) -> anyhow::Result<()> {
+    let Some(admin) = user::find_by_email(pool, SEED_ADMIN_EMAIL).await? else {
+        tracing::warn!(email = SEED_ADMIN_EMAIL, "seeded admin account not found");
         return Ok(());
-    }
+    };
     let Some(password) = admin_password else {
         tracing::warn!(
             email = SEED_ADMIN_EMAIL,
-            "admin account has no password and ADMIN_PASSWORD is unset — set it in .env and restart"
+            "ADMIN_PASSWORD is unset — set it in .env and restart"
         );
         return Ok(());
     };
-    // A weak ADMIN_PASSWORD fails loudly rather than quietly creating the
+    if verify_password(password, &admin.pwd_hash) {
+        return Ok(());
+    }
+    // A weak ADMIN_PASSWORD fails loudly rather than quietly guarding the
     // one account that can moderate everything.
     if let Err(rule) = credentials::check_password(password, "BauernKarte Admin", SEED_ADMIN_EMAIL) {
         anyhow::bail!("ADMIN_PASSWORD does not meet the password policy ({rule:?})");
     }
-    let hash = hash_password(password)?;
-    sqlx::query!(
-        r#"update "user" set pwd_hash = $2, modified = now() where email = $1 and pwd_hash = ''"#,
-        SEED_ADMIN_EMAIL,
-        hash
-    )
-    .execute(pool)
-    .await?;
+    user::update_password(pool, admin.id, &hash_password(password)?).await?;
     tracing::info!(email = SEED_ADMIN_EMAIL, "admin password set from ADMIN_PASSWORD");
     Ok(())
 }

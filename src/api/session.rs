@@ -102,6 +102,10 @@ pub async fn update_profile(name: String, email: String) -> ApiResult<SessionUse
 #[post("/api/account/password", session: tower_sessions::Session)]
 pub async fn change_password(current_password: String, new_password: String) -> ApiResult<()> {
     let user = auth::require_user(&session).await?;
+    // Its password lives in `.env` and is re-applied on every startup.
+    if user.email.eq_ignore_ascii_case(auth::SEED_ADMIN_EMAIL) {
+        return Err(AppError::invalid("error-admin-password-env"));
+    }
     if !auth::verify_password(&current_password, &user.pwd_hash) {
         tracing::warn!(user_id = %user.id, "password change rejected: wrong current password");
         return Err(AppError::invalid("error-current-password-wrong"));

@@ -1,9 +1,9 @@
 # The deployable stack: `db` (Postgres + PostGIS) and `app` (this repo,
 # via `Dockerfile`).
 #
-# Usage: `./bootstrap.py env` (writes `.env` with generated secrets),
-# then `./bootstrap.py up` — or `docker compose up -d --build` (podman
-# compose works too). See `bootstrap.md`.
+# Usage: `./service.py env` (writes `.env` with generated secrets),
+# then `./service.py up` — or `docker compose up -d --build` (podman
+# compose works too). See `service.md`.
 #
 # Every value below is interpolated from `.env` in this directory, which
 # compose auto-loads. `app`'s DATABASE_URL is deliberately *not* `.env`'s
@@ -17,9 +17,9 @@ services:
     image: docker.io/postgis/postgis:18-3.6-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${DB_USER:?run ./bootstrap.py env}
-      POSTGRES_PASSWORD: ${DB_PWD:?run ./bootstrap.py env}
-      POSTGRES_DB: ${DB_NAME:?run ./bootstrap.py env}
+      POSTGRES_USER: ${DB_USER:?run ./service.py env}
+      POSTGRES_PASSWORD: ${DB_PWD:?run ./service.py env}
+      POSTGRES_DB: ${DB_NAME:?run ./service.py env}
     volumes:
       # Postgres 18 moved PGDATA to `/var/lib/postgresql/18/docker` and
       # the volume one level up, to `/var/lib/postgresql` — a `pgdata`
@@ -42,7 +42,7 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: postgres://${DB_USER}:${DB_PWD}@db:5432/${DB_NAME}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?run ./bootstrap.py env}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?run ./service.py env}
       # Plain HTTP, so `false`: a `Secure` session cookie over HTTP makes
       # login silently fail.
       SECURE_COOKIES: ${SECURE_COOKIES:-false}
