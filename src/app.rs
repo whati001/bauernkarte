@@ -101,6 +101,7 @@ pub fn App() -> Element {
         document::Script { src: "/static/leaflet/leaflet.js", defer: true }
         document::Script { src: "/static/bk-map.js", defer: true }
         document::Script { src: "/static/pwa.js", defer: true }
+        document::Script { src: "/static/tap-guard.js", defer: true }
         SuspenseBoundary {
             fallback: |_| rsx! {},
             SessionRoot {}

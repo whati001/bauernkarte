@@ -17,6 +17,25 @@ pub fn matches(query: &str, text: &str) -> bool {
     })
 }
 
+/// Where `text` belongs among the matches for `query`, best first: the
+/// whole name, then a name starting with the query, then a name word
+/// starting with it, then the rest (typos, the middle of a word). Only
+/// orders — `matches` decides what shows. An empty query ranks
+/// everything the same, so a stable sort keeps the original order.
+pub fn rank(query: &str, text: &str) -> u8 {
+    let query = words(&fold(query)).collect::<Vec<_>>().join(" ");
+    let text = words(&fold(text)).collect::<Vec<_>>().join(" ");
+    if text == query {
+        0
+    } else if text.starts_with(&query) {
+        1
+    } else if words(&text).any(|word| word.starts_with(&query)) {
+        2
+    } else {
+        3
+    }
+}
+
 fn words(s: &str) -> impl Iterator<Item = &str> {
     s.split(' ').filter(|w| !w.is_empty())
 }
@@ -133,6 +152,22 @@ mod tests {
     fn every_word_must_match() {
         assert!(matches("bio eier", "Bio-Eier"));
         assert!(!matches("bio honig", "Bio-Eier"));
+    }
+
+    #[test]
+    fn exact_names_rank_first() {
+        let mut names = vec!["Buttermilch", "Milch", "Milchprodukte"];
+        names.sort_by_key(|name| rank("Milch", name));
+        assert_eq!(names, ["Milch", "Milchprodukte", "Buttermilch"]);
+
+        let mut names = vec!["Apfelcider", "Boskoop-Äpfel", "Äpfel"];
+        names.sort_by_key(|name| rank("apfel", name));
+        assert_eq!(names, ["Äpfel", "Apfelcider", "Boskoop-Äpfel"]);
+    }
+
+    #[test]
+    fn empty_query_keeps_the_order() {
+        assert_eq!(rank("", "Buttermilch"), rank(" ", "Milch"));
     }
 
     #[test]

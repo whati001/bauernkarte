@@ -83,6 +83,15 @@ fn ProductPicker(on_pick: EventHandler) -> Element {
     let nav = navigator();
     let route = use_route::<Route>();
     let selected = use_memo(move || (map.product)());
+    // Best match on top: "Milch" lists Milch before Buttermilch, so the
+    // first entry — the one Enter picks — is the product that was typed.
+    let mut query = use_signal(String::new);
+    let ranked = use_memo(move || {
+        let query = query();
+        let mut products = catalog();
+        products.sort_by_key(|p| fuzzy::rank(&query, &p.name));
+        products
+    });
 
     // Typing clears the combobox's highlight, so Enter alone picked
     // nothing and the filter never changed. Moving to the first match
@@ -123,11 +132,12 @@ fn ProductPicker(on_pick: EventHandler) -> Element {
                         nav.push(Route::SearchPanel {});
                     }
                 },
+                on_query_change: move |q: String| query.set(q),
                 filter: Callback::new(|(query, text): (String, String)| fuzzy::matches(&query, &text)),
                 placeholder: locale.t("nav-search-placeholder"),
                 aria_label: locale.t("nav-search-label"),
                 list_aria_label: locale.t("nav-search-label"),
-                for (index , product) in catalog().into_iter().enumerate() {
+                for (index , product) in ranked().into_iter().enumerate() {
                     ComboboxOption::<i64> {
                         key: "{product.id}",
                         index,
