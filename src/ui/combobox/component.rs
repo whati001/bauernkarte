@@ -116,7 +116,12 @@ pub fn ComboboxEmpty(props: ComboboxEmptyProps) -> Element {
 
 #[component]
 pub fn ComboboxOption<T: Clone + PartialEq + 'static>(props: ComboboxOptionProps<T>) -> Element {
-    let base = attributes!(div { class: Styles::dx_combobox_option });
+    // Picks on `pointerup`, so the tap's stray `click` needs cancelling
+    // (see `/static/tap-guard.js`).
+    let base = attributes!(div {
+        class: Styles::dx_combobox_option,
+        "data-tap-guard": "true",
+    });
     let merged = merge_attributes(vec![base, props.attributes]);
 
     rsx! {

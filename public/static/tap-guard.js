@@ -10,10 +10,15 @@
 // skip that click. The listener goes on the option itself: it's already
 // removed from the page when `touchend` fires, so the event no longer
 // bubbles up to `document`.
+//
+// Only the options that mark themselves `data-tap-guard` are guarded, and
+// this is why they have to: a menu item picks on that very `click`, not on
+// `pointerup`, so cancelling it would leave the item dead to the touch —
+// and every menu shares `role=option` with the lists above.
 document.addEventListener(
   "touchstart",
   (e) => {
-    const option = e.target.closest?.("[role=option]");
+    const option = e.target.closest?.("[data-tap-guard]");
     if (!option) return;
     option.addEventListener("touchend", (end) => end.cancelable && end.preventDefault(), {
       once: true,
