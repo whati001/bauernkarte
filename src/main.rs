@@ -14,10 +14,10 @@ mod models;
 mod opening_hours;
 mod seasonality;
 // Vendored library components: not every variant or re-export is used.
-#[allow(dead_code, unused_imports)]
-mod ui;
 #[cfg(feature = "server")]
 mod server;
+#[allow(dead_code, unused_imports)]
+mod ui;
 
 fn main() {
     #[cfg(all(feature = "server", debug_assertions))]

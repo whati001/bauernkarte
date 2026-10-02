@@ -3,7 +3,7 @@
 
 use dioxus::prelude::*;
 
-use super::{use_store, Styles};
+use super::{Styles, use_store};
 use crate::{
     i18n::use_locale,
     ui::avatar::{Avatar, AvatarFallback, AvatarImage, AvatarImageSize},

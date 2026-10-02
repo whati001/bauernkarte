@@ -3,8 +3,8 @@
 //! seeded admin account's password, kept in sync with `ADMIN_PASSWORD`.
 
 use argon2::{
-    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
+    password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng},
 };
 use sqlx::PgPool;
 use tower_sessions::Session;
@@ -30,7 +30,9 @@ pub fn verify_password(password: &str, encoded_hash: &str) -> bool {
     let Ok(parsed) = PasswordHash::new(encoded_hash) else {
         return false;
     };
-    Argon2::default().verify_password(password.as_bytes(), &parsed).is_ok()
+    Argon2::default()
+        .verify_password(password.as_bytes(), &parsed)
+        .is_ok()
 }
 
 pub async fn log_in(session: &Session, user_id: i64) -> anyhow::Result<()> {
@@ -58,7 +60,9 @@ pub async fn current_user(session: &Session) -> ApiResult<Option<User>> {
 /// Catalog editing deliberately allows *any* signed-in user to edit any
 /// entity, so there is no ownership variant of this.
 pub async fn require_user(session: &Session) -> ApiResult<User> {
-    current_user(session).await?.ok_or_else(AppError::unauthorized)
+    current_user(session)
+        .await?
+        .ok_or_else(AppError::unauthorized)
 }
 
 /// 404, not 403, for anyone who isn't an admin — a moderation URL that
@@ -75,7 +79,10 @@ pub async fn require_admin(session: &Session) -> ApiResult<User> {
 /// so editing it there and restarting is how it changes. A migration
 /// can't do this: it has no access to `.env` and a committed hash would
 /// be a published password.
-pub async fn sync_admin_password(pool: &PgPool, admin_password: Option<&str>) -> anyhow::Result<()> {
+pub async fn sync_admin_password(
+    pool: &PgPool,
+    admin_password: Option<&str>,
+) -> anyhow::Result<()> {
     let Some(admin) = user::find_by_email(pool, SEED_ADMIN_EMAIL).await? else {
         tracing::warn!(email = SEED_ADMIN_EMAIL, "seeded admin account not found");
         return Ok(());
@@ -92,10 +99,14 @@ pub async fn sync_admin_password(pool: &PgPool, admin_password: Option<&str>) ->
     }
     // A weak ADMIN_PASSWORD fails loudly rather than quietly guarding the
     // one account that can moderate everything.
-    if let Err(rule) = credentials::check_password(password, "BauernKarte Admin", SEED_ADMIN_EMAIL) {
+    if let Err(rule) = credentials::check_password(password, "BauernKarte Admin", SEED_ADMIN_EMAIL)
+    {
         anyhow::bail!("ADMIN_PASSWORD does not meet the password policy ({rule:?})");
     }
     user::update_password(pool, admin.id, &hash_password(password)?).await?;
-    tracing::info!(email = SEED_ADMIN_EMAIL, "admin password set from ADMIN_PASSWORD");
+    tracing::info!(
+        email = SEED_ADMIN_EMAIL,
+        "admin password set from ADMIN_PASSWORD"
+    );
     Ok(())
 }

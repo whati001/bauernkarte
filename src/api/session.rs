@@ -18,7 +18,10 @@ use crate::{
 #[get("/api/session", session: tower_sessions::Session, headers: dioxus::fullstack::HeaderMap)]
 pub async fn session_info() -> ApiResult<SessionInfo> {
     let user = auth::current_user(&session).await?;
-    Ok(SessionInfo { user: user.map(|u| u.to_session()), locale: locale_from_headers(&headers) })
+    Ok(SessionInfo {
+        user: user.map(|u| u.to_session()),
+        locale: locale_from_headers(&headers),
+    })
 }
 
 #[post("/api/login", session: tower_sessions::Session)]

@@ -4,26 +4,33 @@
 
 use dioxus::prelude::*;
 use dioxus_icons::lucide;
-use dioxus_primitives::toast::{use_toast, ToastOptions};
+use dioxus_primitives::toast::{ToastOptions, use_toast};
 
 use crate::{
     api::{
         admin::{
-            admin_create_user, admin_delete_image, admin_delete_product, admin_delete_user, admin_moderate,
-            admin_queue, admin_rail, admin_revert, admin_save_site_info, admin_set_admin, admin_site_info,
-            admin_update_image, admin_update_product, admin_users,
+            admin_create_user, admin_delete_image, admin_delete_product, admin_delete_user,
+            admin_moderate, admin_queue, admin_rail, admin_revert, admin_save_site_info,
+            admin_set_admin, admin_site_info, admin_update_image, admin_update_product,
+            admin_users,
         },
         error::AppError,
     },
-    app::{use_session, Route},
+    app::{Route, use_session},
     components::{
         common::{Field, FormError},
         navbar::Navbar,
     },
     i18n::use_locale,
-    models::{AdminImageRow, AdminProductRow, AdminUserRow, Entity, QueuePage, QueueTab, SiteInfo, DEFAULT_PRODUCT_ICON, PRODUCT_ICONS},
+    models::{
+        AdminImageRow, AdminProductRow, AdminUserRow, DEFAULT_PRODUCT_ICON, Entity, PRODUCT_ICONS,
+        QueuePage, QueueTab, SiteInfo,
+    },
     ui::{
-        alert_dialog::{AlertDialog, AlertDialogAction, AlertDialogActions, AlertDialogCancel, AlertDialogDescription, AlertDialogTitle},
+        alert_dialog::{
+            AlertDialog, AlertDialogAction, AlertDialogActions, AlertDialogCancel,
+            AlertDialogDescription, AlertDialogTitle,
+        },
         badge::{Badge, BadgeVariant},
         button::{Button, ButtonSize, ButtonVariant},
         card::{Card, CardContent, CardHeader, CardTitle},
@@ -124,7 +131,10 @@ pub fn AdminIndex() -> Element {
             let target = counts
                 .iter()
                 .find(|c| c.pending > 0)
-                .map(|c| Route::AdminQueue { slug: c.entity.slug().into(), tab: "pending".into() })
+                .map(|c| Route::AdminQueue {
+                    slug: c.entity.slug().into(),
+                    tab: "pending".into(),
+                })
                 .unwrap_or(Route::AdminUsers {});
             nav.replace(target);
         }
@@ -140,21 +150,26 @@ pub fn AdminQueue(slug: String, tab: String) -> Element {
         return rsx! { p { class: "admin-empty", {locale.t("error-not-found")} } };
     };
     let tabs = QueueTab::for_entity(entity);
-    let tab = Some(QueueTab::from_key(&tab)).filter(|t| tabs.contains(t)).unwrap_or(QueueTab::Pending);
+    let tab = Some(QueueTab::from_key(&tab))
+        .filter(|t| tabs.contains(t))
+        .unwrap_or(QueueTab::Pending);
     let mut rail_refresh = use_context::<RailRefresh>().0;
-    let mut page = use_resource(use_reactive!(|slug, tab| async move { admin_queue(slug, tab.key().to_string()).await }));
+    let mut page = use_resource(use_reactive!(|slug, tab| async move {
+        admin_queue(slug, tab.key().to_string()).await
+    }));
     let mut error = use_signal(|| None::<AppError>);
 
-    let act = move |run: std::pin::Pin<Box<dyn std::future::Future<Output = Result<(), AppError>>>>| {
-        spawn(async move {
-            match run.await {
-                Ok(()) => error.set(None),
-                Err(err) => error.set(Some(err)),
-            }
-            page.restart();
-            *rail_refresh.write() += 1;
-        });
-    };
+    let act =
+        move |run: std::pin::Pin<Box<dyn std::future::Future<Output = Result<(), AppError>>>>| {
+            spawn(async move {
+                match run.await {
+                    Ok(()) => error.set(None),
+                    Err(err) => error.set(Some(err)),
+                }
+                page.restart();
+                *rail_refresh.write() += 1;
+            });
+        };
 
     let data: Option<QueuePage> = page().and_then(Result::ok);
     let counts = data.as_ref().map(|d| d.counts.clone()).unwrap_or_default();
@@ -321,7 +336,10 @@ fn ProductRow(product: AdminProductRow, on_change: EventHandler<()>) -> Element 
     let mut editing = use_signal(|| false);
     let mut confirm = use_signal(|| false);
     let id = product.id;
-    let icon = product.icon.clone().unwrap_or_else(|| DEFAULT_PRODUCT_ICON.into());
+    let icon = product
+        .icon
+        .clone()
+        .unwrap_or_else(|| DEFAULT_PRODUCT_ICON.into());
 
     rsx! {
         article { class: "admin-row admin-product",
@@ -399,7 +417,10 @@ fn ProductEditForm(product: AdminProductRow, on_done: EventHandler<bool>) -> Ele
         async move {
             match admin_update_product(id, name(), description(), icon()).await {
                 Ok(()) => {
-                    toasts.success(locale.t_name("confirmation-updated", &name()), ToastOptions::new());
+                    toasts.success(
+                        locale.t_name("confirmation-updated", &name()),
+                        ToastOptions::new(),
+                    );
                     on_done.call(true);
                 }
                 Err(err) => error.set(Some(err)),
@@ -777,7 +798,10 @@ fn SiteInfoForm(info: SiteInfo) -> Element {
     };
 
     // Every field is optional free text; one input per `SiteInfo` field.
-    let text_field = move |id: &'static str, label_key: &'static str, get: fn(&SiteInfo) -> &String, set: fn(&mut SiteInfo, String)| {
+    let text_field = move |id: &'static str,
+                           label_key: &'static str,
+                           get: fn(&SiteInfo) -> &String,
+                           set: fn(&mut SiteInfo, String)| {
         rsx! {
             Field { label: locale.t(label_key), html_for: id,
                 Input { id, value: get(&form.read()).clone(), oninput: move |e: FormEvent| set(&mut form.write(), e.value()) }

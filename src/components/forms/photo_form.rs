@@ -4,7 +4,7 @@ use dioxus::prelude::*;
 use dioxus_icons::lucide;
 use dioxus_primitives::{
     checkbox::CheckboxState,
-    toast::{use_toast, ToastOptions},
+    toast::{ToastOptions, use_toast},
 };
 
 use crate::{
@@ -28,7 +28,13 @@ pub fn AddPhoto(id: i64) -> Element {
     // A portrait is never the store image, so ticking one clears the other.
     let mut is_owner = use_signal(|| false);
     let mut is_cover = use_signal(|| false);
-    let state = |on: bool| Some(if on { CheckboxState::Checked } else { CheckboxState::Unchecked });
+    let state = |on: bool| {
+        Some(if on {
+            CheckboxState::Checked
+        } else {
+            CheckboxState::Unchecked
+        })
+    };
 
     // Sent as-is as multipart: the file never passes through Rust on the
     // client side.

@@ -41,7 +41,9 @@ fn find(hours: &[DayHours], day: i16) -> Option<&DayHours> {
 
 /// "09:00" -> "9:00"; the panel's summary reads better without the pad.
 fn short_time(t: &str) -> &str {
-    t.strip_prefix('0').filter(|rest| rest.len() == 4).unwrap_or(t)
+    t.strip_prefix('0')
+        .filter(|rest| rest.len() == 4)
+        .unwrap_or(t)
 }
 
 /// The panel's headline hours: runs of consecutive days sharing the same
@@ -80,7 +82,11 @@ pub fn summary_lines(locale: Locale, hours: &[DayHours]) -> Vec<String> {
         } else {
             format!("{first}\u{2013}{}", locale.t(WEEKDAYS[i].1))
         };
-        lines.push(format!("{days} {}\u{2013}{}", short_time(open), short_time(close)));
+        lines.push(format!(
+            "{days} {}\u{2013}{}",
+            short_time(open),
+            short_time(close)
+        ));
         i += 1;
     }
     lines
@@ -115,7 +121,9 @@ pub fn today_status(hours: &[DayHours], day: i16, now: &str) -> Option<TodayStat
     }
     Some(match find(hours, day) {
         Some(h) if now < h.open.as_str() => TodayStatus::OpensAt(short_time(&h.open).to_string()),
-        Some(h) if now < h.close.as_str() => TodayStatus::OpenUntil(short_time(&h.close).to_string()),
+        Some(h) if now < h.close.as_str() => {
+            TodayStatus::OpenUntil(short_time(&h.close).to_string())
+        }
         _ => TodayStatus::Closed,
     })
 }
@@ -148,8 +156,14 @@ mod tests {
     #[test]
     fn today_status_before_during_and_after_hours() {
         let hours = [day(3, "09:00", "18:00")];
-        assert_eq!(today_status(&hours, 3, "08:15"), Some(TodayStatus::OpensAt("9:00".into())));
-        assert_eq!(today_status(&hours, 3, "09:00"), Some(TodayStatus::OpenUntil("18:00".into())));
+        assert_eq!(
+            today_status(&hours, 3, "08:15"),
+            Some(TodayStatus::OpensAt("9:00".into()))
+        );
+        assert_eq!(
+            today_status(&hours, 3, "09:00"),
+            Some(TodayStatus::OpenUntil("18:00".into()))
+        );
         assert_eq!(today_status(&hours, 3, "18:00"), Some(TodayStatus::Closed));
         assert_eq!(today_status(&hours, 4, "12:00"), Some(TodayStatus::Closed));
         assert_eq!(today_status(&[], 3, "12:00"), None);
@@ -158,17 +172,31 @@ mod tests {
     #[test]
     fn today_status_open_until_midnight() {
         let hours = [day(1, "00:00", "24:00")];
-        assert_eq!(today_status(&hours, 1, "23:59"), Some(TodayStatus::OpenUntil("24:00".into())));
+        assert_eq!(
+            today_status(&hours, 1, "23:59"),
+            Some(TodayStatus::OpenUntil("24:00".into()))
+        );
     }
 
     fn day(day: i16, open: &str, close: &str) -> DayHours {
-        DayHours { day, open: open.into(), close: close.into() }
+        DayHours {
+            day,
+            open: open.into(),
+            close: close.into(),
+        }
     }
 
     #[test]
     fn summary_groups_consecutive_days() {
-        let hours = [day(5, "09:00", "17:00"), day(6, "09:00", "17:00"), day(7, "09:00", "17:00")];
-        assert_eq!(summary_lines(Locale::En, &hours), vec!["Fri\u{2013}Sun 9:00\u{2013}17:00"]);
+        let hours = [
+            day(5, "09:00", "17:00"),
+            day(6, "09:00", "17:00"),
+            day(7, "09:00", "17:00"),
+        ];
+        assert_eq!(
+            summary_lines(Locale::En, &hours),
+            vec!["Fri\u{2013}Sun 9:00\u{2013}17:00"]
+        );
     }
 
     #[test]
@@ -181,21 +209,37 @@ mod tests {
         ];
         assert_eq!(
             summary_lines(Locale::De, &hours),
-            vec!["Mo\u{2013}Di 8:00\u{2013}18:00", "Do 8:00\u{2013}18:00", "Sa 8:00\u{2013}12:00"]
+            vec![
+                "Mo\u{2013}Di 8:00\u{2013}18:00",
+                "Do 8:00\u{2013}18:00",
+                "Sa 8:00\u{2013}12:00"
+            ]
         );
     }
 
     #[test]
     fn summary_says_daily_when_all_match() {
         let hours: Vec<_> = (1..=7).map(|d| day(d, "07:30", "19:00")).collect();
-        assert_eq!(summary_lines(Locale::En, &hours), vec!["Daily 7:30\u{2013}19:00"]);
+        assert_eq!(
+            summary_lines(Locale::En, &hours),
+            vec!["Daily 7:30\u{2013}19:00"]
+        );
     }
 
     #[test]
     fn validate_rejects_half_filled_and_reversed_days() {
-        assert_eq!(validate(&[day(1, "09:00", "")]), Err("error-hours-incomplete"));
-        assert_eq!(validate(&[day(1, "18:00", "09:00")]), Err("error-hours-order"));
+        assert_eq!(
+            validate(&[day(1, "09:00", "")]),
+            Err("error-hours-incomplete")
+        );
+        assert_eq!(
+            validate(&[day(1, "18:00", "09:00")]),
+            Err("error-hours-order")
+        );
         assert_eq!(validate(&[day(1, "", "")]), Ok(vec![]));
-        assert_eq!(validate(&[day(3, "09:00", "24:00")]).map(|v| v.len()), Ok(1));
+        assert_eq!(
+            validate(&[day(3, "09:00", "24:00")]).map(|v| v.len()),
+            Ok(1)
+        );
     }
 }

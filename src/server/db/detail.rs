@@ -2,12 +2,16 @@
 //! queries: the store, its offers with hearts, photos, the owner portrait
 //! and the star rating.
 
-use sqlx::{types::Json, PgPool};
+use sqlx::{PgPool, types::Json};
 
 use crate::models::{OfferDetail, StoreDetail, StoreKind};
 use crate::server::db::{image, review, store};
 
-pub async fn get_store_detail(pool: &PgPool, store_id: i64, viewer_id: Option<i64>) -> sqlx::Result<Option<StoreDetail>> {
+pub async fn get_store_detail(
+    pool: &PgPool,
+    store_id: i64,
+    viewer_id: Option<i64>,
+) -> sqlx::Result<Option<StoreDetail>> {
     let Some(s) = store::find_public(pool, store_id).await? else {
         return Ok(None);
     };

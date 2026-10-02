@@ -32,7 +32,11 @@ use crate::{
 
 /// A switch with its label beside it.
 #[component]
-pub fn SwitchField(#[props(into)] id: String, #[props(into)] label: String, checked: Signal<bool>) -> Element {
+pub fn SwitchField(
+    #[props(into)] id: String,
+    #[props(into)] label: String,
+    checked: Signal<bool>,
+) -> Element {
     let mut checked = checked;
     rsx! {
         div { class: "switch-field",
@@ -118,16 +122,26 @@ impl OfferState {
     /// Whether anything was entered — an untouched block in the new-store
     /// form is skipped, not an error.
     pub fn is_filled(&self) -> bool {
-        if (self.is_new)() { !self.new_name.read().trim().is_empty() } else { (self.existing)().is_some() }
+        if (self.is_new)() {
+            !self.new_name.read().trim().is_empty()
+        } else {
+            (self.existing)().is_some()
+        }
     }
 
     pub fn to_input(&self) -> Result<OfferInput, &'static str> {
         let product = if (self.is_new)() {
-            ProductChoice::New { name: (self.new_name)(), description: (self.new_description)() }
+            ProductChoice::New {
+                name: (self.new_name)(),
+                description: (self.new_description)(),
+            }
         } else {
             ProductChoice::Existing((self.existing)().ok_or("error-product-required")?)
         };
-        Ok(OfferInput { product, seasonal_months: self.season.value()? })
+        Ok(OfferInput {
+            product,
+            seasonal_months: self.season.value()?,
+        })
     }
 }
 
@@ -135,7 +149,13 @@ impl OfferState {
 pub fn ProductChoiceFields(#[props(into)] id: String, state: OfferState) -> Element {
     let locale = use_locale();
     let catalog = use_catalog();
-    let OfferState { is_new, mut existing, mut new_name, mut new_description, .. } = state;
+    let OfferState {
+        is_new,
+        mut existing,
+        mut new_name,
+        mut new_description,
+        ..
+    } = state;
     let selected = use_memo(move || existing());
     rsx! {
         SwitchField { id: "{id}-is-new", label: locale.t("product-form-new-checkbox"), checked: is_new }

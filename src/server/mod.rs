@@ -11,11 +11,13 @@ pub mod routes;
 
 use std::sync::OnceLock;
 
-use axum::{extract::DefaultBodyLimit, routing::get, Router};
-use sqlx::{postgres::PgPoolOptions, PgPool};
+use axum::{Router, extract::DefaultBodyLimit, routing::get};
+use sqlx::{PgPool, postgres::PgPoolOptions};
 use tokio::sync::OnceCell;
 use tower_http::trace::{DefaultMakeSpan, DefaultOnFailure, DefaultOnResponse, TraceLayer};
-use tower_sessions::{cookie::SameSite, session_store::ExpiredDeletion, Expiry, SessionManagerLayer};
+use tower_sessions::{
+    Expiry, SessionManagerLayer, cookie::SameSite, session_store::ExpiredDeletion,
+};
 use tower_sessions_sqlx_store::PostgresStore;
 use tracing::Level;
 
@@ -40,8 +42,12 @@ impl Config {
         Ok(Self {
             database_url: std::env::var("DATABASE_URL")
                 .map_err(|_| anyhow::anyhow!("DATABASE_URL must be set"))?,
-            secure_cookies: std::env::var("SECURE_COOKIES").map(|v| v != "false").unwrap_or(true),
-            admin_password: std::env::var("ADMIN_PASSWORD").ok().filter(|v| !v.is_empty()),
+            secure_cookies: std::env::var("SECURE_COOKIES")
+                .map(|v| v != "false")
+                .unwrap_or(true),
+            admin_password: std::env::var("ADMIN_PASSWORD")
+                .ok()
+                .filter(|v| !v.is_empty()),
         })
     }
 }
@@ -50,7 +56,8 @@ static POOL: OnceLock<PgPool> = OnceLock::new();
 
 /// The shared pool. Set once by `router()` before anything can be served.
 pub fn pool() -> &'static PgPool {
-    POOL.get().expect("database pool is initialised before serving")
+    POOL.get()
+        .expect("database pool is initialised before serving")
 }
 
 /// Pool, migrations, admin seed and the session sweeper — once per
@@ -60,7 +67,10 @@ async fn init_once(config: &Config) -> anyhow::Result<PostgresStore> {
     static STORE: OnceCell<PostgresStore> = OnceCell::const_new();
     STORE
         .get_or_try_init(|| async {
-            let pool = PgPoolOptions::new().max_connections(10).connect(&config.database_url).await?;
+            let pool = PgPoolOptions::new()
+                .max_connections(10)
+                .connect(&config.database_url)
+                .await?;
             tracing::info!("database pool connected");
             sqlx::migrate!("./migrations").run(&pool).await?;
             auth::sync_admin_password(&pool, config.admin_password.as_deref()).await?;
@@ -69,7 +79,9 @@ async fn init_once(config: &Config) -> anyhow::Result<PostgresStore> {
             store.migrate().await?;
             // sqlx-backed sessions don't expire rows on their own.
             tokio::task::spawn(
-                store.clone().continuously_delete_expired(tokio::time::Duration::from_secs(60 * 60)),
+                store
+                    .clone()
+                    .continuously_delete_expired(tokio::time::Duration::from_secs(60 * 60)),
             );
             let _ = POOL.set(pool);
             Ok(store)
@@ -122,11 +134,16 @@ pub fn serve_release() -> ! {
     runtime.block_on(async {
         let router = router().await.expect("building the router");
         let addr = dioxus::cli_config::fullstack_address_or_localhost();
-        let listener = tokio::net::TcpListener::bind(addr).await.expect("binding the listener");
-        tracing::info!("listening on {addr}");
-        axum::serve(listener, router.into_make_service_with_connect_info::<std::net::SocketAddr>())
+        let listener = tokio::net::TcpListener::bind(addr)
             .await
-            .expect("serving");
+            .expect("binding the listener");
+        tracing::info!("listening on {addr}");
+        axum::serve(
+            listener,
+            router.into_make_service_with_connect_info::<std::net::SocketAddr>(),
+        )
+        .await
+        .expect("serving");
     });
     std::process::exit(0)
 }

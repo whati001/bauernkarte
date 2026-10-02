@@ -1,5 +1,5 @@
 use serde_json::json;
-use sqlx::{types::Json, PgPool};
+use sqlx::{PgPool, types::Json};
 
 /// "This shop sells this product", and in which months.
 #[derive(Debug, Clone)]

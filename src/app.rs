@@ -16,7 +16,7 @@ use crate::{
     },
     i18n::Locale,
     models::{SessionInfo, SessionUser},
-    ui::{select::SelectPlaceholder, toast::ToastProvider, Stylesheets},
+    ui::{Stylesheets, select::SelectPlaceholder, toast::ToastProvider},
 };
 
 /// Every page with the map lives under `MapShell`, whose sidebar shows the
@@ -101,7 +101,6 @@ pub fn App() -> Element {
         document::Script { src: "/static/leaflet/leaflet.js", defer: true }
         document::Script { src: "/static/bk-map.js", defer: true }
         document::Script { src: "/static/pwa.js", defer: true }
-        document::Script { src: "/static/tap-guard.js", defer: true }
         SuspenseBoundary {
             fallback: |_| rsx! {},
             SessionRoot {}
@@ -114,7 +113,10 @@ pub fn App() -> Element {
 #[component]
 fn SessionRoot() -> Element {
     let info = use_server_future(api::session::session_info)?;
-    let info = info().and_then(Result::ok).unwrap_or(SessionInfo { user: None, locale: Locale::De });
+    let info = info().and_then(Result::ok).unwrap_or(SessionInfo {
+        user: None,
+        locale: Locale::De,
+    });
     rsx! {
         Provide { info }
     }
@@ -128,7 +130,10 @@ fn Provide(info: SessionInfo) -> Element {
     // `<html lang>` follows the visitor's language (screen readers and
     // browser translation read it).
     use_effect(move || {
-        document::eval(&format!("document.documentElement.lang = '{}';", info.locale.code()));
+        document::eval(&format!(
+            "document.documentElement.lang = '{}';",
+            info.locale.code()
+        ));
     });
     rsx! {
         ToastProvider {

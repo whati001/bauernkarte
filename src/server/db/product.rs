@@ -67,7 +67,12 @@ pub async fn find_live_by_name(pool: &PgPool, name: &str) -> sqlx::Result<Option
     .await
 }
 
-pub async fn insert(pool: &PgPool, name: &str, description: Option<&str>, created_by: i64) -> sqlx::Result<Product> {
+pub async fn insert(
+    pool: &PgPool,
+    name: &str,
+    description: Option<&str>,
+    created_by: i64,
+) -> sqlx::Result<Product> {
     sqlx::query_as!(
         Product,
         r#"insert into product (name, description, approved, created_by, modified_by)
@@ -138,7 +143,11 @@ pub async fn list_live_for_admin(pool: &PgPool) -> sqlx::Result<Vec<AdminProduct
 /// soft-deleted with it, in one transaction. Returns the offers' ids, for
 /// the edit log. Restoring the product later doesn't bring them back;
 /// each can be restored from the offers' "deleted" tab.
-pub async fn soft_delete_with_offers(pool: &PgPool, id: i64, changed_by: i64) -> sqlx::Result<Vec<i64>> {
+pub async fn soft_delete_with_offers(
+    pool: &PgPool,
+    id: i64,
+    changed_by: i64,
+) -> sqlx::Result<Vec<i64>> {
     let mut tx = pool.begin().await?;
     let offers = sqlx::query_scalar!(
         "update store_product set deleted = true, modified_by = $2, modified = now()

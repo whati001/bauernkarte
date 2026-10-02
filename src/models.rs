@@ -52,7 +52,11 @@ pub enum StoreKind {
 }
 
 impl StoreKind {
-    pub const ALL: [StoreKind; 3] = [StoreKind::Market, StoreKind::VendingMachine, StoreKind::Shop];
+    pub const ALL: [StoreKind; 3] = [
+        StoreKind::Market,
+        StoreKind::VendingMachine,
+        StoreKind::Shop,
+    ];
 
     pub fn as_str(self) -> &'static str {
         match self {
@@ -67,7 +71,10 @@ impl StoreKind {
     /// column's default.
     #[cfg_attr(not(feature = "server"), allow(dead_code))]
     pub fn from_db(value: &str) -> Self {
-        Self::ALL.into_iter().find(|kind| kind.as_str() == value).unwrap_or_default()
+        Self::ALL
+            .into_iter()
+            .find(|kind| kind.as_str() == value)
+            .unwrap_or_default()
     }
 
     pub fn label_key(self) -> &'static str {
@@ -120,12 +127,11 @@ pub const DEFAULT_PRODUCT_ICON: &str = "📦";
 /// The admin icon picker's choices: every icon the catalog uses, plus
 /// common farm produce. Any other emoji can still be typed in.
 pub const PRODUCT_ICONS: &[&str] = &[
-    "🍎", "🍏", "🍐", "🍑", "🍒", "🍓", "🫐", "🍇", "🍋", "🍉", "🥝", "🍅",
-    "🥦", "🥕", "🥔", "🧅", "🧄", "🥬", "🥒", "🫑", "🌽", "🎃", "🍄", "🌰",
-    "🥜", "🫘", "🌾", "🌿", "🌻", "💐", "🎄", "🥚", "🥛", "🧀", "🧈", "🥣",
-    "🥩", "🍖", "🍗", "🥓", "🌭", "🐄", "🐷", "🐑", "🐐", "🐔", "🦃", "🐟",
-    "🌊", "🍯", "🐝", "🍞", "🥐", "🍝", "🍲", "🫙", "🧂", "🛢️", "🧃", "🍵",
-    "🍷", "🍺", "🥃", "🧴", "📦",
+    "🍎", "🍏", "🍐", "🍑", "🍒", "🍓", "🫐", "🍇", "🍋", "🍉", "🥝", "🍅", "🥦", "🥕", "🥔", "🧅",
+    "🧄", "🥬", "🥒", "🫑", "🌽", "🎃", "🍄", "🌰", "🥜", "🫘", "🌾", "🌿", "🌻", "💐", "🎄", "🥚",
+    "🥛", "🧀", "🧈", "🥣", "🥩", "🍖", "🍗", "🥓", "🌭", "🐄", "🐷", "🐑", "🐐", "🐔", "🦃", "🐟",
+    "🌊", "🍯", "🐝", "🍞", "🥐", "🍝", "🍲", "🫙", "🧂", "🛢️", "🧃", "🍵", "🍷", "🍺", "🥃", "🧴",
+    "📦",
 ];
 
 /// A live image on the admin "existing" tab.
@@ -368,12 +374,20 @@ pub enum QueueTab {
 }
 
 impl QueueTab {
-    pub const ALL: [QueueTab; 4] = [QueueTab::Pending, QueueTab::Existing, QueueTab::Changes, QueueTab::Deleted];
+    pub const ALL: [QueueTab; 4] = [
+        QueueTab::Pending,
+        QueueTab::Existing,
+        QueueTab::Changes,
+        QueueTab::Deleted,
+    ];
 
     /// The tabs a section shows.
     pub fn for_entity(entity: Entity) -> Vec<QueueTab> {
         let has_existing = matches!(entity, Entity::Product | Entity::Image);
-        Self::ALL.into_iter().filter(|t| *t != QueueTab::Existing || has_existing).collect()
+        Self::ALL
+            .into_iter()
+            .filter(|t| *t != QueueTab::Existing || has_existing)
+            .collect()
     }
 
     pub fn key(self) -> &'static str {

@@ -23,16 +23,25 @@ const MAX_UPLOAD_BYTES: usize = 15 * 1024 * 1024;
 #[post("/api/store/{store_id}/image", session: tower_sessions::Session)]
 pub async fn upload_image(store_id: i64, mut form: MultipartFormData) -> ApiResult<()> {
     let user = auth::require_user(&session).await?;
-    db::store::find(pool(), store_id).await?.ok_or_else(AppError::not_found)?;
+    db::store::find(pool(), store_id)
+        .await?
+        .ok_or_else(AppError::not_found)?;
 
     let mut bytes = None;
     let mut description = String::new();
     let mut is_owner = false;
     let mut is_cover = false;
-    while let Some(field) = form.next_field().await.map_err(|_| AppError::invalid("error-image-required"))? {
+    while let Some(field) = form
+        .next_field()
+        .await
+        .map_err(|_| AppError::invalid("error-image-required"))?
+    {
         match field.name().unwrap_or_default() {
             "file" => {
-                let data = field.bytes().await.map_err(|_| AppError::invalid("error-image-too-large"))?;
+                let data = field
+                    .bytes()
+                    .await
+                    .map_err(|_| AppError::invalid("error-image-too-large"))?;
                 if data.len() > MAX_UPLOAD_BYTES {
                     return Err(AppError::invalid("error-image-too-large"));
                 }

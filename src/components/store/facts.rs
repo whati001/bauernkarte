@@ -7,7 +7,7 @@ use dioxus::prelude::*;
 use dioxus_icons::lucide;
 use dioxus_primitives::collapsible::{Collapsible, CollapsibleContent, CollapsibleTrigger};
 
-use super::{directions_url, use_store, Styles};
+use super::{Styles, directions_url, use_store};
 use crate::{
     api::store::{remove_review, review_store},
     app::use_session,

@@ -16,7 +16,11 @@ pub async fn for_user(pool: &PgPool, user_id: i64) -> sqlx::Result<Vec<PendingIt
     .fetch_all(pool)
     .await?
     {
-        items.push(PendingItem { kind: PendingKind::Store, id: r.id, label: r.name });
+        items.push(PendingItem {
+            kind: PendingKind::Store,
+            id: r.id,
+            label: r.name,
+        });
     }
 
     for r in sqlx::query!(
@@ -26,7 +30,11 @@ pub async fn for_user(pool: &PgPool, user_id: i64) -> sqlx::Result<Vec<PendingIt
     .fetch_all(pool)
     .await?
     {
-        items.push(PendingItem { kind: PendingKind::Product, id: r.id, label: r.name });
+        items.push(PendingItem {
+            kind: PendingKind::Product,
+            id: r.id,
+            label: r.name,
+        });
     }
 
     for r in sqlx::query!(
@@ -55,7 +63,11 @@ pub async fn for_user(pool: &PgPool, user_id: i64) -> sqlx::Result<Vec<PendingIt
     .fetch_all(pool)
     .await?
     {
-        items.push(PendingItem { kind: PendingKind::Image, id: r.id, label: r.store_name });
+        items.push(PendingItem {
+            kind: PendingKind::Image,
+            id: r.id,
+            label: r.store_name,
+        });
     }
 
     Ok(items)

@@ -183,7 +183,10 @@ fn KindFilter() -> Element {
 fn SortSelect(sort: Signal<Sort>) -> Element {
     let locale = use_locale();
     let value = use_memo(move || Some(sort()));
-    let options = [(Sort::Distance, "search-sort-distance"), (Sort::Name, "search-sort-name")];
+    let options = [
+        (Sort::Distance, "search-sort-distance"),
+        (Sort::Name, "search-sort-name"),
+    ];
 
     rsx! {
         Select::<Sort> {
@@ -210,8 +213,13 @@ fn ResultCard(store: StoreSearchResult, now: Option<(i16, String)>) -> Element {
     let nav = navigator();
     let id = store.id;
     let more = (store.product_total - CHIP_LIMIT.min(store.products.len()) as i64).max(0);
-    let status = now.and_then(|(day, time)| opening_hours::today_status(&store.openinghours, day, &time));
-    let lead_icon = store.products.first().and_then(|p| p.icon.clone()).unwrap_or_else(|| "🌾".into());
+    let status =
+        now.and_then(|(day, time)| opening_hours::today_status(&store.openinghours, day, &time));
+    let lead_icon = store
+        .products
+        .first()
+        .and_then(|p| p.icon.clone())
+        .unwrap_or_else(|| "🌾".into());
 
     rsx! {
         li {

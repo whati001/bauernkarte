@@ -14,7 +14,12 @@ pub struct User {
 
 impl User {
     pub fn to_session(&self) -> SessionUser {
-        SessionUser { id: self.id, name: self.name.clone(), email: self.email.clone(), admin: self.admin }
+        SessionUser {
+            id: self.id,
+            name: self.name.clone(),
+            email: self.email.clone(),
+            admin: self.admin,
+        }
     }
 }
 
@@ -39,9 +44,12 @@ pub async fn find_by_email(pool: &PgPool, email: &str) -> sqlx::Result<Option<Us
 }
 
 pub async fn email_exists(pool: &PgPool, email: &str) -> sqlx::Result<bool> {
-    sqlx::query_scalar!(r#"select exists(select 1 from "user" where email = $1) as "exists!""#, email)
-        .fetch_one(pool)
-        .await
+    sqlx::query_scalar!(
+        r#"select exists(select 1 from "user" where email = $1) as "exists!""#,
+        email
+    )
+    .fetch_one(pool)
+    .await
 }
 
 /// Excluding one account — for a profile update, where keeping your own
@@ -83,9 +91,13 @@ pub async fn update_profile(pool: &PgPool, id: i64, name: &str, email: &str) -> 
 }
 
 pub async fn update_password(pool: &PgPool, id: i64, pwd_hash: &str) -> sqlx::Result<()> {
-    sqlx::query!(r#"update "user" set pwd_hash = $2, modified = now() where id = $1"#, id, pwd_hash)
-        .execute(pool)
-        .await?;
+    sqlx::query!(
+        r#"update "user" set pwd_hash = $2, modified = now() where id = $1"#,
+        id,
+        pwd_hash
+    )
+    .execute(pool)
+    .await?;
     Ok(())
 }
 
@@ -117,20 +129,28 @@ pub async fn list_all(pool: &PgPool) -> sqlx::Result<Vec<AdminUserRow>> {
 }
 
 pub async fn set_admin(pool: &PgPool, id: i64, admin: bool) -> sqlx::Result<()> {
-    sqlx::query!(r#"update "user" set admin = $2, modified = now() where id = $1"#, id, admin)
-        .execute(pool)
-        .await?;
+    sqlx::query!(
+        r#"update "user" set admin = $2, modified = now() where id = $1"#,
+        id,
+        admin
+    )
+    .execute(pool)
+    .await?;
     Ok(())
 }
 
 /// A real delete. Submissions stay in the catalog and lose their author.
 pub async fn delete(pool: &PgPool, id: i64) -> sqlx::Result<()> {
-    sqlx::query!(r#"delete from "user" where id = $1"#, id).execute(pool).await?;
+    sqlx::query!(r#"delete from "user" where id = $1"#, id)
+        .execute(pool)
+        .await?;
     Ok(())
 }
 
 /// Guards the last-admin case: removing it would lock everyone out of
 /// moderation with no way back short of SQL.
 pub async fn admin_count(pool: &PgPool) -> sqlx::Result<i64> {
-    sqlx::query_scalar!(r#"select count(*) as "n!" from "user" where admin"#).fetch_one(pool).await
+    sqlx::query_scalar!(r#"select count(*) as "n!" from "user" where admin"#)
+        .fetch_one(pool)
+        .await
 }

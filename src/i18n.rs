@@ -11,9 +11,7 @@
 use std::collections::HashMap;
 
 use dioxus::prelude::*;
-use fluent_templates::{
-    fluent_bundle::FluentValue, static_loader, LanguageIdentifier, Loader,
-};
+use fluent_templates::{LanguageIdentifier, Loader, fluent_bundle::FluentValue, static_loader};
 use serde::{Deserialize, Serialize};
 use unic_langid::langid;
 
@@ -91,7 +89,6 @@ impl Locale {
         args.insert("year".into(), FluentValue::from(year.to_string()));
         LOCALES.lookup_with_args(&self.langid(), key, &args)
     }
-
 
     /// Server errors travel as translation keys (see `api::error`); anything
     /// that isn't a known key — a transport failure, say — is shown as-is.

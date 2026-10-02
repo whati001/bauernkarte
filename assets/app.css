@@ -181,6 +181,15 @@ a:hover { text-decoration: underline; }
   padding-top: env(safe-area-inset-top);
   touch-action: pan-x;
 }
+.nav-tap-shield {
+  position: fixed;
+  z-index: 2000;
+  inset: 0;
+  background: transparent;
+  cursor: default;
+  touch-action: none;
+}
+
 
 .nav-main {
   display: flex;

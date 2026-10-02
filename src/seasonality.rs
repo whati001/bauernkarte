@@ -4,8 +4,18 @@
 use crate::i18n::Locale;
 
 pub const MONTH_KEYS: [&str; 12] = [
-    "month-jan", "month-feb", "month-mar", "month-apr", "month-may", "month-jun",
-    "month-jul", "month-aug", "month-sep", "month-oct", "month-nov", "month-dec",
+    "month-jan",
+    "month-feb",
+    "month-mar",
+    "month-apr",
+    "month-may",
+    "month-jun",
+    "month-jul",
+    "month-aug",
+    "month-sep",
+    "month-oct",
+    "month-nov",
+    "month-dec",
 ];
 
 pub fn is_available(seasonal_months: Option<&[i16]>, month: i16) -> bool {
@@ -53,7 +63,10 @@ pub fn from_form(is_seasonal: bool, months: &[bool; 12]) -> Result<Option<Vec<i1
     if !is_seasonal {
         return Ok(None);
     }
-    let picked: Vec<i16> = (0..12).filter(|&i| months[i]).map(|i| i as i16 + 1).collect();
+    let picked: Vec<i16> = (0..12)
+        .filter(|&i| months[i])
+        .map(|i| i as i16 + 1)
+        .collect();
     if picked.is_empty() {
         return Err("error-season-month-required");
     }
@@ -85,13 +98,19 @@ mod tests {
     #[test]
     fn summary_names_runs() {
         assert_eq!(summary(Locale::En, None), "Jan..Dec");
-        assert_eq!(summary(Locale::En, Some(&[1, 2, 3, 9, 11, 12])), "Jan..Mar, Sep, Nov..Dec");
+        assert_eq!(
+            summary(Locale::En, Some(&[1, 2, 3, 9, 11, 12])),
+            "Jan..Mar, Sep, Nov..Dec"
+        );
     }
 
     #[test]
     fn form_needs_a_month_when_seasonal() {
         assert_eq!(from_form(false, &[false; 12]), Ok(None));
-        assert_eq!(from_form(true, &[false; 12]), Err("error-season-month-required"));
+        assert_eq!(
+            from_form(true, &[false; 12]),
+            Err("error-season-month-required")
+        );
         let mut m = [false; 12];
         m[7] = true;
         assert_eq!(from_form(true, &m), Ok(Some(vec![8])));

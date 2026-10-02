@@ -9,10 +9,7 @@ use crate::{
     api::error::AppError,
     app::Route,
     i18n::use_locale,
-    ui::{
-        label::Label,
-        skeleton::Skeleton,
-    },
+    ui::{label::Label, skeleton::Skeleton},
 };
 
 /// A sidebar panel: the way out first (a view's exit is always at the
@@ -56,7 +53,11 @@ pub fn Section(#[props(into)] title: String, children: Element) -> Element {
 
 /// A labelled form control.
 #[component]
-pub fn Field(#[props(into)] label: String, #[props(into)] html_for: String, children: Element) -> Element {
+pub fn Field(
+    #[props(into)] label: String,
+    #[props(into)] html_for: String,
+    children: Element,
+) -> Element {
     rsx! {
         div { class: "field",
             Label { html_for, {label} }
@@ -115,7 +116,9 @@ pub fn LoadError(error: AppError) -> Element {
 /// store — left the `SuspenseBoundary` showing the old DOM for good, so
 /// there it's just "not loaded yet" and the caller shows a placeholder.
 #[track_caller]
-pub fn use_panel_data<T, F, M>(future: impl FnMut() -> F + 'static) -> Result<Option<T>, RenderError>
+pub fn use_panel_data<T, F, M>(
+    future: impl FnMut() -> F + 'static,
+) -> Result<Option<T>, RenderError>
 where
     F: Future<Output = T> + 'static,
     T: Transportable<M> + Clone,

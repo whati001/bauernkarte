@@ -3,7 +3,7 @@
 
 use std::io::Cursor;
 
-use image::{imageops::FilterType, ImageFormat, ImageReader};
+use image::{ImageFormat, ImageReader, imageops::FilterType};
 
 use crate::api::error::AppError;
 
@@ -28,7 +28,9 @@ pub fn process_upload(raw: &[u8]) -> Result<ProcessedImage, AppError> {
     let mut reader = ImageReader::new(Cursor::new(raw))
         .with_guessed_format()
         .map_err(|_| AppError::invalid("error-image-decode"))?;
-    let format = reader.format().ok_or_else(|| AppError::invalid("error-image-format"))?;
+    let format = reader
+        .format()
+        .ok_or_else(|| AppError::invalid("error-image-format"))?;
     if !ALLOWED_FORMATS.contains(&format) {
         return Err(AppError::invalid("error-image-format"));
     }
@@ -38,7 +40,9 @@ pub fn process_upload(raw: &[u8]) -> Result<ProcessedImage, AppError> {
         limits.max_image_height = Some(MAX_DECODE_DIMENSION);
         limits
     });
-    let img = reader.decode().map_err(|_| AppError::invalid("error-image-decode"))?;
+    let img = reader
+        .decode()
+        .map_err(|_| AppError::invalid("error-image-decode"))?;
 
     let resized = if img.width() > MAX_DIMENSION || img.height() > MAX_DIMENSION {
         img.resize(MAX_DIMENSION, MAX_DIMENSION, FilterType::Lanczos3)
@@ -50,5 +54,8 @@ pub fn process_upload(raw: &[u8]) -> Result<ProcessedImage, AppError> {
     let mut out = Vec::new();
     rgb.write_to(&mut Cursor::new(&mut out), ImageFormat::Jpeg)
         .map_err(|err| AppError::from(anyhow::anyhow!("re-encode failed: {err}")))?;
-    Ok(ProcessedImage { bytes: out, mime_type: "image/jpeg" })
+    Ok(ProcessedImage {
+        bytes: out,
+        mime_type: "image/jpeg",
+    })
 }

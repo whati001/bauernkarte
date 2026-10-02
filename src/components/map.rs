@@ -83,7 +83,11 @@ pub fn MapView() -> Element {
                     MapMessage::Pin { id } => {
                         nav.push(Route::StorePanel { id });
                     }
-                    MapMessage::Geo { lat, lon, available } => {
+                    MapMessage::Geo {
+                        lat,
+                        lon,
+                        available,
+                    } => {
                         map.geo.set(available.then_some((lat, lon)));
                     }
                     MapMessage::Pick { lat, lon } => {
@@ -95,16 +99,22 @@ pub fn MapView() -> Element {
     });
 
     use_effect(move || {
-        let json = serde_json::to_string(&map.results.read().clone().unwrap_or_default()).unwrap_or_default();
+        let json = serde_json::to_string(&map.results.read().clone().unwrap_or_default())
+            .unwrap_or_default();
         document::eval(&format!("window.BK.setStores({json});"));
     });
     use_effect(move || {
-        let id = map.selected.read().map_or("null".to_string(), |id| id.to_string());
+        let id = map
+            .selected
+            .read()
+            .map_or("null".to_string(), |id| id.to_string());
         document::eval(&format!("window.BK.setSelected({id});"));
     });
     use_effect(move || {
         let Picker { active, position } = *map.picker.read();
-        let (lat, lon) = position.map_or(("null".into(), "null".into()), |(a, b)| (a.to_string(), b.to_string()));
+        let (lat, lon) = position.map_or(("null".into(), "null".into()), |(a, b)| {
+            (a.to_string(), b.to_string())
+        });
         document::eval(&format!("window.BK.setPicker({active}, {lat}, {lon});"));
     });
 

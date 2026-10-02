@@ -4,7 +4,7 @@
 use dioxus::prelude::*;
 use dioxus_icons::lucide;
 
-use super::{use_store, Styles};
+use super::{Styles, use_store};
 use crate::{app::Route, components::map::use_map, i18n::use_locale};
 
 /// Foliage hue band for the drawn fallback: yellow-green through green.
@@ -23,9 +23,15 @@ pub fn StoreHero() -> Element {
 
     // Keyed to the lead product, not the store: every shop leading with
     // apples gets the same scene, which is the point.
-    let hue = d.offers.first().map_or(HUE_BASE + 26, |o| HUE_BASE + (o.product_id * 37).rem_euclid(HUE_SPAN));
-    let icons: Vec<String> =
-        d.offers.iter().take(3).map(|o| o.icon.clone().unwrap_or_else(|| "🌾".into())).collect();
+    let hue = d.offers.first().map_or(HUE_BASE + 26, |o| {
+        HUE_BASE + (o.product_id * 37).rem_euclid(HUE_SPAN)
+    });
+    let icons: Vec<String> = d
+        .offers
+        .iter()
+        .take(3)
+        .map(|o| o.icon.clone().unwrap_or_else(|| "🌾".into()))
+        .collect();
 
     rsx! {
         // Outside the header, which clips: the bar stays pinned to the top

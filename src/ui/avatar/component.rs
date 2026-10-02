@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
-use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::avatar::{self, AvatarState};
+use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
 
 #[css_module("/src/ui/avatar/style.css")]
@@ -77,9 +77,7 @@ pub fn Avatar(props: AvatarProps) -> Element {
         props.size.to_class(),
         props.shape.to_class()
     );
-    let base = attributes!(span {
-        class
-    });
+    let base = attributes!(span { class });
     let merged = merge_attributes(vec![base, props.attributes]);
 
     rsx! {

@@ -8,10 +8,10 @@ use dioxus_icons::lucide;
 
 use crate::{
     api::{search::top_products, session::logout},
-    app::{use_session, Route},
+    app::{Route, use_session},
     components::{map::MapCtx, shell::use_catalog},
     fuzzy,
-    i18n::{use_locale, Locale},
+    i18n::{Locale, use_locale},
     models::CatalogProduct,
     ui::{
         button::{Button, ButtonSize, ButtonVariant},
@@ -28,6 +28,11 @@ pub fn Navbar(with_search: bool) -> Element {
     // Phones only: the picker hides behind a magnifier and, once opened,
     // takes over the whole top row. Wider screens always show it.
     let mut search_open = use_signal(|| false);
+    // Touch option selection happens on `pointerup`; mobile browsers may
+    // dispatch the follow-up compatibility `click` after the picker closes.
+    // Keep that click on a Rust-rendered shield instead of letting it hit the
+    // map or the result card now exposed below the collapsed mobile search.
+    let mut tap_shield = use_signal(|| false);
     use_effect(move || {
         if search_open() {
             document::eval("document.querySelector('.nav-search input')?.focus();");
@@ -52,7 +57,12 @@ pub fn Navbar(with_search: bool) -> Element {
                         onclick: move |_| search_open.set(false),
                         lucide::ArrowLeft { size: 18 }
                     }
-                    ProductPicker { on_pick: move |_| search_open.set(false) }
+                    ProductPicker { on_pick: move |picked_by_touch| {
+                        if picked_by_touch {
+                            tap_shield.set(true);
+                        }
+                        search_open.set(false);
+                    } }
                     button {
                         class: "nav-icon-link nav-search-toggle",
                         r#type: "button",
@@ -65,6 +75,33 @@ pub fn Navbar(with_search: bool) -> Element {
                 }
                 AccountActions {}
             }
+            if tap_shield() {
+                div {
+                    class: "nav-tap-shield",
+                    "aria-hidden": "true",
+                    onpointerdown: move |event| {
+                        event.prevent_default();
+                        event.stop_propagation();
+                    },
+                    onpointerup: move |event| {
+                        event.prevent_default();
+                        event.stop_propagation();
+                    },
+                    onmousedown: move |event| {
+                        event.prevent_default();
+                        event.stop_propagation();
+                    },
+                    onmouseup: move |event| {
+                        event.prevent_default();
+                        event.stop_propagation();
+                    },
+                    onclick: move |event| {
+                        event.prevent_default();
+                        event.stop_propagation();
+                        tap_shield.set(false);
+                    },
+                }
+            }
             if with_search {
                 PopularProducts {}
             }
@@ -76,7 +113,7 @@ pub fn Navbar(with_search: bool) -> Element {
 /// list, and the filter changes when an entry is chosen. Choosing lands
 /// on the search panel from wherever the visitor was.
 #[component]
-fn ProductPicker(on_pick: EventHandler) -> Element {
+fn ProductPicker(on_pick: EventHandler<bool>) -> Element {
     let locale = use_locale();
     let mut map = use_context::<MapCtx>();
     let catalog = use_catalog();
@@ -86,6 +123,7 @@ fn ProductPicker(on_pick: EventHandler) -> Element {
     // Best match on top: "Milch" lists Milch before Buttermilch, so the
     // first entry — the one Enter picks — is the product that was typed.
     let mut query = use_signal(String::new);
+    let mut touch_pick_armed = use_signal(|| false);
     let ranked = use_memo(move || {
         let query = query();
         let mut products = catalog();
@@ -114,7 +152,13 @@ fn ProductPicker(on_pick: EventHandler) -> Element {
     });
 
     rsx! {
-        div { class: "nav-search",
+        div {
+            class: "nav-search",
+            onpointerdown: move |event| {
+                if event.pointer_type() == "touch" {
+                    touch_pick_armed.set(true);
+                }
+            },
             span { class: "nav-search-icon", "aria-hidden": "true",
                 match selected().and_then(|id| catalog().into_iter().find(|p| p.id == id)) {
                     // The picked product's emoji stands in for the magnifier,
@@ -127,7 +171,9 @@ fn ProductPicker(on_pick: EventHandler) -> Element {
                 value: Some(selected.into()),
                 on_value_change: move |id: Option<i64>| {
                     map.product.set(id);
-                    on_pick.call(());
+                    let picked_by_touch = touch_pick_armed();
+                    touch_pick_armed.set(false);
+                    on_pick.call(picked_by_touch);
                     if route != (Route::SearchPanel {}) {
                         nav.push(Route::SearchPanel {});
                     }
@@ -177,7 +223,10 @@ fn PopularProducts() -> Element {
 
     let pressed_index = match (map.product)() {
         None => 0,
-        Some(id) => products.iter().position(|p| p.id == id).map_or(usize::MAX, |i| i + 1),
+        Some(id) => products
+            .iter()
+            .position(|p| p.id == id)
+            .map_or(usize::MAX, |i| i + 1),
     };
     let ids: Vec<i64> = products.iter().map(|p| p.id).collect();
 

@@ -8,7 +8,7 @@ use crate::{
     api::search::{all_products, search_stores},
     app::Route,
     components::{
-        common::{use_panel_data, PanelSkeleton},
+        common::{PanelSkeleton, use_panel_data},
         map::{MapCtx, MapView, Picker},
         navbar::Navbar,
     },
@@ -146,14 +146,25 @@ pub fn MapShell() -> Element {
         });
     });
     let cycle_width = move |_| {
-        let next = SIDEBAR_WIDTHS[(SIDEBAR_WIDTHS.iter().position(|w| *w == width()).unwrap_or(1) + 1) % 3];
+        let next = SIDEBAR_WIDTHS[(SIDEBAR_WIDTHS
+            .iter()
+            .position(|w| *w == width())
+            .unwrap_or(1)
+            + 1)
+            % 3];
         width.set(next);
-        document::eval(&format!("try {{ localStorage.setItem('{SIDEBAR_WIDTH_KEY}', '{next}'); }} catch {{}}"));
+        document::eval(&format!(
+            "try {{ localStorage.setItem('{SIDEBAR_WIDTH_KEY}', '{next}'); }} catch {{}}"
+        ));
     };
 
     let open = (map.sidebar_open)();
     let mut locating = use_signal(|| false);
-    let toggle_label = if open { locale.t("map-sidebar-collapse") } else { locale.t("map-sidebar-expand") };
+    let toggle_label = if open {
+        locale.t("map-sidebar-collapse")
+    } else {
+        locale.t("map-sidebar-expand")
+    };
 
     rsx! {
         div { class: "app",

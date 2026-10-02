@@ -2,16 +2,16 @@
 
 use dioxus::prelude::*;
 use dioxus_icons::lucide;
-use dioxus_primitives::toast::{use_toast, ToastOptions};
+use dioxus_primitives::toast::{ToastOptions, use_toast};
 
 use crate::{
     api::{
         error::AppError,
         session::{account_data, change_password, login, register, update_profile},
     },
-    app::{use_session, Route},
+    app::{Route, use_session},
     components::common::{Field, FormError, LoadError, Panel, Section},
-    credentials::{self, PasswordRule, MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH},
+    credentials::{self, MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH, PasswordRule},
     i18n::use_locale,
     models::{AccountData, PendingKind},
     ui::{button::Button, input::Input},
@@ -52,7 +52,10 @@ pub fn Login() -> Element {
         async move {
             match login(email(), password()).await {
                 Ok(user) => {
-                    toasts.success(locale.t_name("auth-welcome-back", &user.name), ToastOptions::new());
+                    toasts.success(
+                        locale.t_name("auth-welcome-back", &user.name),
+                        ToastOptions::new(),
+                    );
                     session.0.set(Some(user));
                     nav.push(Route::SearchPanel {});
                 }
@@ -115,7 +118,10 @@ pub fn Register() -> Element {
         async move {
             match register(name(), email(), password()).await {
                 Ok(user) => {
-                    toasts.success(locale.t_name("auth-register-success", &user.name), ToastOptions::new());
+                    toasts.success(
+                        locale.t_name("auth-register-success", &user.name),
+                        ToastOptions::new(),
+                    );
                     session.0.set(Some(user));
                     nav.push(Route::SearchPanel {});
                 }
@@ -189,7 +195,12 @@ fn PolicyRow(met: bool, #[props(into)] label: String) -> Element {
 
 /// Runs the same rules the server enforces (`crate::credentials`), live.
 #[component]
-fn PasswordChecklist(#[props(into)] id: String, password: ReadSignal<String>, name: ReadSignal<String>, email: ReadSignal<String>) -> Element {
+fn PasswordChecklist(
+    #[props(into)] id: String,
+    password: ReadSignal<String>,
+    name: ReadSignal<String>,
+    email: ReadSignal<String>,
+) -> Element {
     let locale = use_locale();
     let pw = password();
     rsx! {

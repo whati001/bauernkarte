@@ -21,12 +21,16 @@ use crate::{
 
 #[cfg(feature = "server")]
 fn human(at: time::OffsetDateTime) -> String {
-    at.format(time::macros::format_description!("[day].[month].[year] [hour]:[minute]")).unwrap_or_default()
+    at.format(time::macros::format_description!(
+        "[day].[month].[year] [hour]:[minute]"
+    ))
+    .unwrap_or_default()
 }
 
 #[cfg(feature = "server")]
 fn iso(at: time::OffsetDateTime) -> String {
-    at.format(time::macros::format_description!("[year]-[month]-[day]")).unwrap_or_default()
+    at.format(time::macros::format_description!("[year]-[month]-[day]"))
+        .unwrap_or_default()
 }
 
 #[cfg(feature = "server")]
@@ -40,7 +44,10 @@ pub async fn admin_rail() -> ApiResult<Vec<RailCount>> {
     auth::require_admin(&session).await?;
     let mut rail = Vec::new();
     for entity in Entity::ALL {
-        rail.push(RailCount { entity, pending: db::moderation::counts(pool(), entity).await?.pending });
+        rail.push(RailCount {
+            entity,
+            pending: db::moderation::counts(pool(), entity).await?.pending,
+        });
     }
     Ok(rail)
 }
@@ -63,13 +70,34 @@ pub async fn admin_queue(slug: String, tab: String) -> ApiResult<QueuePage> {
     };
     let tab = QueueTab::from_key(&tab);
     let existing = tab == QueueTab::Existing;
-    let products =
-        if existing && entity == Entity::Product { db::product::list_live_for_admin(pool()).await? } else { vec![] };
-    let images = if existing && entity == Entity::Image { db::image::list_live_for_admin(pool()).await? } else { vec![] };
+    let products = if existing && entity == Entity::Product {
+        db::product::list_live_for_admin(pool()).await?
+    } else {
+        vec![]
+    };
+    let images = if existing && entity == Entity::Image {
+        db::image::list_live_for_admin(pool()).await?
+    } else {
+        vec![]
+    };
     let (rows, changes) = match tab {
-        QueueTab::Pending => (db::moderation::pending(pool(), entity).await?.into_iter().map(to_row).collect(), vec![]),
+        QueueTab::Pending => (
+            db::moderation::pending(pool(), entity)
+                .await?
+                .into_iter()
+                .map(to_row)
+                .collect(),
+            vec![],
+        ),
         QueueTab::Existing => (vec![], vec![]),
-        QueueTab::Deleted => (db::moderation::deleted(pool(), entity).await?.into_iter().map(to_row).collect(), vec![]),
+        QueueTab::Deleted => (
+            db::moderation::deleted(pool(), entity)
+                .await?
+                .into_iter()
+                .map(to_row)
+                .collect(),
+            vec![],
+        ),
         QueueTab::Changes => (
             vec![],
             db::moderation::changes(pool(), entity)
@@ -86,7 +114,13 @@ pub async fn admin_queue(slug: String, tab: String) -> ApiResult<QueuePage> {
                 .collect(),
         ),
     };
-    Ok(QueuePage { counts, rows, changes, products, images })
+    Ok(QueuePage {
+        counts,
+        rows,
+        changes,
+        products,
+        images,
+    })
 }
 
 /// An emoji, not text: short, no spaces, no letters or digits. Empty
@@ -97,7 +131,11 @@ fn valid_icon(icon: &str) -> ApiResult<Option<&str>> {
     if icon.is_empty() {
         return Ok(None);
     }
-    if icon.chars().count() > 8 || icon.chars().any(|c| c.is_whitespace() || c.is_ascii_alphanumeric()) {
+    if icon.chars().count() > 8
+        || icon
+            .chars()
+            .any(|c| c.is_whitespace() || c.is_ascii_alphanumeric())
+    {
         return Err(AppError::invalid("admin-product-error-icon"));
     }
     Ok(Some(icon))
@@ -105,18 +143,29 @@ fn valid_icon(icon: &str) -> ApiResult<Option<&str>> {
 
 /// The "existing" tab's edit: like a member's product edit, plus the icon.
 #[patch("/api/admin/products/{id}", session: tower_sessions::Session)]
-pub async fn admin_update_product(id: i64, name: String, description: String, icon: String) -> ApiResult<()> {
+pub async fn admin_update_product(
+    id: i64,
+    name: String,
+    description: String,
+    icon: String,
+) -> ApiResult<()> {
     let admin = auth::require_admin(&session).await?;
-    let before = db::product::find(pool(), id).await?.ok_or_else(AppError::not_found)?;
+    let before = db::product::find(pool(), id)
+        .await?
+        .ok_or_else(AppError::not_found)?;
     if before.deleted {
         return Err(AppError::deleted());
     }
     let name = non_empty(&name).ok_or_else(|| AppError::invalid("error-name-required"))?;
-    if db::product::find_live_by_name(pool(), name).await?.is_some_and(|other| other.id != id) {
+    if db::product::find_live_by_name(pool(), name)
+        .await?
+        .is_some_and(|other| other.id != id)
+    {
         return Err(AppError::invalid("error-product-name-taken"));
     }
     let icon = valid_icon(&icon)?;
-    let after = db::product::update(pool(), id, name, non_empty(&description), icon, admin.id).await?;
+    let after =
+        db::product::update(pool(), id, name, non_empty(&description), icon, admin.id).await?;
     db::edit_log::write(
         pool(),
         "product",
@@ -127,7 +176,11 @@ pub async fn admin_update_product(id: i64, name: String, description: String, ic
         admin.id,
     )
     .await?;
-    tracing::info!(admin_id = admin.id, product_id = id, "admin updated product");
+    tracing::info!(
+        admin_id = admin.id,
+        product_id = id,
+        "admin updated product"
+    );
     Ok(())
 }
 
@@ -137,18 +190,42 @@ pub async fn admin_update_product(id: i64, name: String, description: String, ic
 #[delete("/api/admin/products/{id}", session: tower_sessions::Session)]
 pub async fn admin_delete_product(id: i64) -> ApiResult<()> {
     let admin = auth::require_admin(&session).await?;
-    let before = db::product::find(pool(), id).await?.ok_or_else(AppError::not_found)?;
+    let before = db::product::find(pool(), id)
+        .await?
+        .ok_or_else(AppError::not_found)?;
     if before.deleted {
         return Err(AppError::deleted());
     }
     let offers = db::product::soft_delete_with_offers(pool(), id, admin.id).await?;
-    db::edit_log::write(pool(), "product", id, EditAction::Delete, &db::product::snapshot(&before), None, admin.id)
-        .await?;
+    db::edit_log::write(
+        pool(),
+        "product",
+        id,
+        EditAction::Delete,
+        &db::product::snapshot(&before),
+        None,
+        admin.id,
+    )
+    .await?;
     for offer in &offers {
         let entry = serde_json::json!({ "id": offer, "product": id, "reason": "product deleted" });
-        db::edit_log::write(pool(), "store_product", *offer, EditAction::Delete, &entry, None, admin.id).await?;
+        db::edit_log::write(
+            pool(),
+            "store_product",
+            *offer,
+            EditAction::Delete,
+            &entry,
+            None,
+            admin.id,
+        )
+        .await?;
     }
-    tracing::info!(admin_id = admin.id, product_id = id, offers = offers.len(), "admin deleted product");
+    tracing::info!(
+        admin_id = admin.id,
+        product_id = id,
+        offers = offers.len(),
+        "admin deleted product"
+    );
     Ok(())
 }
 
@@ -191,7 +268,10 @@ pub async fn admin_users() -> ApiResult<Vec<AdminUserRow>> {
             protected: u.id == admin.id
                 || (u.admin && admin_count <= 1)
                 || u.email.eq_ignore_ascii_case(SEED_ADMIN_EMAIL),
-            created_human: u.created.format(time::macros::format_description!("[day].[month].[year]")).unwrap_or_default(),
+            created_human: u
+                .created
+                .format(time::macros::format_description!("[day].[month].[year]"))
+                .unwrap_or_default(),
             id: u.id,
             name: u.name,
             email: u.email,
@@ -204,7 +284,12 @@ pub async fn admin_users() -> ApiResult<Vec<AdminUserRow>> {
 /// An account created here is a real account: the same gates as public
 /// registration apply.
 #[post("/api/admin/users", session: tower_sessions::Session)]
-pub async fn admin_create_user(name: String, email: String, password: String, admin: bool) -> ApiResult<()> {
+pub async fn admin_create_user(
+    name: String,
+    email: String,
+    password: String,
+    admin: bool,
+) -> ApiResult<()> {
     auth::require_admin(&session).await?;
     let name = name.trim();
     let email = email.trim().to_lowercase();
@@ -234,7 +319,9 @@ async fn guard_target(admin_id: i64, target_id: i64, make_admin: bool) -> ApiRes
     if target_id == admin_id {
         return Err(AppError::invalid("admin-users-error-self"));
     }
-    let target = db::user::find_by_id(pool(), target_id).await?.ok_or_else(AppError::not_found)?;
+    let target = db::user::find_by_id(pool(), target_id)
+        .await?
+        .ok_or_else(AppError::not_found)?;
     if target.email.eq_ignore_ascii_case(SEED_ADMIN_EMAIL) {
         return Err(AppError::invalid("admin-users-error-seed"));
     }
@@ -280,12 +367,16 @@ pub async fn admin_save_site_info(info: SiteInfo) -> ApiResult<()> {
 #[patch("/api/admin/images/{id}", session: tower_sessions::Session)]
 pub async fn admin_update_image(id: i64, description: String, cover: bool) -> ApiResult<()> {
     let admin = auth::require_admin(&session).await?;
-    let before = db::image::find(pool(), id).await?.ok_or_else(AppError::not_found)?;
+    let before = db::image::find(pool(), id)
+        .await?
+        .ok_or_else(AppError::not_found)?;
     if before.deleted {
         return Err(AppError::deleted());
     }
     db::image::update(pool(), id, non_empty(&description), cover, admin.id).await?;
-    let after = db::image::find(pool(), id).await?.ok_or_else(AppError::not_found)?;
+    let after = db::image::find(pool(), id)
+        .await?
+        .ok_or_else(AppError::not_found)?;
     db::edit_log::write(
         pool(),
         "image",
@@ -305,12 +396,23 @@ pub async fn admin_update_image(id: i64, description: String, cover: bool) -> Ap
 #[delete("/api/admin/images/{id}", session: tower_sessions::Session)]
 pub async fn admin_delete_image(id: i64) -> ApiResult<()> {
     let admin = auth::require_admin(&session).await?;
-    let before = db::image::find(pool(), id).await?.ok_or_else(AppError::not_found)?;
+    let before = db::image::find(pool(), id)
+        .await?
+        .ok_or_else(AppError::not_found)?;
     if before.deleted {
         return Err(AppError::deleted());
     }
     db::image::soft_delete(pool(), id, admin.id).await?;
-    db::edit_log::write(pool(), "image", id, EditAction::Delete, &db::image::snapshot(&before), None, admin.id).await?;
+    db::edit_log::write(
+        pool(),
+        "image",
+        id,
+        EditAction::Delete,
+        &db::image::snapshot(&before),
+        None,
+        admin.id,
+    )
+    .await?;
     tracing::info!(admin_id = admin.id, image_id = id, "admin deleted image");
     Ok(())
 }

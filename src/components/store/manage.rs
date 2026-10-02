@@ -4,14 +4,17 @@
 use dioxus::prelude::*;
 use dioxus_icons::lucide;
 
-use super::{directions_url, use_store, Styles};
+use super::{Styles, directions_url, use_store};
 use crate::{
     api::store::delete_store,
-    app::{use_session, Route},
+    app::{Route, use_session},
     components::map::use_map,
     i18n::use_locale,
     ui::{
-        alert_dialog::{AlertDialog, AlertDialogAction, AlertDialogActions, AlertDialogCancel, AlertDialogDescription, AlertDialogTitle},
+        alert_dialog::{
+            AlertDialog, AlertDialogAction, AlertDialogActions, AlertDialogCancel,
+            AlertDialogDescription, AlertDialogTitle,
+        },
         button::{Button, ButtonVariant},
     },
 };

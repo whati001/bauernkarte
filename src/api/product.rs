@@ -18,26 +18,45 @@ use crate::{
 #[get("/api/product/{id}", session: tower_sessions::Session)]
 pub async fn product_for_edit(id: i64) -> ApiResult<ProductEdit> {
     auth::require_user(&session).await?;
-    let p = db::product::find(pool(), id).await?.ok_or_else(AppError::not_found)?;
+    let p = db::product::find(pool(), id)
+        .await?
+        .ok_or_else(AppError::not_found)?;
     if p.deleted {
         return Err(AppError::deleted());
     }
-    Ok(ProductEdit { id: p.id, name: p.name, description: p.description })
+    Ok(ProductEdit {
+        id: p.id,
+        name: p.name,
+        description: p.description,
+    })
 }
 
 /// Returns the saved name, for the confirmation.
 #[patch("/api/product/{id}", session: tower_sessions::Session)]
 pub async fn update_product(id: i64, name: String, description: String) -> ApiResult<String> {
     let user = auth::require_user(&session).await?;
-    let before = db::product::find(pool(), id).await?.ok_or_else(AppError::not_found)?;
+    let before = db::product::find(pool(), id)
+        .await?
+        .ok_or_else(AppError::not_found)?;
     if before.deleted {
         return Err(AppError::deleted());
     }
     let name = non_empty(&name).ok_or_else(|| AppError::invalid("error-name-required"))?;
-    if db::product::find_live_by_name(pool(), name).await?.is_some_and(|other| other.id != id) {
+    if db::product::find_live_by_name(pool(), name)
+        .await?
+        .is_some_and(|other| other.id != id)
+    {
         return Err(AppError::invalid("error-product-name-taken"));
     }
-    let after = db::product::update(pool(), id, name, non_empty(&description), before.icon.as_deref(), user.id).await?;
+    let after = db::product::update(
+        pool(),
+        id,
+        name,
+        non_empty(&description),
+        before.icon.as_deref(),
+        user.id,
+    )
+    .await?;
     db::edit_log::write(
         pool(),
         "product",
@@ -56,13 +75,23 @@ pub async fn update_product(id: i64, name: String, description: String) -> ApiRe
 #[delete("/api/product/{id}", session: tower_sessions::Session)]
 pub async fn delete_product(id: i64) -> ApiResult<()> {
     let user = auth::require_user(&session).await?;
-    let before = db::product::find(pool(), id).await?.ok_or_else(AppError::not_found)?;
+    let before = db::product::find(pool(), id)
+        .await?
+        .ok_or_else(AppError::not_found)?;
     if before.deleted {
         return Err(AppError::deleted());
     }
     db::product::soft_delete(pool(), id, user.id).await?;
-    db::edit_log::write(pool(), "product", id, EditAction::Delete, &db::product::snapshot(&before), None, user.id)
-        .await?;
+    db::edit_log::write(
+        pool(),
+        "product",
+        id,
+        EditAction::Delete,
+        &db::product::snapshot(&before),
+        None,
+        user.id,
+    )
+    .await?;
     tracing::info!(user_id = %user.id, product_id = id, "product deleted");
     Ok(())
 }

@@ -3,7 +3,7 @@
 
 use dioxus::prelude::*;
 use dioxus_icons::lucide;
-use dioxus_primitives::toast::{use_toast, ToastOptions};
+use dioxus_primitives::toast::{ToastOptions, use_toast};
 
 use super::{OfferState, ProductChoiceFields, SeasonFields, SeasonState};
 use crate::{
@@ -14,7 +14,7 @@ use crate::{
     app::Route,
     components::{
         account::RequireLogin,
-        common::{use_panel_data, FormError, LoadError, Panel},
+        common::{FormError, LoadError, Panel, use_panel_data},
         map::use_map,
     },
     i18n::use_locale,
@@ -53,7 +53,10 @@ fn AddOfferForm(store_id: i64) -> Element {
             saving.set(false);
             match result {
                 Ok(product) => {
-                    toasts.success(locale.t_name("confirmation-pending", &product), ToastOptions::new());
+                    toasts.success(
+                        locale.t_name("confirmation-pending", &product),
+                        ToastOptions::new(),
+                    );
                     map.reload_results();
                     nav.push(Route::StorePanel { id: store_id });
                 }

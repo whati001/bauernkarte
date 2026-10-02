@@ -13,7 +13,9 @@ pub fn matches(query: &str, text: &str) -> bool {
     words(&fold(query)).all(|word| {
         let word: Vec<char> = word.chars().collect();
         let typos = allowed_typos(word.len());
-        tokens.iter().any(|token| contains_within(&word, token, typos))
+        tokens
+            .iter()
+            .any(|token| contains_within(&word, token, typos))
     })
 }
 

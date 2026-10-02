@@ -4,7 +4,7 @@
 
 use dioxus::prelude::*;
 use dioxus_icons::lucide;
-use dioxus_primitives::toast::{use_toast, ToastOptions};
+use dioxus_primitives::toast::{ToastOptions, use_toast};
 
 use super::{OfferState, ProductChoiceFields, SeasonFields, SwitchField};
 use crate::{
@@ -14,9 +14,9 @@ use crate::{
     },
     app::Route,
     components::{
-        common::{use_panel_data, Field, FormError, LoadError, Panel, Section},
         account::RequireLogin,
-        map::{use_map, Picker},
+        common::{Field, FormError, LoadError, Panel, Section, use_panel_data},
+        map::{Picker, use_map},
     },
     i18n::use_locale,
     models::{DayHours, StoreFields, StoreKind},
@@ -78,13 +78,22 @@ fn StoreForm(id: Option<i64>, initial: StoreFields) -> Element {
     let mut owner_bio = use_signal(|| initial.owner_bio.clone());
     let has_hours = use_signal(|| !initial.openinghours.is_empty());
     let hours = use_signal(|| week_from(&initial.openinghours));
-    let offers = use_hook(|| (0..MAX_OFFERS).map(|_| OfferState::new()).collect::<Vec<_>>());
+    let offers = use_hook(|| {
+        (0..MAX_OFFERS)
+            .map(|_| OfferState::new())
+            .collect::<Vec<_>>()
+    });
     let mut error = use_signal(|| None::<AppError>);
     let mut saving = use_signal(|| false);
 
     // The map is the position input while this form is open.
     let start = initial.lat.zip(initial.lon);
-    use_effect(move || map.picker.set(Picker { active: true, position: start }));
+    use_effect(move || {
+        map.picker.set(Picker {
+            active: true,
+            position: start,
+        })
+    });
     use_drop(move || map.picker.set(Picker::default()));
     let position = (map.picker)().position;
 
@@ -102,7 +111,11 @@ fn StoreForm(id: Option<i64>, initial: StoreFields) -> Element {
                 kind: kind(),
                 lat: Some(lat),
                 lon: Some(lon),
-                openinghours: if has_hours() { week_to_hours(&hours()) } else { Vec::new() },
+                openinghours: if has_hours() {
+                    week_to_hours(&hours())
+                } else {
+                    Vec::new()
+                },
                 address: address(),
                 phone: phone(),
                 owner_name: owner_name(),
@@ -113,8 +126,11 @@ fn StoreForm(id: Option<i64>, initial: StoreFields) -> Element {
             let result = match id {
                 Some(id) => update_store(id, fields).await.map(|_| None),
                 None => {
-                    let inputs: Result<Vec<_>, _> =
-                        offers.iter().filter(|o| o.is_filled()).map(|o| o.to_input()).collect();
+                    let inputs: Result<Vec<_>, _> = offers
+                        .iter()
+                        .filter(|o| o.is_filled())
+                        .map(|o| o.to_input())
+                        .collect();
                     match inputs {
                         Ok(inputs) => create_store(fields, inputs).await.map(Some),
                         Err(key) => Err(AppError::invalid(key)),
@@ -124,12 +140,17 @@ fn StoreForm(id: Option<i64>, initial: StoreFields) -> Element {
             saving.set(false);
             match result {
                 Ok(Some(created)) => {
-                    toasts.success(locale.t_name("confirmation-pending", &created), ToastOptions::new());
+                    toasts.success(
+                        locale.t_name("confirmation-pending", &created),
+                        ToastOptions::new(),
+                    );
                     nav.push(Route::SearchPanel {});
                 }
                 Ok(None) => {
                     map.reload_results();
-                    nav.push(Route::StorePanel { id: id.unwrap_or_default() });
+                    nav.push(Route::StorePanel {
+                        id: id.unwrap_or_default(),
+                    });
                 }
                 Err(err) => error.set(Some(err)),
             }
@@ -140,7 +161,11 @@ fn StoreForm(id: Option<i64>, initial: StoreFields) -> Element {
         Some(id) => Route::StorePanel { id },
         None => Route::SearchPanel {},
     };
-    let title = if id.is_some() { locale.t("store-form-edit-heading") } else { locale.t("store-form-new-heading") };
+    let title = if id.is_some() {
+        locale.t("store-form-edit-heading")
+    } else {
+        locale.t("store-form-new-heading")
+    };
 
     rsx! {
         Panel { back, title,
@@ -257,7 +282,11 @@ fn week_to_hours(week: &[(String, String); 7]) -> Vec<DayHours> {
     week.iter()
         .enumerate()
         .filter(|(_, (open, close))| !open.is_empty() || !close.is_empty())
-        .map(|(i, (open, close))| DayHours { day: i as i16 + 1, open: open.clone(), close: close.clone() })
+        .map(|(i, (open, close))| DayHours {
+            day: i as i16 + 1,
+            open: open.clone(),
+            close: close.clone(),
+        })
         .collect()
 }
 
@@ -315,7 +344,12 @@ fn KindSelect(kind: Signal<StoreKind>) -> Element {
 
 /// Half-hour steps up to "24:00", plus "closed" (the empty value).
 #[component]
-fn TimeSelect(label: String, value: String, times: Vec<String>, on_change: EventHandler<String>) -> Element {
+fn TimeSelect(
+    label: String,
+    value: String,
+    times: Vec<String>,
+    on_change: EventHandler<String>,
+) -> Element {
     let locale = use_locale();
     let current = use_memo(use_reactive!(|value| Some(value)));
     rsx! {

@@ -32,14 +32,17 @@ pub(crate) fn parse_offer(offer: &OfferInput) -> ApiResult<Option<Vec<i16>>> {
 pub(crate) async fn resolve_product(choice: &ProductChoice, user_id: i64) -> ApiResult<Product> {
     match choice {
         ProductChoice::Existing(id) => {
-            let product = db::product::find(pool(), *id).await?.ok_or_else(|| AppError::invalid("error-product-required"))?;
+            let product = db::product::find(pool(), *id)
+                .await?
+                .ok_or_else(|| AppError::invalid("error-product-required"))?;
             if product.deleted {
                 return Err(AppError::invalid("error-product-required"));
             }
             Ok(product)
         }
         ProductChoice::New { name, description } => {
-            let name = non_empty(name).ok_or_else(|| AppError::invalid("error-product-name-required"))?;
+            let name =
+                non_empty(name).ok_or_else(|| AppError::invalid("error-product-name-required"))?;
             if let Some(existing) = db::product::find_live_by_name(pool(), name).await? {
                 return Ok(existing);
             }
@@ -53,7 +56,9 @@ pub(crate) async fn resolve_product(choice: &ProductChoice, user_id: i64) -> Api
 #[post("/api/store/{store_id}/offer", session: tower_sessions::Session)]
 pub async fn add_offer(store_id: i64, offer: OfferInput) -> ApiResult<String> {
     let user = auth::require_user(&session).await?;
-    db::store::find_public(pool(), store_id).await?.ok_or_else(AppError::not_found)?;
+    db::store::find_public(pool(), store_id)
+        .await?
+        .ok_or_else(AppError::not_found)?;
     let months = parse_offer(&offer)?;
     let product = resolve_product(&offer.product, user.id).await?;
     db::store_product::insert(pool(), store_id, product.id, months, user.id).await?;
@@ -64,11 +69,15 @@ pub async fn add_offer(store_id: i64, offer: OfferInput) -> ApiResult<String> {
 #[get("/api/offer/{id}", session: tower_sessions::Session)]
 pub async fn offer_for_edit(id: i64) -> ApiResult<OfferEdit> {
     auth::require_user(&session).await?;
-    let sp = db::store_product::find(pool(), id).await?.ok_or_else(AppError::not_found)?;
+    let sp = db::store_product::find(pool(), id)
+        .await?
+        .ok_or_else(AppError::not_found)?;
     if sp.deleted {
         return Err(AppError::deleted());
     }
-    let product = db::product::find(pool(), sp.product).await?.ok_or_else(AppError::not_found)?;
+    let product = db::product::find(pool(), sp.product)
+        .await?
+        .ok_or_else(AppError::not_found)?;
     Ok(OfferEdit {
         store_product_id: sp.id,
         store_id: sp.store,
@@ -82,7 +91,9 @@ pub async fn offer_for_edit(id: i64) -> ApiResult<OfferEdit> {
 #[patch("/api/offer/{id}", session: tower_sessions::Session)]
 pub async fn update_offer(id: i64, seasonal_months: Option<Vec<i16>>) -> ApiResult<i64> {
     let user = auth::require_user(&session).await?;
-    let before = db::store_product::find(pool(), id).await?.ok_or_else(AppError::not_found)?;
+    let before = db::store_product::find(pool(), id)
+        .await?
+        .ok_or_else(AppError::not_found)?;
     if before.deleted {
         return Err(AppError::deleted());
     }
@@ -105,7 +116,9 @@ pub async fn update_offer(id: i64, seasonal_months: Option<Vec<i16>>) -> ApiResu
 #[delete("/api/offer/{id}", session: tower_sessions::Session)]
 pub async fn delete_offer(id: i64) -> ApiResult<()> {
     let user = auth::require_user(&session).await?;
-    let before = db::store_product::find(pool(), id).await?.ok_or_else(AppError::not_found)?;
+    let before = db::store_product::find(pool(), id)
+        .await?
+        .ok_or_else(AppError::not_found)?;
     if before.deleted {
         return Err(AppError::deleted());
     }

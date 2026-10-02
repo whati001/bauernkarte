@@ -7,7 +7,11 @@ use crate::models::{OfferInput, ReviewSummary, StoreDetail, StoreFields};
 
 #[cfg(feature = "server")]
 use crate::{
-    api::{error::AppError, non_empty, offer::{parse_offer, resolve_product}},
+    api::{
+        error::AppError,
+        non_empty,
+        offer::{parse_offer, resolve_product},
+    },
     models::StoreKind,
     opening_hours,
     server::{
@@ -29,7 +33,9 @@ pub async fn store_detail(id: i64) -> ApiResult<StoreDetail> {
 #[get("/api/store/{id}/edit", session: tower_sessions::Session)]
 pub async fn store_for_edit(id: i64) -> ApiResult<StoreFields> {
     auth::require_user(&session).await?;
-    let s = db::store::find(pool(), id).await?.ok_or_else(AppError::not_found)?;
+    let s = db::store::find(pool(), id)
+        .await?
+        .ok_or_else(AppError::not_found)?;
     if s.deleted {
         return Err(AppError::deleted());
     }
@@ -62,7 +68,10 @@ fn parse_store(fields: &StoreFields) -> ApiResult<StoreWrite<'_>> {
         None => None,
         Some(text) => {
             let this_year = time::OffsetDateTime::now_utc().year() as i16;
-            let year = text.parse::<i16>().ok().filter(|y| (1800..=this_year).contains(y));
+            let year = text
+                .parse::<i16>()
+                .ok()
+                .filter(|y| (1800..=this_year).contains(y));
             Some(year.ok_or_else(|| AppError::invalid("error-owner-since-invalid"))?)
         }
     };
@@ -91,7 +100,10 @@ pub async fn create_store(fields: StoreFields, offers: Vec<OfferInput>) -> ApiRe
     if offers.is_empty() {
         return Err(AppError::invalid("error-products-min-one"));
     }
-    let parsed = offers.iter().map(parse_offer).collect::<ApiResult<Vec<_>>>()?;
+    let parsed = offers
+        .iter()
+        .map(parse_offer)
+        .collect::<ApiResult<Vec<_>>>()?;
     let mut products = Vec::with_capacity(offers.len());
     for offer in &offers {
         products.push(resolve_product(&offer.product, user.id).await?);
@@ -109,7 +121,9 @@ pub async fn create_store(fields: StoreFields, offers: Vec<OfferInput>) -> ApiRe
 #[patch("/api/store/{id}", session: tower_sessions::Session)]
 pub async fn update_store(id: i64, fields: StoreFields) -> ApiResult<()> {
     let user = auth::require_user(&session).await?;
-    let before = db::store::find(pool(), id).await?.ok_or_else(AppError::not_found)?;
+    let before = db::store::find(pool(), id)
+        .await?
+        .ok_or_else(AppError::not_found)?;
     if before.deleted {
         return Err(AppError::deleted());
     }
@@ -132,13 +146,23 @@ pub async fn update_store(id: i64, fields: StoreFields) -> ApiResult<()> {
 #[delete("/api/store/{id}", session: tower_sessions::Session)]
 pub async fn delete_store(id: i64) -> ApiResult<()> {
     let user = auth::require_user(&session).await?;
-    let before = db::store::find(pool(), id).await?.ok_or_else(AppError::not_found)?;
+    let before = db::store::find(pool(), id)
+        .await?
+        .ok_or_else(AppError::not_found)?;
     if before.deleted {
         return Err(AppError::deleted());
     }
     db::store::soft_delete(pool(), id, user.id).await?;
-    db::edit_log::write(pool(), "store", id, EditAction::Delete, &db::store::snapshot(&before), None, user.id)
-        .await?;
+    db::edit_log::write(
+        pool(),
+        "store",
+        id,
+        EditAction::Delete,
+        &db::store::snapshot(&before),
+        None,
+        user.id,
+    )
+    .await?;
     tracing::info!(user_id = %user.id, store_id = %id, "store deleted");
     Ok(())
 }
@@ -150,7 +174,9 @@ pub async fn review_store(id: i64, stars: i16) -> ApiResult<ReviewSummary> {
     if !(1..=5).contains(&stars) {
         return Err(AppError::invalid("error-stars-range"));
     }
-    db::store::find_public(pool(), id).await?.ok_or_else(AppError::not_found)?;
+    db::store::find_public(pool(), id)
+        .await?
+        .ok_or_else(AppError::not_found)?;
     db::review::upsert(pool(), id, user.id, stars).await?;
     Ok(db::review::summary(pool(), id, Some(user.id)).await?)
 }

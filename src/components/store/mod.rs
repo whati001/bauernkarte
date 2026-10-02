@@ -13,7 +13,7 @@ use dioxus::prelude::*;
 
 use crate::{
     api::store::store_detail,
-    components::common::{use_panel_data, LoadError, PanelSkeleton},
+    components::common::{LoadError, PanelSkeleton, use_panel_data},
     models::StoreDetail,
     ui::separator::Separator,
 };

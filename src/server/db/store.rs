@@ -1,5 +1,5 @@
 use serde_json::json;
-use sqlx::{types::Json, PgPool};
+use sqlx::{PgPool, types::Json};
 
 use crate::models::{DayHours, ProductSummary, StoreKind, StoreSearchResult};
 
@@ -198,7 +198,12 @@ pub async fn insert(pool: &PgPool, store: &StoreWrite<'_>, created_by: i64) -> s
 }
 
 /// Catalog editing: live immediately, `approved` untouched.
-pub async fn update(pool: &PgPool, id: i64, store: &StoreWrite<'_>, changed_by: i64) -> sqlx::Result<Store> {
+pub async fn update(
+    pool: &PgPool,
+    id: i64,
+    store: &StoreWrite<'_>,
+    changed_by: i64,
+) -> sqlx::Result<Store> {
     sqlx::query_as!(
         Store,
         r#"update store
@@ -257,9 +262,18 @@ mod tests {
 
     #[test]
     fn place_is_the_town_without_postcode() {
-        assert_eq!(place_from_address("Apfelweg 3, 8200 Gleisdorf").as_deref(), Some("Gleisdorf"));
-        assert_eq!(place_from_address("8200 Gleisdorf").as_deref(), Some("Gleisdorf"));
-        assert_eq!(place_from_address("Hart bei Eggersdorf").as_deref(), Some("Hart bei Eggersdorf"));
+        assert_eq!(
+            place_from_address("Apfelweg 3, 8200 Gleisdorf").as_deref(),
+            Some("Gleisdorf")
+        );
+        assert_eq!(
+            place_from_address("8200 Gleisdorf").as_deref(),
+            Some("Gleisdorf")
+        );
+        assert_eq!(
+            place_from_address("Hart bei Eggersdorf").as_deref(),
+            Some("Hart bei Eggersdorf")
+        );
         assert_eq!(place_from_address("Apfelweg 3, 8200").as_deref(), None);
     }
 }

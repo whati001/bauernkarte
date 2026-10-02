@@ -100,7 +100,13 @@ pub async fn list_live_for_admin(pool: &PgPool) -> sqlx::Result<Vec<AdminImageRo
 
 /// The admin edit: description and the store-image flag. A portrait
 /// never becomes the store image.
-pub async fn update(pool: &PgPool, id: i64, description: Option<&str>, cover: bool, changed_by: i64) -> sqlx::Result<()> {
+pub async fn update(
+    pool: &PgPool,
+    id: i64,
+    description: Option<&str>,
+    cover: bool,
+    changed_by: i64,
+) -> sqlx::Result<()> {
     sqlx::query!(
         "update image set description = $2, cover = $3 and kind = 'photo', modified_by = $4, modified = now()
          where id = $1",

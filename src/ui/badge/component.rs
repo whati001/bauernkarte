@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
-use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 use dioxus_icons::lucide::BadgeCheck;
+use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 
 #[css_module("/src/ui/badge/style.css")]
 struct Styles;

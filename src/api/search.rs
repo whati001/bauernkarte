@@ -26,7 +26,12 @@ pub async fn search_stores(
 ) -> ApiResult<Vec<StoreSearchResult>> {
     let origin = lat.zip(lon);
     let results = db::store::search(pool(), origin, product_id).await?;
-    tracing::debug!(?product_id, ranked_by_distance = origin.is_some(), count = results.len(), "search");
+    tracing::debug!(
+        ?product_id,
+        ranked_by_distance = origin.is_some(),
+        count = results.len(),
+        "search"
+    );
     Ok(results)
 }
 

@@ -6,16 +6,19 @@ use dioxus::prelude::*;
 use dioxus_icons::lucide;
 use dioxus_primitives::collapsible::{Collapsible, CollapsibleContent, CollapsibleTrigger};
 
-use super::{use_store, Styles};
+use super::{Styles, use_store};
 use crate::{
     api::offer::{delete_offer, heart_offer, unheart_offer},
-    app::{use_session, Route},
+    app::{Route, use_session},
     components::map::use_map,
     i18n::use_locale,
     models::OfferDetail,
     seasonality,
     ui::{
-        alert_dialog::{AlertDialog, AlertDialogAction, AlertDialogActions, AlertDialogCancel, AlertDialogDescription, AlertDialogTitle},
+        alert_dialog::{
+            AlertDialog, AlertDialogAction, AlertDialogActions, AlertDialogCancel,
+            AlertDialogDescription, AlertDialogTitle,
+        },
         badge::{Badge, BadgeVariant},
         button::{Button, ButtonSize, ButtonVariant},
     },
@@ -32,7 +35,10 @@ fn this_month() -> i16 {
 /// simply always there, and badging every one of them would drown the
 /// badges that mean something.
 fn in_season(offer: &OfferDetail, month: i16) -> Option<bool> {
-    offer.seasonal_months.as_deref().map(|months| months.contains(&month))
+    offer
+        .seasonal_months
+        .as_deref()
+        .map(|months| months.contains(&month))
 }
 
 #[component]
@@ -42,7 +48,11 @@ pub fn OfferList() -> Element {
     let session = use_session();
     let d = store.detail.read();
     let month = this_month();
-    let in_season_now = d.offers.iter().filter(|o| in_season(o, month) == Some(true)).count();
+    let in_season_now = d
+        .offers
+        .iter()
+        .filter(|o| in_season(o, month) == Some(true))
+        .count();
 
     rsx! {
         section { class: Styles::section, "aria-labelledby": "products-heading",

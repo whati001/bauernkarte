@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
-use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 use dioxus_primitives::switch::{self, SwitchProps};
+use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 
 #[css_module("/src/ui/switch/style.css")]
 struct Styles;

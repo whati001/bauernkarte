@@ -1,7 +1,7 @@
 use dioxus::prelude::*;
-use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 use dioxus_icons::lucide::Check;
 use dioxus_primitives::checkbox::{self, CheckboxProps};
+use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 
 #[css_module("/src/ui/checkbox/style.css")]
 struct Styles;

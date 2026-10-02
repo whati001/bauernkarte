@@ -23,8 +23,11 @@ pub enum PasswordRule {
 impl PasswordRule {
     /// The three rows the checklist shows (`TooLong` is unreachable
     /// through an input with `maxlength`).
-    pub const CHECKLIST: [PasswordRule; 3] =
-        [PasswordRule::Length, PasswordRule::NotCommon, PasswordRule::NotPersonal];
+    pub const CHECKLIST: [PasswordRule; 3] = [
+        PasswordRule::Length,
+        PasswordRule::NotCommon,
+        PasswordRule::NotPersonal,
+    ];
 
     pub fn label_key(self) -> &'static str {
         match self {
@@ -69,10 +72,15 @@ static COMMON_PASSWORDS: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
 /// The first rule `password` fails, if any.
 #[cfg_attr(not(feature = "server"), allow(dead_code))]
 pub fn check_password(password: &str, name: &str, email: &str) -> Result<(), PasswordRule> {
-    [PasswordRule::Length, PasswordRule::TooLong, PasswordRule::NotCommon, PasswordRule::NotPersonal]
-        .into_iter()
-        .find(|rule| !rule.is_met(password, name, email))
-        .map_or(Ok(()), Err)
+    [
+        PasswordRule::Length,
+        PasswordRule::TooLong,
+        PasswordRule::NotCommon,
+        PasswordRule::NotPersonal,
+    ]
+    .into_iter()
+    .find(|rule| !rule.is_met(password, name, email))
+    .map_or(Ok(()), Err)
 }
 
 /// On the deny-list as-is, or with trailing digits stripped — that's what
@@ -81,7 +89,9 @@ fn is_common(lowered: &str) -> bool {
     if COMMON_PASSWORDS.contains(lowered) {
         return true;
     }
-    let stripped = lowered.trim_end_matches(|c: char| c.is_ascii_digit()).trim();
+    let stripped = lowered
+        .trim_end_matches(|c: char| c.is_ascii_digit())
+        .trim();
     stripped.chars().count() >= 3 && COMMON_PASSWORDS.contains(stripped)
 }
 
@@ -119,7 +129,9 @@ fn valid_local_part(local: &str) -> bool {
         && !local.starts_with('.')
         && !local.ends_with('.')
         && !local.contains("..")
-        && local.chars().all(|c| c.is_ascii_alphanumeric() || LOCAL_SPECIALS.contains(c))
+        && local
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || LOCAL_SPECIALS.contains(c))
 }
 
 fn valid_domain(domain: &str) -> bool {
@@ -134,8 +146,9 @@ fn valid_domain(domain: &str) -> bool {
             && !label.ends_with('-')
             && label.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
     });
-    let tld_looks_real =
-        labels.last().is_some_and(|tld| tld.len() >= 2 && tld.chars().all(|c| c.is_ascii_alphabetic()));
+    let tld_looks_real = labels
+        .last()
+        .is_some_and(|tld| tld.len() >= 2 && tld.chars().all(|c| c.is_ascii_alphabetic()));
     well_formed && tld_looks_real
 }
 
@@ -148,20 +161,50 @@ mod tests {
 
     #[test]
     fn password_policy() {
-        assert_eq!(check_password("gruener Traktor am Feldweg", NAME, EMAIL), Ok(()));
-        assert_eq!(check_password("äöüäöüäöüäö", NAME, EMAIL), Err(PasswordRule::Length));
-        assert_eq!(check_password("passwort1234", NAME, EMAIL), Err(PasswordRule::NotCommon));
-        assert_eq!(check_password("maximilian im garten", NAME, EMAIL), Err(PasswordRule::NotPersonal));
-        assert_eq!(check_password("bootshaus am see", "Bo Li", "bo@example.com"), Ok(()));
-        assert_eq!(check_password(&"a".repeat(129), NAME, EMAIL), Err(PasswordRule::TooLong));
+        assert_eq!(
+            check_password("gruener Traktor am Feldweg", NAME, EMAIL),
+            Ok(())
+        );
+        assert_eq!(
+            check_password("äöüäöüäöüäö", NAME, EMAIL),
+            Err(PasswordRule::Length)
+        );
+        assert_eq!(
+            check_password("passwort1234", NAME, EMAIL),
+            Err(PasswordRule::NotCommon)
+        );
+        assert_eq!(
+            check_password("maximilian im garten", NAME, EMAIL),
+            Err(PasswordRule::NotPersonal)
+        );
+        assert_eq!(
+            check_password("bootshaus am see", "Bo Li", "bo@example.com"),
+            Ok(())
+        );
+        assert_eq!(
+            check_password(&"a".repeat(129), NAME, EMAIL),
+            Err(PasswordRule::TooLong)
+        );
     }
 
     #[test]
     fn emails() {
-        for ok in ["a@bc.de", "max+bk@sub.example.co.uk", "  spaced@example.com  "] {
+        for ok in [
+            "a@bc.de",
+            "max+bk@sub.example.co.uk",
+            "  spaced@example.com  ",
+        ] {
             assert!(valid_email(ok), "{ok}");
         }
-        for bad in ["", "user@host", "user@host.c", "a@1.2.3.4", "a@b..c.de", "us..er@example.com", "a@@b.de"] {
+        for bad in [
+            "",
+            "user@host",
+            "user@host.c",
+            "a@1.2.3.4",
+            "a@b..c.de",
+            "us..er@example.com",
+            "a@@b.de",
+        ] {
             assert!(!valid_email(bad), "{bad}");
         }
     }

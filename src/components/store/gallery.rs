@@ -5,7 +5,7 @@
 use dioxus::prelude::*;
 use dioxus_icons::lucide;
 
-use super::{use_store, Styles};
+use super::{Styles, use_store};
 use crate::i18n::use_locale;
 
 /// How far a pointer has to travel sideways to count as a swipe, in px.
@@ -29,7 +29,9 @@ pub fn PhotoViewer() -> Element {
     // Wraps around both ways.
     let go = move |step: isize| {
         let mut viewing = viewing;
-        viewing.set(Some((index as isize + step).rem_euclid(count as isize) as usize));
+        viewing.set(Some(
+            (index as isize + step).rem_euclid(count as isize) as usize
+        ));
     };
     let close = move || {
         let mut viewing = viewing;

@@ -190,7 +190,12 @@ fn snapshot_title(snapshot: &Value) -> String {
         .or_else(|| snapshot.get("description"))
         .and_then(Value::as_str)
         .map(str::to_string)
-        .unwrap_or_else(|| format!("#{}", snapshot.get("id").and_then(Value::as_i64).unwrap_or(0)))
+        .unwrap_or_else(|| {
+            format!(
+                "#{}",
+                snapshot.get("id").and_then(Value::as_i64).unwrap_or(0)
+            )
+        })
 }
 
 /// Changed fields only; `id` and the moderation flags never move in an
@@ -230,8 +235,15 @@ pub async fn counts(pool: &PgPool, entity: Entity) -> sqlx::Result<QueueCounts> 
                 (select count(*) from {t} where deleted)",
         t = table(entity)
     );
-    let (pending, existing, changes, deleted): (Option<i64>, Option<i64>, Option<i64>, Option<i64>) =
-        sqlx::query_as(&sql).bind(table(entity)).fetch_one(pool).await?;
+    let (pending, existing, changes, deleted): (
+        Option<i64>,
+        Option<i64>,
+        Option<i64>,
+        Option<i64>,
+    ) = sqlx::query_as(&sql)
+        .bind(table(entity))
+        .fetch_one(pool)
+        .await?;
     Ok(QueueCounts {
         pending: pending.unwrap_or(0),
         existing: existing.unwrap_or(0),
@@ -322,7 +334,9 @@ pub async fn revert(pool: &PgPool, entity: Entity, log_id: i64, by: i64) -> sqlx
 
     let (before, after) = match entity {
         Entity::Store => {
-            let Some(before) = db::store::find(pool, id).await? else { return Ok(()) };
+            let Some(before) = db::store::find(pool, id).await? else {
+                return Ok(());
+            };
             let name = str_field("name").unwrap_or_default();
             let (address, phone) = (str_field("address"), str_field("phone"));
             let (owner_name, owner_bio) = (str_field("owner_name"), str_field("owner_bio"));
@@ -331,42 +345,78 @@ pub async fn revert(pool: &PgPool, entity: Entity, log_id: i64, by: i64) -> sqlx
                 kind: StoreKind::from_db(&str_field("kind").unwrap_or(before.kind.clone())),
                 lat: old.get("lat").and_then(Value::as_f64).unwrap_or(before.lat),
                 lon: old.get("lon").and_then(Value::as_f64).unwrap_or(before.lon),
-                openinghours: json_field("openinghours").and_then(|v| serde_json::from_value(v).ok()),
+                openinghours: json_field("openinghours")
+                    .and_then(|v| serde_json::from_value(v).ok()),
                 address: address.as_deref(),
                 phone: phone.as_deref(),
                 owner_name: owner_name.as_deref(),
-                owner_since: old.get("owner_since").and_then(Value::as_i64).map(|y| y as i16),
+                owner_since: old
+                    .get("owner_since")
+                    .and_then(Value::as_i64)
+                    .map(|y| y as i16),
                 owner_bio: owner_bio.as_deref(),
             };
             let after = db::store::update(pool, id, &write, by).await?;
             (db::store::snapshot(&before), db::store::snapshot(&after))
         }
         Entity::Product => {
-            let Some(before) = db::product::find(pool, id).await? else { return Ok(()) };
+            let Some(before) = db::product::find(pool, id).await? else {
+                return Ok(());
+            };
             let name = str_field("name").unwrap_or_default();
             let description = str_field("description");
             // Entries logged before icons were part of the snapshot have
             // no "icon" key: those leave the current icon alone.
-            let icon = if old.get("icon").is_some() { str_field("icon") } else { before.icon.clone() };
-            let after = db::product::update(pool, id, &name, description.as_deref(), icon.as_deref(), by).await?;
-            (db::product::snapshot(&before), db::product::snapshot(&after))
+            let icon = if old.get("icon").is_some() {
+                str_field("icon")
+            } else {
+                before.icon.clone()
+            };
+            let after =
+                db::product::update(pool, id, &name, description.as_deref(), icon.as_deref(), by)
+                    .await?;
+            (
+                db::product::snapshot(&before),
+                db::product::snapshot(&after),
+            )
         }
         Entity::Offer => {
-            let Some(before) = db::store_product::find(pool, id).await? else { return Ok(()) };
+            let Some(before) = db::store_product::find(pool, id).await? else {
+                return Ok(());
+            };
             let months = json_field("seasonal_months").and_then(|v| serde_json::from_value(v).ok());
             let after = db::store_product::update_seasonality(pool, id, months, by).await?;
-            (db::store_product::snapshot(&before), db::store_product::snapshot(&after))
+            (
+                db::store_product::snapshot(&before),
+                db::store_product::snapshot(&after),
+            )
         }
         Entity::Image => {
-            let Some(before) = db::image::find(pool, id).await? else { return Ok(()) };
+            let Some(before) = db::image::find(pool, id).await? else {
+                return Ok(());
+            };
             let description = str_field("description");
             // Entries from before the flag existed leave it alone.
-            let cover = old.get("cover").and_then(Value::as_bool).unwrap_or(before.cover);
+            let cover = old
+                .get("cover")
+                .and_then(Value::as_bool)
+                .unwrap_or(before.cover);
             db::image::update(pool, id, description.as_deref(), cover, by).await?;
-            let Some(after) = db::image::find(pool, id).await? else { return Ok(()) };
+            let Some(after) = db::image::find(pool, id).await? else {
+                return Ok(());
+            };
             (db::image::snapshot(&before), db::image::snapshot(&after))
         }
     };
 
-    db::edit_log::write(pool, table(entity), id, EditAction::Update, &before, Some(&after), by).await
+    db::edit_log::write(
+        pool,
+        table(entity),
+        id,
+        EditAction::Update,
+        &before,
+        Some(&after),
+        by,
+    )
+    .await
 }

@@ -19,29 +19,44 @@ pub type ApiResult<T> = Result<T, AppError>;
 impl AppError {
     /// Bad input or a broken business rule — shown next to the form.
     pub fn invalid(key: &str) -> Self {
-        Self { key: key.to_string(), status: 422 }
+        Self {
+            key: key.to_string(),
+            status: 422,
+        }
     }
 
     #[cfg_attr(not(feature = "server"), allow(dead_code))]
     pub fn unauthorized() -> Self {
-        Self { key: "error-login-required".into(), status: 401 }
+        Self {
+            key: "error-login-required".into(),
+            status: 401,
+        }
     }
 
     /// Also what a non-admin gets from an admin function: a 404 reveals
     /// nothing about whether the thing exists.
     #[cfg_attr(not(feature = "server"), allow(dead_code))]
     pub fn not_found() -> Self {
-        Self { key: "error-not-found".into(), status: 404 }
+        Self {
+            key: "error-not-found".into(),
+            status: 404,
+        }
     }
 
     /// Acting on a row that has since been (soft-)deleted.
     #[cfg_attr(not(feature = "server"), allow(dead_code))]
     pub fn deleted() -> Self {
-        Self { key: "error-deleted".into(), status: 409 }
+        Self {
+            key: "error-deleted".into(),
+            status: 409,
+        }
     }
 
     pub fn internal() -> Self {
-        Self { key: "error-generic".into(), status: 500 }
+        Self {
+            key: "error-generic".into(),
+            status: 500,
+        }
     }
 }
 
@@ -62,7 +77,10 @@ impl AsStatusCode for AppError {
 impl From<ServerFnError> for AppError {
     fn from(err: ServerFnError) -> Self {
         match err {
-            ServerFnError::ServerError { message, code, .. } => Self { key: message, status: code },
+            ServerFnError::ServerError { message, code, .. } => Self {
+                key: message,
+                status: code,
+            },
             _ => Self::internal(),
         }
     }

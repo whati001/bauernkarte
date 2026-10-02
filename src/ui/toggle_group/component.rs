@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
-use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 use dioxus_primitives::toggle_group::{self, ToggleGroupProps, ToggleItemProps};
+use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 
 #[css_module("/src/ui/toggle_group/style.css")]
 struct Styles;

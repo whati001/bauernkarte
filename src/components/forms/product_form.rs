@@ -2,7 +2,7 @@
 
 use dioxus::prelude::*;
 use dioxus_icons::lucide;
-use dioxus_primitives::toast::{use_toast, ToastOptions};
+use dioxus_primitives::toast::{ToastOptions, use_toast};
 
 use crate::{
     api::{
@@ -12,13 +12,15 @@ use crate::{
     app::Route,
     components::{
         account::RequireLogin,
-        common::{use_panel_data, Field, FormError, LoadError, Panel},
+        common::{Field, FormError, LoadError, Panel, use_panel_data},
         map::use_map,
     },
     i18n::use_locale,
     models::ProductEdit,
     ui::{
-        alert_dialog::{AlertDialog, AlertDialogAction, AlertDialogActions, AlertDialogCancel, AlertDialogTitle},
+        alert_dialog::{
+            AlertDialog, AlertDialogAction, AlertDialogActions, AlertDialogCancel, AlertDialogTitle,
+        },
         button::{Button, ButtonVariant},
         input::Input,
         textarea::Textarea,
@@ -62,7 +64,10 @@ fn EditProductForm(store_id: i64, product: ProductEdit) -> Element {
         async move {
             match update_product(id, name(), description()).await {
                 Ok(saved) => {
-                    toasts.success(locale.t_name("confirmation-updated", &saved), ToastOptions::new());
+                    toasts.success(
+                        locale.t_name("confirmation-updated", &saved),
+                        ToastOptions::new(),
+                    );
                     map.reload_results();
                     nav.push(Route::StorePanel { id: store_id });
                 }

@@ -29,7 +29,10 @@ static LIMITER: LazyLock<DefaultKeyedRateLimiter<IpAddr>> = LazyLock::new(|| {
 });
 
 pub async fn limit_mutations(request: Request, next: Next) -> Response {
-    let is_mutation = !matches!(*request.method(), Method::GET | Method::HEAD | Method::OPTIONS);
+    let is_mutation = !matches!(
+        *request.method(),
+        Method::GET | Method::HEAD | Method::OPTIONS
+    );
     if is_mutation {
         // Under `dx serve` there is no peer address (see
         // `server::serve_release`), so every dev request shares one bucket.

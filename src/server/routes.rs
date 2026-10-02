@@ -4,13 +4,13 @@
 
 use axum::{
     extract::Path,
-    http::{header, HeaderMap, StatusCode},
+    http::{HeaderMap, StatusCode, header},
     response::{Html, IntoResponse, Response},
 };
 use tower_sessions::Session;
 
 use crate::{
-    i18n::{Locale, LOCALE_COOKIE},
+    i18n::{LOCALE_COOKIE, Locale},
     server::{auth, db, pool},
 };
 
@@ -44,8 +44,15 @@ pub async fn switch_locale(Path(code): Path<String>, headers: HeaderMap) -> Resp
         })
         .filter(|p| p.starts_with('/') && !p.starts_with("//"))
         .unwrap_or_else(|| "/".to_string());
-    let cookie = format!("{LOCALE_COOKIE}={}; Path=/; Max-Age=31536000; SameSite=Lax", locale.code());
-    (StatusCode::SEE_OTHER, [(header::SET_COOKIE, cookie), (header::LOCATION, back)]).into_response()
+    let cookie = format!(
+        "{LOCALE_COOKIE}={}; Path=/; Max-Age=31536000; SameSite=Lax",
+        locale.code()
+    );
+    (
+        StatusCode::SEE_OTHER,
+        [(header::SET_COOKIE, cookie), (header::LOCATION, back)],
+    )
+        .into_response()
 }
 
 /// `GET /image/{id}` — the stored bytes, if approved and not deleted, or
