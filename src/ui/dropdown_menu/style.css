@@ -49,7 +49,9 @@
 
 .dx-dropdown-menu-content[data-state="closed"] {
   animation: dx-dropdown-menu-content-animate-out 150ms ease-in forwards;
-  pointer-events: none;
+  /* Keep the closing layer hit-testable long enough to absorb a mobile
+     compatibility click after a touch selection. */
+  pointer-events: auto;
 }
 
 @keyframes dx-dropdown-menu-content-animate-out {

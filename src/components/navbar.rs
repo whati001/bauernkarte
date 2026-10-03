@@ -266,6 +266,7 @@ fn AccountActions() -> Element {
     let locale = use_locale();
     let mut session = use_session();
     let nav = navigator();
+    let mut menu_open = use_signal(|| false);
 
     let Some(user) = session.user() else {
         return rsx! {
@@ -279,20 +280,23 @@ fn AccountActions() -> Element {
         };
     };
 
-    let on_select = move |action: MenuAction| match action {
-        MenuAction::Account => {
-            nav.push(Route::Account {});
-        }
-        MenuAction::NewStore => {
-            nav.push(Route::NewStore {});
-        }
-        MenuAction::Logout => {
-            spawn(async move {
-                if logout().await.is_ok() {
-                    session.0.set(None);
-                    nav.push(Route::SearchPanel {});
-                }
-            });
+    let on_select = move |action: MenuAction| {
+        menu_open.set(false);
+        match action {
+            MenuAction::Account => {
+                nav.push(Route::Account {});
+            }
+            MenuAction::NewStore => {
+                nav.push(Route::NewStore {});
+            }
+            MenuAction::Logout => {
+                spawn(async move {
+                    if logout().await.is_ok() {
+                        session.0.set(None);
+                        nav.push(Route::SearchPanel {});
+                    }
+                });
+            }
         }
     };
 
@@ -307,7 +311,7 @@ fn AccountActions() -> Element {
                     lucide::HardHat { size: 18 }
                 }
             }
-            DropdownMenu {
+            DropdownMenu { open: menu_open(), on_open_change: move |open| menu_open.set(open),
                 DropdownMenuTrigger { class: "nav-user",
                     title: locale.t_name("nav-account-of", &user.name),
                     lucide::User { size: 16 }

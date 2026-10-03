@@ -1,10 +1,22 @@
 use dioxus::prelude::*;
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::dropdown_menu::{
-    self, DropdownMenuContentProps, DropdownMenuItemProps, DropdownMenuProps,
-    DropdownMenuTriggerProps,
+    self, DropdownMenuContentProps, DropdownMenuProps, DropdownMenuTriggerProps,
 };
 use dioxus_primitives::merge_attributes;
+
+#[derive(Props, Clone, PartialEq)]
+pub struct DropdownMenuItemProps<T: Clone + PartialEq + 'static> {
+    pub value: ReadSignal<T>,
+    pub index: ReadSignal<usize>,
+    #[props(default)]
+    pub disabled: ReadSignal<bool>,
+    #[props(default)]
+    pub on_select: Callback<T>,
+    #[props(extends = GlobalAttributes)]
+    pub attributes: Vec<Attribute>,
+    pub children: Element,
+}
 
 #[css_module("/src/ui/dropdown_menu/style.css")]
 struct Styles;
@@ -57,8 +69,24 @@ pub fn DropdownMenuContent(props: DropdownMenuContentProps) -> Element {
 pub fn DropdownMenuItem<T: Clone + PartialEq + 'static>(
     props: DropdownMenuItemProps<T>,
 ) -> Element {
+    let mut touch_selected = use_signal(|| false);
+    let touch_value = props.value;
+    let touch_on_select = props.on_select;
+    let click_on_select = props.on_select;
     let base = attributes!(div {
         class: Styles::dx_dropdown_menu_item,
+        onpointerup: move |event| {
+            if event.pointer_type() == "touch" {
+                // iOS Safari suppresses the item's synthetic click because the
+                // menu content prevents default on pointerdown to keep focus.
+                // Select on touch pointerup in Rust, then ignore the later
+                // compatibility click on browsers that still emit one.
+                event.prevent_default();
+                event.stop_propagation();
+                touch_selected.set(true);
+                touch_on_select.call((touch_value)());
+            }
+        },
     });
     let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
@@ -67,7 +95,13 @@ pub fn DropdownMenuItem<T: Clone + PartialEq + 'static>(
             disabled: props.disabled,
             value: props.value,
             index: props.index,
-            on_select: props.on_select,
+            on_select: move |value: T| {
+                if touch_selected() {
+                    touch_selected.set(false);
+                    return;
+                }
+                click_on_select.call(value);
+            },
             attributes: merged,
             {props.children}
         }
