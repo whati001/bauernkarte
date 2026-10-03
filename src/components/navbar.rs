@@ -29,9 +29,9 @@ pub fn Navbar(with_search: bool) -> Element {
     // takes over the whole top row. Wider screens always show it.
     let mut search_open = use_signal(|| false);
     // Touch option selection happens on `pointerup`; mobile browsers may
-    // dispatch the follow-up compatibility `click` after the picker closes.
-    // Keep that click on a Rust-rendered shield instead of letting it hit the
-    // map or the result card now exposed below the collapsed mobile search.
+    // dispatch a follow-up compatibility `click` after the picker closes.
+    // A Rust-rendered shield catches that click, then removes itself on the
+    // click or on its short CSS animation end if Safari emits no click.
     let mut tap_shield = use_signal(|| false);
     use_effect(move || {
         if search_open() {
@@ -100,6 +100,7 @@ pub fn Navbar(with_search: bool) -> Element {
                         event.stop_propagation();
                         tap_shield.set(false);
                     },
+                    onanimationend: move |_| tap_shield.set(false),
                 }
             }
             if with_search {
