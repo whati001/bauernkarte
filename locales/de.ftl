@@ -306,6 +306,57 @@ impressum-purpose = Blattlinie
 impressum-data-heading = Kartendaten
 impressum-data-osm = Kartendarstellung und ein Teil der Geschäftsdaten stammen von OpenStreetMap und dessen Mitwirkenden, veröffentlicht unter der Open Database License (ODbL).
 
+## Datenschutz
+datenschutz-link = Datenschutz
+datenschutz-heading = Datenschutz
+datenschutz-intro = Diese Datenschutzerklärung beschreibt die Verarbeitung personenbezogener Daten beim Besuch und bei der Nutzung der BauernKarte.
+datenschutz-updated = Stand: 26. Oktober 2026.
+datenschutz-controller-heading = Verantwortlicher
+datenschutz-controller-body = Verantwortlicher im Sinn des Art. 4 Z 7 DSGVO ist:
+datenschutz-controller-unconfigured = Die Datenschutzangaben sind noch nicht hinterlegt. Ein Admin kann sie unter /admin/privacy-info ausfüllen.
+datenschutz-controller-email = Datenschutz-E-Mail
+datenschutz-controller-phone = Telefon
+datenschutz-technical-heading = Technische Bereitstellung und Sicherheit
+datenschutz-technical-body = Bei der HTTP-Nutzung werden technisch erforderliche Verbindungs- und Anfragedaten verarbeitet, darunter die IP-Adresse auf Transport- und Hosting-Ebene, Datum und Uhrzeit, angeforderte URL und Methode, Antwortstatus sowie vom Browser übermittelte Browser- und Geräteinformationen. Das dient der Auslieferung der Anwendung, Fehlerdiagnose und dem Schutz vor Missbrauch; verändernde Anfragen werden zusätzlich durch eine flüchtige, im Arbeitsspeicher geführte Ratenbegrenzung pro IP-Adresse geschützt. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO; berechtigtes Interesse ist der sichere und zuverlässige Betrieb.
+datenschutz-account-heading = Konten und Sitzungen
+datenschutz-account-body = Für Registrierung, Anmeldung, Profil, Berechtigungen und Gemeinschaftsfunktionen verarbeitet BauernKarte Name, E-Mail-Adresse, einen gesalzenen Argon2-Passwort-Hash, Rolle, Zeitstempel und die serverseitige Zuordnung der Sitzung. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO. Passwörter werden nicht im Klartext gespeichert.
+datenschutz-content-heading = Gemeinschaftsinhalte und Moderation
+datenschutz-content-body = Bei Einreichungen und Bearbeitungen werden Geschäftsposition, Adresse, Telefonnummer, Name und Biografie der betreibenden Person, Produktangaben, Bewertungen, Bildbeschreibungen, Geschäftsfotos und Porträts, Kennungen der erstellenden und bearbeitenden Konten, Zeitstempel sowie Prüf- und Änderungsschnappschüsse verarbeitet. Zwecke sind Moderation, Zuordnung, Betrieb des Verzeichnisses, Missbrauchsbehandlung und Wiederherstellung von Bearbeitungen. Rechtsgrundlagen sind Art. 6 Abs. 1 lit. b und lit. f DSGVO; berechtigte Interessen sind ein verlässliches, nachvollziehbares Gemeinschaftsverzeichnis und dessen Schutz. Importierte Geschäftsdaten können aus OpenStreetMap und von dessen Community-Mitwirkenden stammen; dies ist die Datenquelle im Sinn des Art. 14 DSGVO.
+datenschutz-public-warning = Freigegebene Kontakt- und Betreiberangaben sowie freigegebene Bilder eines Geschäfts sind öffentlich. E-Mail-Adressen von Konten und Passwort-Hashes sind nicht öffentlich.
+datenschutz-location-heading = Standort
+datenschutz-location-body = Die Karte fragt derzeit beim Initialisieren nach dem Browserstandort. Erst nach Browserfreigabe werden Breiten- und Längengrad an den gleichursprünglichen Endpunkt /api/stores übermittelt, um Ergebnisse nach Entfernung zu sortieren. Die Koordinaten werden nicht in die Anwendungsdatenbank geschrieben, können aber als Abfrageparameter in Anfrage- oder Hosting-Protokollen vorkommen. Rechtsgrundlage ist Ihre Einwilligung nach Art. 6 Abs. 1 lit. a DSGVO. Bei Ablehnung bleibt die alphabetische Suche nutzbar. Die Berechtigung kann in den Browser- oder Website-Einstellungen widerrufen werden.
+datenschutz-osm-heading = OpenStreetMap und externe Links
+datenschutz-osm-body = Beim Laden der Karte ruft der Browser Rasterkarten direkt von tile.openstreetmap.org ab. Empfänger ist die OpenStreetMap Foundation (OSMF) im Vereinigten Königreich. Dabei können IP-Adresse, Browser, Gerät und Betriebssystem, Referrer, Datum und Uhrzeit sowie die angeforderten Kartenkacheln verarbeitet werden. Zweck ist die Kartendarstellung; Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO und das berechtigte Interesse an einer nutzbaren geografischen Darstellung. OSMF betreibt dafür ein weltweites Cache-Netz.
+datenschutz-osm-policy = Datenschutzerklärung der OpenStreetMap Foundation
+datenschutz-google-body = Der gewöhnliche Link zur Routenplanung in Google Maps stellt erst dann eine Verbindung zu Google her, wenn Sie ihm folgen. Google verarbeitet die dabei anfallenden Daten unter eigenen Bedingungen.
+datenschutz-storage-heading = Cookies, lokaler Speicher und Offline-Cache
+datenschutz-storage-session = Notwendiges Server-Sitzungscookie: Ablauf nach 14 Tagen Inaktivität, SameSite=Lax und, wenn konfiguriert, Secure.
+datenschutz-storage-locale = Cookie locale für die Sprachauswahl: höchstens ein Jahr, SameSite=Lax.
+datenschutz-storage-sidebar = localStorage-Schlüssel bk-sidebar-width für die gewählte Seitenleistenbreite: bis die Website-Daten gelöscht werden.
+datenschutz-storage-pwa = PWA-Cache für statische Dateien und die Offline-Seite: bis zur Ersetzung durch eine neue Version, zur Abmeldung des Service Workers oder zum Löschen der Website-Daten.
+datenschutz-storage-osm-cache = Browser-Cache für OpenStreetMap-Kacheln: nach den Cache-Regeln des Browsers und des Kacheldienstes.
+datenschutz-storage-legal = Diese Speicherungen sind funktional beziehungsweise technisch erforderlich und beruhen auf § 165 Abs. 3 TKG 2021. BauernKarte setzt keine Werbe-, Marketing- oder Analyse-Cookies ein.
+datenschutz-recipients-heading = Empfänger und Übermittlungen
+datenschutz-recipients-body = Empfänger können autorisierte Administratoren, die Kategorien der Hosting- und Datenbankbetreiber des Verantwortlichen, öffentliche Besucher bei freigegebenen öffentlichen Inhalten, die OpenStreetMap Foundation beim Kartenabruf sowie Behörden bei gesetzlicher Verpflichtung sein. OSMF hat ihren Sitz im Vereinigten Königreich und nutzt für Kartenkacheln ein weltweites Cache-Netz.
+datenschutz-retention-heading = Speicherdauer
+datenschutz-retention-body = Sitzungen verfallen nach 14 Tagen Inaktivität; abgelaufene Sitzungen werden stündlich bereinigt. Die Sprachauswahl bleibt höchstens ein Jahr gespeichert, die Seitenleistenbreite bis zum Löschen der Website-Daten und der Service-Worker-Cache bis zu Ersetzung, Abmeldung oder Löschung. Konten bleiben bis zur endgültigen Löschung durch einen Administrator auf Anfrage bestehen; erhaltene Beiträge verlieren danach ihre Kontozuordnung. Eigene Bewertungen können sofort entfernt werden. Beitrags- und Prüfdaten haben keine automatische Ablauffrist und bleiben erhalten, solange sie für Verzeichnisbetrieb, Moderation, Wiederherstellung, Rechtsansprüche oder eine begründete Löschentscheidung benötigt werden. Anfrage- und Sicherheitsprotokolle sowie Sicherungen folgen dem für Sicherheit und Wiederherstellung erforderlichen Zeitplan des Verantwortlichen beziehungsweise seines Hosting-Betreibers.
+datenschutz-rights-heading = Ihre Rechte
+datenschutz-right-information = Recht auf Information über die Verarbeitung.
+datenschutz-right-access = Recht auf Auskunft über Ihre personenbezogenen Daten.
+datenschutz-right-rectification = Recht auf Berichtigung unrichtiger Daten.
+datenschutz-right-erasure = Recht auf Löschung, soweit die gesetzlichen Voraussetzungen vorliegen.
+datenschutz-right-restriction = Recht auf Einschränkung der Verarbeitung.
+datenschutz-right-portability = Recht auf Datenübertragbarkeit, soweit anwendbar.
+datenschutz-right-objection = Recht auf Widerspruch gegen Verarbeitungen nach Art. 6 Abs. 1 lit. f DSGVO aus Gründen Ihrer besonderen Situation.
+datenschutz-right-withdrawal = Recht, die Einwilligung zur Standortverarbeitung jederzeit ohne Wirkung auf die Rechtmäßigkeit der vorherigen Verarbeitung zu widerrufen.
+datenschutz-rights-contact = Anfragen können an die oben unabhängig konfigurierte Datenschutz-E-Mail-Adresse gerichtet werden. Sie werden grundsätzlich innerhalb eines Monats beantwortet.
+datenschutz-no-automated-decisions = BauernKarte führt kein Profiling und keine ausschließlich automatisierten Entscheidungen mit rechtlicher oder ähnlich erheblicher Wirkung durch.
+datenschutz-complaint-heading = Beschwerderecht
+datenschutz-complaint = Sie können sich bei einer Datenschutzaufsichtsbehörde beschweren, insbesondere bei der österreichischen Datenschutzbehörde:
+datenschutz-dsb-name = Österreichische Datenschutzbehörde
+datenschutz-dsb-address = Barichgasse 40–42, 1030 Wien
+datenschutz-dsb-link = Kontaktseite der Datenschutzbehörde
+
 ## Adminbereich — Seiteninfo
 admin-nav-site-info = Seiteninfo
 admin-site-info-blurb = Die Kontaktdaten, die auf der Impressum-Seite stehen. Leere Felder werden dort weggelassen.
@@ -317,6 +368,20 @@ admin-site-info-country = Land
 admin-site-info-optional = Alles hier ist optional — ohne Gewerbe gibt es weder UID noch Firmenbucheintrag.
 admin-site-info-purpose = Grundlegende Ausrichtung der Website
 admin-site-info-saved = Seiteninfo gespeichert.
+
+## Adminbereich — Datenschutz
+admin-nav-privacy-info = Datenschutz
+admin-privacy-info-blurb = Die unabhängig vom Impressum verwalteten Angaben zum datenschutzrechtlich Verantwortlichen. Alle Felder sind optional.
+admin-privacy-info-controller-heading = Verantwortlicher
+admin-privacy-info-controller = Name des Verantwortlichen
+admin-privacy-info-street = Straße und Hausnummer
+admin-privacy-info-postal = PLZ
+admin-privacy-info-city = Ort
+admin-privacy-info-country = Land
+admin-privacy-info-contact-heading = Kontakt
+admin-privacy-info-email = E-Mail
+admin-privacy-info-phone = Telefon
+admin-privacy-info-saved = Datenschutzangaben gespeichert.
 
 ## Store info (redesigned detail panel)
 detail-close = Schließen

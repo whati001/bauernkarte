@@ -314,6 +314,32 @@ impl SiteInfo {
     }
 }
 
+/// The independently configured controller shown on the privacy page.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct PrivacyInfo {
+    pub controller_name: String,
+    pub street: String,
+    pub postal_code: String,
+    pub city: String,
+    pub country: String,
+    pub email: String,
+    pub phone: String,
+}
+
+impl PrivacyInfo {
+    pub fn is_configured(&self) -> bool {
+        !self.controller_name.trim().is_empty()
+    }
+
+    pub fn postal_city(&self) -> String {
+        [self.postal_code.trim(), self.city.trim()]
+            .into_iter()
+            .filter(|part| !part.is_empty())
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
+}
+
 // ---------------------------------------------------------------------
 // Admin
 // ---------------------------------------------------------------------

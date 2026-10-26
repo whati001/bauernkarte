@@ -3,6 +3,7 @@
 pub mod account;
 pub mod admin;
 pub mod common;
+pub mod datenschutz;
 pub mod forms;
 pub mod impressum;
 pub mod map;

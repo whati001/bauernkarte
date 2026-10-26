@@ -184,6 +184,8 @@ pub fn MapShell() -> Element {
                     }
                     footer { id: "sidebar-footer",
                         Link { to: Route::Impressum {}, {locale.t("impressum-link")} }
+                        " · "
+                        Link { to: Route::Datenschutz {}, {locale.t("datenschutz-link")} }
                     }
                 }
                 Button {

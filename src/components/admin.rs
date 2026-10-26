@@ -15,6 +15,7 @@ use crate::{
             admin_users,
         },
         error::AppError,
+        privacy::{admin_privacy_info, admin_save_privacy_info},
     },
     app::{Route, use_session},
     components::{
@@ -24,7 +25,7 @@ use crate::{
     i18n::use_locale,
     models::{
         AdminImageRow, AdminProductRow, AdminUserRow, DEFAULT_PRODUCT_ICON, Entity, PRODUCT_ICONS,
-        QueuePage, QueueTab, SiteInfo,
+        PrivacyInfo, QueuePage, QueueTab, SiteInfo,
     },
     ui::{
         alert_dialog::{
@@ -111,6 +112,10 @@ pub fn AdminShell() -> Element {
                     Link { class: "admin-rail-item", to: Route::AdminSiteInfo {}, active_class: "active",
                         lucide::Building2 { size: 16 }
                         {locale.t("admin-nav-site-info")}
+                    }
+                    Link { class: "admin-rail-item", to: Route::AdminPrivacyInfo {}, active_class: "active",
+                        lucide::Shield { size: 16 }
+                        {locale.t("admin-nav-privacy-info")}
                     }
                 }
                 main { class: "admin-content",
@@ -854,6 +859,80 @@ fn SiteInfoForm(info: SiteInfo) -> Element {
                             oninput: move |e: FormEvent| form.write().purpose = e.value(),
                         }
                     }
+                }
+            }
+            FormError { error }
+            Button { r#type: "submit",
+                lucide::CircleCheck { size: 16 }
+                {locale.t("action-save")}
+            }
+        }
+    }
+}
+
+#[component]
+pub fn AdminPrivacyInfo() -> dioxus::prelude::Element {
+    let info = use_resource(admin_privacy_info);
+    match info() {
+        Some(Ok(info)) => rsx! { PrivacyInfoForm { info } },
+        _ => rsx! {},
+    }
+}
+
+#[component]
+fn PrivacyInfoForm(info: PrivacyInfo) -> dioxus::prelude::Element {
+    let locale = use_locale();
+    let toasts = use_toast();
+    let mut form = use_signal(|| info);
+    let mut error = use_signal(|| None::<AppError>);
+
+    let submit = move |evt: FormEvent| {
+        evt.prevent_default();
+        async move {
+            match admin_save_privacy_info(form()).await {
+                Ok(()) => {
+                    error.set(None);
+                    toasts.success(locale.t("admin-privacy-info-saved"), ToastOptions::new());
+                }
+                Err(err) => error.set(Some(err)),
+            }
+        }
+    };
+
+    let text_field = move |id: &'static str,
+                           label_key: &'static str,
+                           get: fn(&PrivacyInfo) -> &String,
+                           set: fn(&mut PrivacyInfo, String)| {
+        rsx! {
+            Field { label: locale.t(label_key), html_for: id,
+                Input { id, value: get(&form.read()).clone(), oninput: move |e: FormEvent| set(&mut form.write(), e.value()) }
+            }
+        }
+    };
+
+    rsx! {
+        div { class: "admin-head",
+            h2 { {locale.t("admin-nav-privacy-info")} }
+            p { {locale.t("admin-privacy-info-blurb")} }
+        }
+        form { class: "form admin-form", onsubmit: submit,
+            Card {
+                CardHeader { CardTitle { {locale.t("admin-privacy-info-controller-heading")} } }
+                CardContent {
+                    {text_field("pi-controller", "admin-privacy-info-controller", |s| &s.controller_name, |s, v| s.controller_name = v)}
+                    {text_field("pi-street", "admin-privacy-info-street", |s| &s.street, |s, v| s.street = v)}
+                    div { class: "field-row",
+                        {text_field("pi-postal", "admin-privacy-info-postal", |s| &s.postal_code, |s, v| s.postal_code = v)}
+                        {text_field("pi-city", "admin-privacy-info-city", |s| &s.city, |s, v| s.city = v)}
+                    }
+                    {text_field("pi-country", "admin-privacy-info-country", |s| &s.country, |s, v| s.country = v)}
+                }
+            }
+            Card {
+                CardHeader { CardTitle { {locale.t("admin-privacy-info-contact-heading")} } }
+                CardContent {
+                    {text_field("pi-email", "admin-privacy-info-email", |s| &s.email, |s, v| s.email = v)}
+                    {text_field("pi-phone", "admin-privacy-info-phone", |s| &s.phone, |s, v| s.phone = v)}
                 }
             }
             FormError { error }

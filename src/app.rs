@@ -7,7 +7,8 @@ use crate::{
     api,
     components::{
         account::{Account, Login, Register},
-        admin::{AdminIndex, AdminQueue, AdminShell, AdminSiteInfo, AdminUsers},
+        admin::{AdminIndex, AdminPrivacyInfo, AdminQueue, AdminShell, AdminSiteInfo, AdminUsers},
+        datenschutz::Datenschutz,
         forms::{AddOffer, AddPhoto, EditOffer, EditProduct, EditStore, NewStore},
         impressum::Impressum,
         search::SearchPanel,
@@ -50,6 +51,8 @@ pub enum Route {
         Account {},
         #[route("/impressum")]
         Impressum {},
+        #[route("/datenschutz")]
+        Datenschutz {},
     #[end_layout]
     #[layout(AdminShell)]
         #[route("/admin")]
@@ -58,6 +61,8 @@ pub enum Route {
         AdminUsers {},
         #[route("/admin/site-info")]
         AdminSiteInfo {},
+        #[route("/admin/privacy-info")]
+        AdminPrivacyInfo {},
         #[route("/admin/queue/:slug?:tab")]
         AdminQueue { slug: String, tab: String },
     #[end_layout]

@@ -306,6 +306,57 @@ impressum-purpose = Editorial purpose
 impressum-data-heading = Map data
 impressum-data-osm = The map and part of the store data come from OpenStreetMap and its contributors, published under the Open Database License (ODbL).
 
+## Datenschutz
+datenschutz-link = Privacy
+datenschutz-heading = Privacy
+datenschutz-intro = This privacy notice describes the processing of personal data when visiting and using BauernKarte.
+datenschutz-updated = Last updated: 26 October 2026.
+datenschutz-controller-heading = Controller
+datenschutz-controller-body = The controller within the meaning of Article 4(7) GDPR is:
+datenschutz-controller-unconfigured = The privacy information has not been configured yet. An administrator can complete it at /admin/privacy-info.
+datenschutz-controller-email = Privacy email
+datenschutz-controller-phone = Phone
+datenschutz-technical-heading = Technical delivery and security
+datenschutz-technical-body = Technically necessary connection and request data are processed during HTTP use, including the IP address at transport and hosting level, date and time, requested URL and method, response status, and browser and device information sent by the browser. This serves application delivery, failure diagnosis, and abuse protection; mutation requests are also protected by volatile in-memory rate limiting per IP address. The legal basis is Article 6(1)(f) GDPR; the legitimate interest is secure and reliable operation.
+datenschutz-account-heading = Accounts and sessions
+datenschutz-account-body = For registration, login, profiles, authorization, and community functions, BauernKarte processes the name, email address, a salted Argon2 password hash, role, timestamps, and the server-side session association. The legal basis is Article 6(1)(b) GDPR. Plaintext passwords are not stored.
+datenschutz-content-heading = Community content and moderation
+datenschutz-content-body = Submissions and edits process the shop position, address, phone number, owner name and biography, product information, ratings, image descriptions, shop photos and owner portraits, creator and editor account IDs, timestamps, and audit and change snapshots. The purposes are moderation, attribution, catalog operation, abuse handling, and edit recovery. The legal bases are Article 6(1)(b) and (f) GDPR; the legitimate interests are a reliable, accountable community catalog and its protection. Imported shop data may originate from OpenStreetMap and its community contributors; this is the source of the data within the meaning of Article 14 GDPR.
+datenschutz-public-warning = Approved shop contact and owner details and approved images are public. Account email addresses and password hashes are not public.
+datenschutz-location-heading = Location
+datenschutz-location-body = The map currently requests the browser location during initialization. Only after browser permission are latitude and longitude sent to the same-origin /api/stores endpoint to rank results by distance. The coordinates are not written to the application database, but may occur as query parameters in request or hosting logs. The legal basis is your consent under Article 6(1)(a) GDPR. If permission is refused, alphabetical search remains usable. Permission can be withdrawn in the browser or site settings.
+datenschutz-osm-heading = OpenStreetMap and external links
+datenschutz-osm-body = When the map loads, the browser requests raster tiles directly from tile.openstreetmap.org. The recipient is the OpenStreetMap Foundation (OSMF) in the United Kingdom. The IP address, browser, device and operating system, referrer, date and time, and requested tiles may be processed. The purpose is map delivery; the legal basis is Article 6(1)(f) GDPR and the legitimate interest in a usable geographic display. OSMF operates a global cache network for this purpose.
+datenschutz-osm-policy = OpenStreetMap Foundation privacy policy
+datenschutz-google-body = The ordinary Google Maps directions link contacts Google only after you follow it. Google then processes the resulting data under its own terms.
+datenschutz-storage-heading = Cookies, local storage, and offline cache
+datenschutz-storage-session = Necessary server session cookie: expires after 14 days of inactivity, SameSite=Lax, and Secure when configured.
+datenschutz-storage-locale = locale cookie for the language choice: at most one year, SameSite=Lax.
+datenschutz-storage-sidebar = localStorage key bk-sidebar-width for the selected sidebar width: until site data is cleared.
+datenschutz-storage-pwa = PWA cache for static files and the offline page: until replacement by a new version, service-worker unregister, or clearing site data.
+datenschutz-storage-osm-cache = Browser cache for OpenStreetMap tiles: according to the browser's and tile service's cache rules.
+datenschutz-storage-legal = These storage operations are functional or technically necessary and rely on section 165(3) TKG 2021. BauernKarte uses no advertising, marketing, or analytics cookies.
+datenschutz-recipients-heading = Recipients and transfers
+datenschutz-recipients-body = Recipients may include authorized administrators, the controller's categories of hosting and database operators, public visitors for approved public content, the OpenStreetMap Foundation for tile requests, and authorities only where legally required. OSMF is based in the United Kingdom and uses a global cache network for map tiles.
+datenschutz-retention-heading = Retention
+datenschutz-retention-body = Sessions expire after 14 days of inactivity; expired sessions are swept hourly. The language choice remains stored for at most one year, the sidebar width until site data is cleared, and the service-worker cache until replacement, unregister, or clearing. Accounts remain until hard deletion by an administrator on request; retained contributions then lose their account association. A user's own ratings can be removed immediately. Contribution and audit data have no automatic expiry and remain while needed for catalog operation, moderation, restoration, legal claims, or a justified erasure decision. Request and security logs and backups follow the controller's or hosting operator's necessary security and recovery schedule.
+datenschutz-rights-heading = Your rights
+datenschutz-right-information = Right to information about the processing.
+datenschutz-right-access = Right of access to your personal data.
+datenschutz-right-rectification = Right to rectification of inaccurate data.
+datenschutz-right-erasure = Right to erasure where the legal requirements are met.
+datenschutz-right-restriction = Right to restriction of processing.
+datenschutz-right-portability = Right to data portability where applicable.
+datenschutz-right-objection = Right to object to processing under Article 6(1)(f) GDPR on grounds relating to your particular situation.
+datenschutz-right-withdrawal = Right to withdraw location consent at any time without affecting the lawfulness of earlier processing.
+datenschutz-rights-contact = Requests can be sent to the independently configured privacy email address above. They are normally answered within one month.
+datenschutz-no-automated-decisions = BauernKarte performs no profiling and no solely automated decisions with legal or similarly significant effects.
+datenschutz-complaint-heading = Right to complain
+datenschutz-complaint = You may lodge a complaint with a data-protection supervisory authority, in particular the Austrian Data Protection Authority:
+datenschutz-dsb-name = Austrian Data Protection Authority (Österreichische Datenschutzbehörde)
+datenschutz-dsb-address = Barichgasse 40–42, 1030 Vienna, Austria
+datenschutz-dsb-link = Data Protection Authority contact page
+
 ## Admin area — site info
 admin-nav-site-info = Site info
 admin-site-info-blurb = The contact details shown on the legal notice page. Empty fields are left off it.
@@ -317,6 +368,20 @@ admin-site-info-country = Country
 admin-site-info-optional = Everything here is optional — a private operator has no VAT ID and no register entry.
 admin-site-info-purpose = What this website is for
 admin-site-info-saved = Site info saved.
+
+## Admin area — privacy
+admin-nav-privacy-info = Privacy
+admin-privacy-info-blurb = The data-protection controller details managed independently from the legal notice. Every field is optional.
+admin-privacy-info-controller-heading = Controller
+admin-privacy-info-controller = Controller name
+admin-privacy-info-street = Street and number
+admin-privacy-info-postal = Postcode
+admin-privacy-info-city = City
+admin-privacy-info-country = Country
+admin-privacy-info-contact-heading = Contact
+admin-privacy-info-email = Email
+admin-privacy-info-phone = Phone
+admin-privacy-info-saved = Privacy information saved.
 
 ## Store info (redesigned detail panel)
 detail-close = Close

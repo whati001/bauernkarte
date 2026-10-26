@@ -12,6 +12,7 @@ pub mod admin;
 pub mod error;
 pub mod image;
 pub mod offer;
+pub mod privacy;
 pub mod product;
 pub mod search;
 pub mod session;

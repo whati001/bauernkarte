@@ -7,6 +7,7 @@ pub mod edit_log;
 pub mod image;
 pub mod moderation;
 pub mod pending;
+pub mod privacy_info;
 pub mod product;
 pub mod rating;
 pub mod review;

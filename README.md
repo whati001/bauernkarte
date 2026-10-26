@@ -8,7 +8,7 @@ app, with a redesigned store info panel.
 Same database, same features: search and map, product filter, store
 detail, community submissions with moderation, catalog editing with an
 edit log, hearts on offers, photo uploads, accounts, admin area,
-Impressum, DE/EN, PWA shell.
+Impressum, independently configured Datenschutz, DE/EN, PWA shell.
 
 ## Quick start (Docker)
 
@@ -118,6 +118,13 @@ map tiles 183 ms, pins 1.5 s (that last one is the debug bundle).
 
 Server errors travel as i18n keys (`api::error::AppError`) and are
 translated in the browser.
+
+## Legal pages
+
+`/impressum` reads the singleton `site_info` record managed at
+`/admin/site-info`. `/datenschutz` reads the separate singleton
+`privacy_info` record managed at `/admin/privacy-info`; the two legal
+datasets intentionally do not fall back to or copy from each other.
 
 ## The store info panel
 
