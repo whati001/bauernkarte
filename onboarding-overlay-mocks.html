@@ -1,0 +1,756 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BauernKarte — onboarding overlay mocks</title>
+  <link rel="icon" href="public/static/favicon.svg" type="image/svg+xml">
+  <style>
+    :root {
+      --page-bg: #f9f9f7;
+      --surface: #fcfcfb;
+      --surface-2: #f2f1ee;
+      --shell: #f5efe4;
+      --shell-2: #eae0cd;
+      --text: #0b0b0b;
+      --text-2: #52514e;
+      --muted: #898781;
+      --border: rgba(11, 11, 11, .12);
+      --border-strong: rgba(11, 11, 11, .22);
+      --green: #008300;
+      --green-dark: #006d00;
+      --green-wash: rgba(0, 131, 0, .1);
+      --forest: #2f6b4f;
+      --mint: #eff8f1;
+      --market: #c25e00;
+      --blue: #1a6bd8;
+      --radius-sm: 6px;
+      --radius: 10px;
+      --shadow-sm: 0 1px 2px rgba(11, 11, 11, .06), 0 1px 1px rgba(11, 11, 11, .04);
+      --shadow-lg: 0 28px 80px rgba(21, 18, 14, .28), 0 8px 24px rgba(21, 18, 14, .14);
+      --font-display: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+      --font-body: system-ui, -apple-system, "Segoe UI", sans-serif;
+      --ease: cubic-bezier(.2, 0, 0, 1);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      min-width: 320px;
+      color: var(--text);
+      background: #dedbd4;
+      font-family: var(--font-body);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    svg { display: block; }
+    .icon { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+    /* Prototype controls — intentionally outside the proposed product UI. */
+    .prototype {
+      min-height: 100%;
+      display: grid;
+      grid-template-rows: auto minmax(600px, 1fr);
+    }
+    .labbar {
+      position: relative;
+      z-index: 5000;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      min-height: 68px;
+      padding: .7rem clamp(.8rem, 2vw, 1.5rem);
+      border-bottom: 1px solid rgba(11, 11, 11, .16);
+      background: rgba(252, 252, 251, .96);
+      box-shadow: 0 2px 18px rgba(11, 11, 11, .08);
+    }
+    .lab-title { display: flex; align-items: center; gap: .75rem; min-width: max-content; }
+    .lab-mark {
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: var(--green);
+      color: white;
+    }
+    .lab-mark .icon { width: 21px; height: 21px; }
+    .lab-title strong { display: block; font-size: .92rem; }
+    .lab-title span { display: block; color: var(--muted); font-size: .72rem; letter-spacing: .035em; }
+    .concept-tabs {
+      display: flex;
+      gap: .3rem;
+      margin: 0 auto;
+      padding: 4px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface-2);
+    }
+    .concept-tab {
+      min-height: 38px;
+      padding: 0 .9rem;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text-2);
+      cursor: pointer;
+      font-size: .83rem;
+      font-weight: 650;
+      transition: background 150ms var(--ease), color 150ms var(--ease), box-shadow 150ms var(--ease);
+    }
+    .concept-tab:hover { color: var(--text); }
+    .concept-tab[aria-selected="true"] { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); }
+    .concept-tab b { margin-right: .32rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .lab-actions { display: flex; align-items: center; gap: .55rem; }
+    .segmented {
+      display: flex;
+      padding: 3px;
+      border: 1px solid var(--border-strong);
+      border-radius: 999px;
+      background: var(--surface);
+    }
+    .locale-button {
+      width: 37px;
+      height: 32px;
+      padding: 0;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--text-2);
+      cursor: pointer;
+      font-size: .76rem;
+      font-weight: 700;
+    }
+    .locale-button[aria-pressed="true"] { background: var(--green); color: white; }
+    .restart-button {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      height: 40px;
+      padding: 0 .75rem;
+      border: 1px solid var(--border-strong);
+      border-radius: 9px;
+      background: var(--surface);
+      cursor: pointer;
+      font-size: .82rem;
+      font-weight: 650;
+    }
+    .restart-button:hover { background: var(--surface-2); }
+
+    /* App canvas behind the onboarding. */
+    .demo-window { position: relative; min-height: 600px; overflow: hidden; background: var(--page-bg); }
+    .app-shell { position: absolute; inset: 0; display: grid; grid-template-rows: 96px 1fr; }
+    .fake-nav { position: relative; z-index: 2; border-bottom: 1px solid var(--border); background: var(--shell); }
+    .fake-nav-main { height: 58px; display: flex; align-items: center; gap: .75rem; padding: .4rem 1rem; }
+    .fake-brand { display: flex; align-items: center; gap: .58rem; min-width: max-content; }
+    .fake-brand-mark {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      background: var(--green);
+      color: white;
+    }
+    .fake-brand-copy { display: flex; flex-direction: column; line-height: 1.18; }
+    .fake-brand-copy strong { font-size: 1.03rem; }
+    .fake-brand-copy span { color: var(--text-2); font-size: .71rem; }
+    .fake-search {
+      display: flex;
+      align-items: center;
+      gap: .65rem;
+      width: min(42vw, 520px);
+      height: 43px;
+      margin-left: .5rem;
+      padding: 0 1rem;
+      border: 1px solid var(--border-strong);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--muted);
+      box-shadow: var(--shadow-sm);
+    }
+    .fake-nav-actions { display: flex; align-items: center; gap: .55rem; margin-left: auto; }
+    .fake-language { padding: .48rem .7rem; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); font-size: .76rem; font-weight: 700; }
+    .fake-avatar { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--green); color: white; }
+    .fake-chips { display: flex; gap: .4rem; height: 38px; padding: 0 1rem .45rem; overflow: hidden; }
+    .fake-chip { min-width: max-content; padding: .3rem .7rem; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); font-size: .72rem; }
+    .fake-layout { min-height: 0; display: grid; grid-template-columns: minmax(300px, 31%) 1fr; }
+    .background-sidebar { padding: 1rem; border-right: 1px solid var(--border); background: var(--shell); }
+    .background-input { height: 40px; margin-bottom: .75rem; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--surface); }
+    .background-result { display: flex; gap: .7rem; margin-top: .7rem; padding: .7rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+    .background-thumb { width: 62px; height: 62px; border-radius: 9px; background: linear-gradient(145deg, #d5e8c9, #9cb97e); }
+    .background-lines { flex: 1; padding-top: .2rem; }
+    .line { height: 7px; margin-bottom: .55rem; border-radius: 99px; background: #d5d1ca; }
+    .line.short { width: 56%; }
+    .line.tiny { width: 32%; }
+
+    .map-canvas, .mini-map {
+      position: relative;
+      overflow: hidden;
+      background-color: #e7eadf;
+      background-image:
+        linear-gradient(28deg, transparent 46%, rgba(255,255,255,.86) 47%, rgba(255,255,255,.86) 50%, transparent 51%),
+        linear-gradient(104deg, transparent 43%, rgba(255,255,255,.72) 44%, rgba(255,255,255,.72) 47%, transparent 48%),
+        repeating-linear-gradient(10deg, rgba(117,151,94,.11) 0 2px, transparent 2px 42px);
+    }
+    .map-canvas::before, .mini-map::before {
+      content: "";
+      position: absolute;
+      width: 44%;
+      height: 18%;
+      right: -4%;
+      top: 18%;
+      border: 14px solid rgba(138, 188, 218, .38);
+      border-radius: 50%;
+      transform: rotate(-18deg);
+    }
+    .map-canvas::after, .mini-map::after {
+      content: "";
+      position: absolute;
+      width: 24%;
+      height: 33%;
+      left: 24%;
+      bottom: 5%;
+      border-radius: 45% 55% 60% 40%;
+      background: rgba(128, 172, 104, .18);
+    }
+    .map-label { position: absolute; z-index: 1; color: #74796d; font-family: Georgia, serif; font-size: clamp(.62rem, 1vw, .84rem); }
+    .map-label.a { left: 21%; top: 18%; }
+    .map-label.b { right: 18%; bottom: 20%; }
+    .map-label.c { left: 48%; top: 56%; }
+    .map-pin {
+      position: absolute;
+      z-index: 2;
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border: 3px solid white;
+      border-radius: 50%;
+      background: var(--green);
+      color: white;
+      box-shadow: 0 2px 8px rgba(11,11,11,.22);
+    }
+    .map-pin .icon { width: 17px; height: 17px; }
+    .map-pin.one { left: 23%; top: 31%; }
+    .map-pin.two { right: 28%; top: 43%; background: var(--market); }
+    .map-pin.three { left: 48%; bottom: 18%; background: #7cc8ee; color: #0b4a6b; }
+    .map-zoom { position: absolute; left: 1rem; bottom: 1rem; display: grid; gap: .4rem; }
+    .map-zoom span { display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid var(--border); border-radius: 50%; background: var(--surface); box-shadow: var(--shadow-sm); font-size: 1.15rem; }
+
+    /* Shared modal anatomy. Layout changes per concept below. */
+    .overlay-layer { position: absolute; z-index: 4000; inset: 0; display: grid; place-items: center; padding: clamp(1rem, 3vw, 2.4rem); }
+    .overlay-layer[hidden] { display: none; }
+    .scrim { position: absolute; inset: 0; background: rgba(20, 20, 17, .62); backdrop-filter: blur(3px) saturate(.82); }
+    .dialog-card {
+      position: relative;
+      z-index: 1;
+      width: min(56rem, 100%);
+      max-height: calc(100% - 1rem);
+      overflow: auto;
+      border: 1px solid rgba(255,255,255,.45);
+      background: var(--surface);
+      box-shadow: var(--shadow-lg);
+      animation: dialog-in 280ms var(--ease) both;
+    }
+    @keyframes dialog-in { from { opacity: 0; transform: translateY(12px) scale(.98); } }
+    .onboarding-visual { position: relative; min-width: 0; margin: 0; overflow: hidden; background: #dfe4d7; }
+    .visual-stage { position: absolute; inset: 0; overflow: hidden; background: var(--surface); }
+    .visual-badge {
+      position: absolute;
+      z-index: 20;
+      top: .75rem;
+      left: .75rem;
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .28rem .55rem;
+      border: 1px solid rgba(255,255,255,.7);
+      border-radius: 999px;
+      background: rgba(252,252,251,.88);
+      box-shadow: var(--shadow-sm);
+      color: var(--text-2);
+      font-size: .67rem;
+      font-weight: 700;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      backdrop-filter: blur(10px);
+    }
+    .visual-badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+    .dialog-copy { min-width: 0; }
+    .step-eyebrow { margin: 0 0 .5rem; color: var(--green-dark); font-size: .72rem; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
+    .dialog-title { margin: 0; font-family: var(--font-display); font-size: clamp(1.65rem, 3vw, 2.25rem); font-weight: 650; line-height: 1.08; letter-spacing: -.02em; }
+    .dialog-body { max-width: 60ch; margin: .72rem 0 0; color: var(--text-2); font-size: .95rem; line-height: 1.58; }
+    .progress-row { display: flex; align-items: center; gap: .7rem; }
+    .step-count { min-width: 2.8rem; color: var(--text-2); font-size: .8rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .step-dots { display: flex; align-items: center; gap: .38rem; }
+    .step-dot { width: 6px; height: 6px; border: 0; border-radius: 50%; background: #c9c6c0; transition: width 180ms var(--ease), background 180ms var(--ease); }
+    .step-dot.active { width: 22px; border-radius: 99px; background: var(--green); }
+    .dialog-actions { display: flex; align-items: center; gap: .5rem; }
+    .action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: .38rem;
+      min-height: 42px;
+      padding: 0 .95rem;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      background: transparent;
+      cursor: pointer;
+      font-weight: 650;
+      transition: background 130ms var(--ease), border 130ms var(--ease), transform 130ms var(--ease);
+    }
+    .action:hover { background: var(--surface-2); }
+    .action:active { transform: translateY(1px); }
+    .action:focus-visible, .concept-tab:focus-visible, .locale-button:focus-visible, .restart-button:focus-visible { outline: 3px solid rgba(0,131,0,.23); outline-offset: 2px; }
+    .action.secondary { border-color: var(--border-strong); background: var(--surface); }
+    .action.secondary:hover { background: var(--surface-2); }
+    .action.primary { min-width: 92px; background: var(--green); color: white; }
+    .action.primary:hover { background: var(--green-dark); }
+    .action .icon { width: 16px; height: 16px; }
+    .skip-action { margin-right: auto; color: var(--text-2); }
+    .back-action[hidden] { display: none; }
+
+    /* Concept 01 — familiar landscape card. */
+    [data-concept="classic"] .dialog-card { display: grid; grid-template-rows: minmax(0, 1fr) auto; border-radius: 18px; }
+    [data-concept="classic"] .onboarding-visual { aspect-ratio: 8 / 5; border-bottom: 1px solid var(--border); }
+    [data-concept="classic"] .dialog-copy { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1.1rem 2rem; padding: 1.35rem 1.5rem 1.45rem; }
+    [data-concept="classic"] .copy-main { max-width: 660px; }
+    [data-concept="classic"] .progress-row { align-self: start; justify-self: end; padding-top: .25rem; }
+    [data-concept="classic"] .dialog-actions { grid-column: 1 / -1; padding-top: .15rem; border-top: 1px solid var(--border); }
+    [data-concept="classic"] .dialog-actions { margin-top: .25rem; padding-top: 1rem; }
+
+    /* Concept 02 — editorial split, text first and persistent chapter rail. */
+    [data-concept="split"] .dialog-card { display: grid; grid-template-columns: minmax(280px, 36%) 1fr; min-height: min(580px, calc(100vh - 120px)); border-radius: 4px 22px 22px 4px; }
+    [data-concept="split"] .dialog-copy { order: 1; display: flex; flex-direction: column; padding: clamp(1.5rem, 4vw, 2.7rem); background: var(--shell); }
+    [data-concept="split"] .onboarding-visual { order: 2; min-height: 100%; border-left: 1px solid var(--border); }
+    [data-concept="split"] .copy-main { margin: auto 0; }
+    [data-concept="split"] .dialog-title { font-size: clamp(1.85rem, 3.4vw, 2.7rem); }
+    [data-concept="split"] .dialog-body { margin-top: 1rem; }
+    [data-concept="split"] .progress-row { order: -1; align-items: flex-start; gap: .9rem; margin-bottom: 1.5rem; }
+    [data-concept="split"] .step-count { min-width: auto; padding-top: .05rem; color: var(--green-dark); }
+    [data-concept="split"] .step-dots { flex-direction: column; align-items: flex-start; gap: .5rem; }
+    [data-concept="split"] .step-dot { width: 22px; height: 3px; border-radius: 99px; }
+    [data-concept="split"] .step-dot.active { width: 58px; }
+    [data-concept="split"] .dialog-actions { flex-wrap: wrap; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+    [data-concept="split"] .skip-action { width: 100%; order: 3; justify-content: flex-start; min-height: 36px; padding-left: 0; margin-top: .15rem; }
+    [data-concept="split"] .visual-badge { top: auto; bottom: 1rem; left: 1rem; }
+
+    /* Concept 03 — compact field guide with an inset, tactile card. */
+    [data-concept="compact"] .overlay-layer { align-items: center; }
+    [data-concept="compact"] .dialog-card { width: min(39rem, 100%); display: grid; grid-template-rows: auto auto; padding: .75rem; border-radius: 30px; background: var(--shell); }
+    [data-concept="compact"] .onboarding-visual { aspect-ratio: 8 / 4.55; border-radius: 21px; box-shadow: inset 0 0 0 1px var(--border); }
+    [data-concept="compact"] .dialog-copy { position: relative; margin-top: -.9rem; padding: 1.6rem 1rem .7rem; border-radius: 18px; background: var(--surface); box-shadow: 0 -6px 22px rgba(11,11,11,.06); }
+    [data-concept="compact"] .copy-main { padding: 0 .2rem; }
+    [data-concept="compact"] .dialog-title { font-size: clamp(1.55rem, 4vw, 2rem); }
+    [data-concept="compact"] .dialog-body { margin-top: .55rem; font-size: .9rem; }
+    [data-concept="compact"] .progress-row { justify-content: space-between; margin: 1rem .2rem .85rem; }
+    [data-concept="compact"] .step-dots { order: -1; }
+    [data-concept="compact"] .dialog-actions { padding-top: .85rem; border-top: 1px solid var(--border); }
+    [data-concept="compact"] .skip-action { padding-left: .2rem; }
+    [data-concept="compact"] .visual-badge { top: .7rem; left: .7rem; }
+
+    /* Mini application captures inside each card. */
+    .shot { position: absolute; inset: 0; display: grid; grid-template-rows: 12% 1fr; background: var(--page-bg); font-size: clamp(7px, 1vw, 12px); }
+    .shot-nav { position: relative; z-index: 6; display: flex; align-items: center; gap: 1.4em; padding: .6em 1.3em; border-bottom: 1px solid var(--border); background: var(--shell); }
+    .shot-brand { display: flex; align-items: center; gap: .55em; min-width: max-content; font-weight: 750; }
+    .shot-logo { display: grid; place-items: center; width: 2.25em; height: 2.25em; border-radius: .55em; background: var(--green); color: white; }
+    .shot-logo .icon { width: 1.25em; height: 1.25em; }
+    .shot-search { position: relative; display: flex; align-items: center; gap: .55em; width: min(48%, 32em); height: 2.8em; padding: 0 1em; border: 1px solid var(--border-strong); border-radius: 99em; background: white; color: var(--muted); box-shadow: var(--shadow-sm); }
+    .shot-search.active { border-color: var(--green); box-shadow: 0 0 0 3px rgba(0,131,0,.12); color: var(--text); }
+    .shot-actions { display: flex; align-items: center; gap: .5em; margin-left: auto; }
+    .shot-pill { padding: .55em .75em; border: 1px solid var(--border); border-radius: 99em; background: white; font-weight: 650; }
+    .shot-user { display: grid; place-items: center; width: 2.7em; height: 2.7em; border-radius: 50%; background: var(--green); color: white; }
+    .shot-body { min-height: 0; display: grid; grid-template-columns: 37% 1fr; }
+    .shot-body.no-panel { grid-template-columns: 1fr; }
+    .shot-sidebar { position: relative; z-index: 3; min-width: 0; overflow: hidden; padding: 1.2em; border-right: 1px solid var(--border); background: var(--shell); }
+    .shot-map { min-width: 0; }
+    .shot-toolbar { display: flex; align-items: center; gap: .5em; height: 3.1em; padding: 0 .9em; border: 1px solid var(--border-strong); border-radius: 99em; background: white; color: var(--text-2); }
+    .shot-toolbar.active { border-color: var(--green); box-shadow: 0 0 0 2px var(--green-wash); }
+    .shot-result { display: flex; gap: .85em; margin-top: 1em; padding: .85em; border: 1px solid var(--green); border-radius: .8em; background: white; box-shadow: var(--shadow-sm); }
+    .shot-result-photo { width: 4.8em; height: 4.8em; flex: none; border-radius: .65em; background: linear-gradient(145deg, #dce8ca, #91ad72); position: relative; overflow: hidden; }
+    .shot-result-photo::before { content: ""; position: absolute; inset: 38% 16% 12%; background: #fff8e7; clip-path: polygon(50% 0,100% 38%,88% 38%,88% 100%,12% 100%,12% 38%,0 38%); }
+    .shot-result-copy { min-width: 0; flex: 1; }
+    .shot-result-copy strong { display: block; margin-bottom: .45em; font-size: 1.1em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .shot-tags { display: flex; flex-wrap: wrap; gap: .3em; }
+    .shot-tag { padding: .2em .5em; border-radius: 99em; background: var(--mint); color: var(--forest); }
+    .shot-meta { margin-top: .55em; color: var(--muted); }
+    .suggestion-menu { position: absolute; z-index: 12; top: calc(100% + .45em); left: 0; right: 0; padding: .45em; border: 1px solid var(--border); border-radius: .75em; background: white; box-shadow: 0 10px 24px rgba(11,11,11,.16); }
+    .suggestion { display: flex; align-items: center; gap: .65em; padding: .7em; border-radius: .5em; }
+    .suggestion:first-child { background: var(--green-wash); color: var(--green-dark); font-weight: 700; }
+    .shot-panel-title { margin: .1em 0 .8em; font-family: var(--font-display); font-size: 1.75em; line-height: 1.1; }
+    .shot-copy { margin: -.25em 0 1em; color: var(--text-2); }
+    .shot-form { padding: 1.1em; border: 1px solid var(--border); border-radius: .85em; background: white; box-shadow: var(--shadow-sm); }
+    .shot-label { display: block; margin: .65em 0 .3em; color: var(--text-2); font-weight: 650; }
+    .shot-input { height: 2.9em; border: 1px solid var(--border-strong); border-radius: .5em; background: white; }
+    .shot-input.prefilled { display: flex; align-items: center; padding: 0 .8em; color: var(--text); }
+    .shot-row { display: grid; grid-template-columns: 1fr 1fr; gap: .65em; }
+    .shot-button { display: inline-flex; align-items: center; gap: .45em; margin-top: 1em; padding: .65em 1em; border-radius: .5em; background: var(--green); color: white; font-weight: 700; }
+    .login-card { max-width: 23em; margin: 1.6em auto 0; padding: 1.35em; border: 1px solid var(--border); border-radius: .9em; background: white; box-shadow: var(--shadow-sm); }
+    .login-card .shot-panel-title { text-align: center; }
+    .login-card .shot-button { width: 100%; justify-content: center; }
+    .location-preview { position: relative; height: 7.5em; margin-top: .8em; border: 1px solid var(--border); border-radius: .65em; overflow: hidden; }
+    .location-preview .map-pin { left: 52%; top: 40%; width: 2.7em; height: 2.7em; transform: translate(-50%, -50%); border-width: 2px; }
+
+    .complete-card {
+      position: absolute;
+      z-index: 4;
+      top: 50%;
+      left: 50%;
+      width: min(360px, calc(100% - 2rem));
+      padding: 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--surface);
+      box-shadow: var(--shadow-lg);
+      text-align: center;
+      transform: translate(-50%, -50%);
+    }
+    .complete-card[hidden] { display: none; }
+    .complete-check { display: grid; place-items: center; width: 52px; height: 52px; margin: 0 auto .9rem; border-radius: 50%; background: var(--green-wash); color: var(--green); }
+    .complete-card h2 { margin: 0; font-family: var(--font-display); font-size: 1.55rem; }
+    .complete-card p { margin: .45rem 0 1rem; color: var(--text-2); }
+
+    @media (max-width: 760px) {
+      .prototype { grid-template-rows: auto minmax(560px, 1fr); }
+      .labbar { flex-wrap: wrap; gap: .55rem .8rem; }
+      .lab-title { flex: 1; }
+      .lab-title span { display: none; }
+      .concept-tabs { order: 3; width: 100%; }
+      .concept-tab { flex: 1; padding: 0 .4rem; }
+      .concept-tab b { display: none; }
+      .restart-button span { display: none; }
+      .fake-nav-main { padding-inline: .7rem; }
+      .fake-brand-copy span, .fake-search, .background-sidebar, .fake-chips { display: none; }
+      .app-shell { grid-template-rows: 58px 1fr; }
+      .fake-layout { display: block; }
+      .map-canvas { height: 100%; }
+      .overlay-layer { align-items: end; padding: .6rem; }
+      .dialog-card { max-height: calc(100% - .25rem); }
+
+      [data-concept="classic"] .dialog-card,
+      [data-concept="split"] .dialog-card,
+      [data-concept="compact"] .dialog-card { width: 100%; grid-template-columns: 1fr; grid-template-rows: auto auto; min-height: 0; border-radius: 22px 22px 12px 12px; }
+      [data-concept="classic"] .onboarding-visual,
+      [data-concept="split"] .onboarding-visual,
+      [data-concept="compact"] .onboarding-visual { order: 1; min-height: 0; aspect-ratio: 8 / 4.45; border: 0; border-radius: 18px 18px 0 0; }
+      [data-concept="classic"] .dialog-copy,
+      [data-concept="split"] .dialog-copy,
+      [data-concept="compact"] .dialog-copy { order: 2; display: block; margin: 0; padding: 1rem; border-radius: 0 0 18px 18px; background: var(--surface); box-shadow: none; }
+      [data-concept="split"] .copy-main { margin: 0; }
+      [data-concept="split"] .progress-row { order: initial; margin: .85rem 0; align-items: center; }
+      [data-concept="split"] .step-count { display: block; }
+      [data-concept="split"] .step-dots { flex-direction: row; align-items: center; gap: .38rem; }
+      [data-concept="split"] .step-dot { width: 6px; height: 6px; }
+      [data-concept="split"] .step-dot.active { width: 22px; }
+      [data-concept="classic"] .progress-row { justify-self: auto; padding: 0; }
+      [data-concept="classic"] .dialog-copy { grid-template-columns: 1fr; }
+      [data-concept="classic"] .dialog-actions,
+      [data-concept="split"] .dialog-actions,
+      [data-concept="compact"] .dialog-actions { display: flex; margin: 0; padding-top: .8rem; flex-wrap: wrap; }
+      [data-concept="split"] .skip-action { width: auto; order: initial; min-height: 42px; padding-left: .6rem; margin-top: 0; }
+      [data-concept="compact"] .dialog-card { padding: .45rem; background: var(--shell); }
+      [data-concept="compact"] .dialog-copy { margin-top: -.35rem; border-radius: 14px; }
+      .dialog-title { font-size: 1.55rem !important; }
+      .dialog-body { font-size: .86rem; line-height: 1.48; }
+      .progress-row { margin: .85rem 0; }
+      .action { min-height: 40px; padding-inline: .7rem; font-size: .86rem; }
+      .skip-action { margin-right: auto; }
+      .shot { font-size: clamp(6px, 1.6vw, 9px); }
+      .visual-badge { top: .45rem !important; bottom: auto !important; left: .45rem !important; }
+    }
+
+    @media (max-width: 410px) {
+      .lab-mark { width: 34px; height: 34px; }
+      .lab-title strong { font-size: .83rem; }
+      .locale-button { width: 32px; }
+      .dialog-body { margin-top: .45rem; }
+      .dialog-actions { gap: .3rem; }
+      .action { padding-inline: .55rem; }
+      .step-count { min-width: 2.5rem; }
+      .shot-brand span, .shot-pill { display: none; }
+      .shot-search { width: 65%; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <svg class="sr-only" aria-hidden="true">
+    <defs>
+      <symbol id="i-sprout" viewBox="0 0 24 24"><path d="M14 9.5V7a4 4 0 0 1 4-4h1.5a.5.5 0 0 1 .5.5V5a4 4 0 0 1-4 4 4 4 0 0 0-4 4c0 2 1 3 1 5a5 5 0 0 1-1 3"/><path d="M4 9a5 5 0 0 1 8 4 5 5 0 0 1-8-4"/><path d="M5 21h14"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+      <symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21a7 7 0 0 0-14 0"/><circle cx="12" cy="7" r="4"/></symbol>
+      <symbol id="i-store" viewBox="0 0 24 24"><path d="M3 9l2-5h14l2 5"/><path d="M5 13v8h14v-8"/><path d="M9 21v-6h6v6"/><path d="M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/></symbol>
+      <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+      <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+      <symbol id="i-rotate" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+      <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+      <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    </defs>
+  </svg>
+
+  <div class="prototype" data-concept="classic" id="prototype">
+    <header class="labbar">
+      <div class="lab-title">
+        <span class="lab-mark"><svg class="icon"><use href="#i-sprout"/></svg></span>
+        <div><strong>Onboarding overlay</strong><span>Three frontend directions</span></div>
+      </div>
+
+      <div class="concept-tabs" role="tablist" aria-label="Mock concept">
+        <button class="concept-tab" role="tab" aria-selected="true" data-concept-button="classic"><b>01</b>Canvas</button>
+        <button class="concept-tab" role="tab" aria-selected="false" data-concept-button="split"><b>02</b>Guidebook</button>
+        <button class="concept-tab" role="tab" aria-selected="false" data-concept-button="compact"><b>03</b>Field card</button>
+      </div>
+
+      <div class="lab-actions">
+        <div class="segmented" aria-label="Preview language">
+          <button class="locale-button" aria-pressed="true" data-locale="de">DE</button>
+          <button class="locale-button" aria-pressed="false" data-locale="en">EN</button>
+        </div>
+        <button class="restart-button" id="restartTop"><svg class="icon"><use href="#i-rotate"/></svg><span>Restart</span></button>
+      </div>
+    </header>
+
+    <main class="demo-window" id="demoWindow">
+      <div class="app-shell" aria-hidden="true">
+        <nav class="fake-nav">
+          <div class="fake-nav-main">
+            <div class="fake-brand">
+              <span class="fake-brand-mark"><svg class="icon"><use href="#i-sprout"/></svg></span>
+              <span class="fake-brand-copy"><strong>BauernKarte</strong><span>Regional einkaufen</span></span>
+            </div>
+            <div class="fake-search"><svg class="icon"><use href="#i-search"/></svg><span>Produkt suchen …</span></div>
+            <div class="fake-nav-actions"><span class="fake-language">DE</span><span class="fake-avatar"><svg class="icon"><use href="#i-user"/></svg></span></div>
+          </div>
+          <div class="fake-chips"><span class="fake-chip">Alle Produkte</span><span class="fake-chip">Milch</span><span class="fake-chip">Eier</span><span class="fake-chip">Äpfel</span><span class="fake-chip">Honig</span></div>
+        </nav>
+        <div class="fake-layout">
+          <aside class="background-sidebar">
+            <div class="background-input"></div>
+            <div class="background-result"><div class="background-thumb"></div><div class="background-lines"><div class="line"></div><div class="line short"></div><div class="line tiny"></div></div></div>
+            <div class="background-result"><div class="background-thumb"></div><div class="background-lines"><div class="line"></div><div class="line short"></div><div class="line tiny"></div></div></div>
+          </aside>
+          <div class="map-canvas"><span class="map-label a">Weiz</span><span class="map-label b">Gleisdorf</span><span class="map-label c">Sinabelkirchen</span><span class="map-pin one"><svg class="icon"><use href="#i-store"/></svg></span><span class="map-pin two"><svg class="icon"><use href="#i-store"/></svg></span><span class="map-pin three"><svg class="icon"><use href="#i-store"/></svg></span><span class="map-zoom"><span>+</span><span>−</span></span></div>
+        </div>
+      </div>
+
+      <section class="overlay-layer" id="overlayLayer">
+        <div class="scrim" aria-hidden="true"></div>
+        <div class="dialog-card" role="dialog" aria-modal="true" aria-labelledby="dialogTitle" aria-describedby="dialogBody">
+          <figure class="onboarding-visual">
+            <div class="visual-stage" id="visualStage"></div>
+            <figcaption class="visual-badge" id="visualBadge">Live preview</figcaption>
+          </figure>
+          <section class="dialog-copy">
+            <div class="copy-main">
+              <p class="step-eyebrow" id="stepEyebrow">Find regional food</p>
+              <h1 class="dialog-title" id="dialogTitle"></h1>
+              <p class="dialog-body" id="dialogBody"></p>
+            </div>
+            <div class="progress-row" aria-label="Onboarding progress">
+              <span class="step-count" id="stepCount"></span>
+              <span class="step-dots" id="stepDots" aria-hidden="true"></span>
+            </div>
+            <div class="dialog-actions">
+              <button class="action skip-action" id="skipButton">Überspringen</button>
+              <button class="action secondary back-action" id="backButton"><svg class="icon"><use href="#i-arrow-left"/></svg><span>Zurück</span></button>
+              <button class="action primary" id="nextButton"><span>Weiter</span><svg class="icon"><use href="#i-arrow-right"/></svg></button>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="complete-card" id="completeCard" hidden>
+        <span class="complete-check"><svg class="icon"><use href="#i-check"/></svg></span>
+        <h2 id="completeTitle">Bereit zum Entdecken</h2>
+        <p id="completeBody">Die Einführung ist in diesem Mock abgeschlossen.</p>
+        <button class="action primary" id="restartCard"><svg class="icon"><use href="#i-rotate"/></svg><span id="restartLabel">Noch einmal ansehen</span></button>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const copy = {
+      de: {
+        eyebrow: "BauernKarte kennenlernen",
+        badges: ["Produktsuche", "Geschäftssuche", "Navigation", "Neues Geschäft", "Bearbeiten"],
+        skip: "Überspringen",
+        back: "Zurück",
+        next: "Weiter",
+        finish: "Los geht's",
+        completeTitle: "Bereit zum Entdecken",
+        completeBody: "Die Einführung ist in diesem Mock abgeschlossen.",
+        restart: "Noch einmal ansehen",
+        pages: [
+          { title: "Produkt suchen", body: "Gib oben ein Produkt ein oder wähle einen Vorschlag. Karte und Liste zeigen dir passende Geschäfte." },
+          { title: "Geschäft suchen", body: "Öffne die Seitenleiste und suche nach dem Namen eines Hofladens, Automaten oder Markts." },
+          { title: "Navigation und Login", body: "In der oberen Leiste wechselst du die Sprache und meldest dich an. Mit einem Konto kannst du Geschäfte hinzufügen und ändern." },
+          { title: "Neues Geschäft hinzufügen", body: "Melde dich an, öffne dein Kontomenü und wähle „Neues Geschäft“. Trage die Daten ein und setze den Standort auf der Karte." },
+          { title: "Geschäft ändern", body: "Öffne ein Geschäft, scrolle zu den Aktionen und wähle „Bearbeiten“. Passe die Daten an und speichere." }
+        ]
+      },
+      en: {
+        eyebrow: "Get to know BauernKarte",
+        badges: ["Product search", "Store search", "Navigation", "New store", "Editing"],
+        skip: "Skip",
+        back: "Back",
+        next: "Next",
+        finish: "Get started",
+        completeTitle: "Ready to explore",
+        completeBody: "The introduction is complete in this mock.",
+        restart: "View it again",
+        pages: [
+          { title: "Search for a product", body: "Type a product at the top or choose a suggestion. The map and list show matching stores." },
+          { title: "Search for a store", body: "Open the sidebar and search for the name of a farm shop, vending machine, or market." },
+          { title: "Navigation and login", body: "Use the top bar to change language and log in. With an account, you can add and change stores." },
+          { title: "Add a new store", body: "Log in, open your account menu, and choose “New Store”. Enter the details and set the location on the map." },
+          { title: "Change a store", body: "Open a store, scroll to its actions, and choose “Edit”. Update the details and save." }
+        ]
+      }
+    };
+
+    const ui = {
+      prototype: document.querySelector("#prototype"),
+      overlay: document.querySelector("#overlayLayer"),
+      visual: document.querySelector("#visualStage"),
+      badge: document.querySelector("#visualBadge"),
+      eyebrow: document.querySelector("#stepEyebrow"),
+      title: document.querySelector("#dialogTitle"),
+      body: document.querySelector("#dialogBody"),
+      count: document.querySelector("#stepCount"),
+      dots: document.querySelector("#stepDots"),
+      skip: document.querySelector("#skipButton"),
+      back: document.querySelector("#backButton"),
+      next: document.querySelector("#nextButton"),
+      complete: document.querySelector("#completeCard"),
+      completeTitle: document.querySelector("#completeTitle"),
+      completeBody: document.querySelector("#completeBody"),
+      restartLabel: document.querySelector("#restartLabel")
+    };
+
+    const state = { concept: "classic", locale: "de", page: 0, open: true };
+    const icon = name => `<svg class="icon"><use href="#i-${name}"/></svg>`;
+
+    function shotShell(content, options = {}) {
+      const search = options.search || (state.locale === "de" ? "Produkt suchen …" : "Search for a product …");
+      const navExtra = options.loggedIn
+        ? `<span class="shot-pill">${state.locale === "de" ? "Mein Konto" : "My account"}</span><span class="shot-user">${icon("user")}</span>`
+        : `<span class="shot-pill">DE · EN</span><span class="shot-user">${icon("user")}</span>`;
+      return `<div class="shot">
+        <div class="shot-nav">
+          <div class="shot-brand"><span class="shot-logo">${icon("sprout")}</span><span>BauernKarte</span></div>
+          <div class="shot-search ${options.activeSearch ? "active" : ""}">${icon("search")}<span>${search}</span>${options.suggestions || ""}</div>
+          <div class="shot-actions">${navExtra}</div>
+        </div>
+        ${content}
+      </div>`;
+    }
+
+    function mapMarkup() {
+      return `<div class="shot-map mini-map"><span class="map-label a">Weiz</span><span class="map-label b">Gleisdorf</span><span class="map-label c">Sinabelkirchen</span><span class="map-pin one">${icon("store")}</span><span class="map-pin two">${icon("store")}</span><span class="map-pin three">${icon("store")}</span></div>`;
+    }
+
+    function renderVisual(page) {
+      const de = state.locale === "de";
+      if (page === 0) {
+        const suggestions = `<div class="suggestion-menu"><div class="suggestion">${icon("search")} ${de ? "Äpfel" : "Apples"}</div><div class="suggestion">${icon("search")} ${de ? "Apfelsaft" : "Apple juice"}</div><div class="suggestion">${icon("search")} ${de ? "Apfelmost" : "Apple cider"}</div></div>`;
+        return shotShell(`<div class="shot-body no-panel">${mapMarkup()}</div>`, { search: de ? "Äpfel" : "Apples", activeSearch: true, suggestions });
+      }
+      if (page === 1) {
+        return shotShell(`<div class="shot-body"><aside class="shot-sidebar"><div class="shot-toolbar active">${icon("search")}<span>Obstgarten Maier</span></div><div class="shot-result"><div class="shot-result-photo"></div><div class="shot-result-copy"><strong>Obstgarten Maier</strong><div class="shot-tags"><span class="shot-tag">${de ? "Äpfel" : "Apples"}</span><span class="shot-tag">${de ? "Saft" : "Juice"}</span></div><div class="shot-meta">${de ? "Hofladen · 4,2 km" : "Farm shop · 4.2 km"}</div></div></div></aside>${mapMarkup()}</div>`);
+      }
+      if (page === 2) {
+        return shotShell(`<div class="shot-body"><aside class="shot-sidebar"><div class="login-card"><h2 class="shot-panel-title">${de ? "Anmelden" : "Log in"}</h2><span class="shot-label">E-Mail</span><div class="shot-input"></div><span class="shot-label">${de ? "Passwort" : "Password"}</span><div class="shot-input"></div><span class="shot-button">${icon("lock")} ${de ? "Anmelden" : "Log in"}</span></div></aside>${mapMarkup()}</div>`);
+      }
+      const edit = page === 4;
+      const heading = edit ? (de ? "Geschäft ändern" : "Change store") : (de ? "Neues Geschäft" : "New store");
+      return shotShell(`<div class="shot-body"><aside class="shot-sidebar"><h2 class="shot-panel-title">${heading}</h2><p class="shot-copy">${de ? "Geschäftsdaten und Standort" : "Store details and location"}</p><div class="shot-form"><span class="shot-label">${de ? "Name" : "Name"}</span><div class="shot-input ${edit ? "prefilled" : ""}">${edit ? "Obstgarten Maier" : ""}</div><div class="shot-row"><div><span class="shot-label">${de ? "Art" : "Type"}</span><div class="shot-input"></div></div><div><span class="shot-label">${de ? "Ort" : "Place"}</span><div class="shot-input"></div></div></div><span class="shot-label">${de ? "Standort" : "Location"}</span><div class="location-preview mini-map"><span class="map-pin">${icon("pin")}</span></div><span class="shot-button">${edit ? icon("check") : icon("plus")} ${edit ? (de ? "Änderungen speichern" : "Save changes") : (de ? "Geschäft hinzufügen" : "Add store")}</span></div></aside>${mapMarkup()}</div>`, { loggedIn: true });
+    }
+
+    function render() {
+      const locale = copy[state.locale];
+      const page = locale.pages[state.page];
+      ui.prototype.dataset.concept = state.concept;
+      document.documentElement.lang = state.locale;
+      ui.eyebrow.textContent = locale.eyebrow;
+      ui.badge.textContent = locale.badges[state.page];
+      ui.title.textContent = page.title;
+      ui.body.textContent = page.body;
+      ui.count.textContent = `${state.page + 1} / 5`;
+      ui.dots.innerHTML = Array.from({ length: 5 }, (_, index) => `<span class="step-dot ${index === state.page ? "active" : ""}"></span>`).join("");
+      ui.skip.textContent = locale.skip;
+      ui.back.hidden = state.page === 0;
+      ui.back.querySelector("span").textContent = locale.back;
+      ui.next.querySelector("span").textContent = state.page === 4 ? locale.finish : locale.next;
+      ui.next.querySelector("use").setAttribute("href", state.page === 4 ? "#i-check" : "#i-arrow-right");
+      ui.visual.innerHTML = renderVisual(state.page);
+      ui.overlay.hidden = !state.open;
+      ui.complete.hidden = state.open;
+      ui.completeTitle.textContent = locale.completeTitle;
+      ui.completeBody.textContent = locale.completeBody;
+      ui.restartLabel.textContent = locale.restart;
+      document.querySelectorAll("[data-concept-button]").forEach(button => button.setAttribute("aria-selected", String(button.dataset.conceptButton === state.concept)));
+      document.querySelectorAll("[data-locale]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.locale === state.locale)));
+    }
+
+    function restart() {
+      state.page = 0;
+      state.open = true;
+      render();
+      requestAnimationFrame(() => ui.skip.focus());
+    }
+
+    function complete() {
+      state.open = false;
+      render();
+      document.querySelector("#restartCard").focus();
+    }
+
+    document.querySelectorAll("[data-concept-button]").forEach(button => button.addEventListener("click", () => {
+      state.concept = button.dataset.conceptButton;
+      restart();
+    }));
+    document.querySelectorAll("[data-locale]").forEach(button => button.addEventListener("click", () => {
+      state.locale = button.dataset.locale;
+      render();
+    }));
+    document.querySelector("#restartTop").addEventListener("click", restart);
+    document.querySelector("#restartCard").addEventListener("click", restart);
+    ui.skip.addEventListener("click", complete);
+    ui.back.addEventListener("click", () => { state.page = Math.max(0, state.page - 1); render(); ui.back.focus(); });
+    ui.next.addEventListener("click", () => {
+      if (state.page === 4) { complete(); return; }
+      state.page += 1;
+      render();
+      ui.next.focus();
+    });
+
+    document.addEventListener("keydown", event => {
+      if (!state.open) return;
+      if (event.key === "ArrowRight" && state.page < 4) { state.page += 1; render(); }
+      if (event.key === "ArrowLeft" && state.page > 0) { state.page -= 1; render(); }
+      if (event.key === "Escape") event.preventDefault();
+      if (event.key === "Tab") {
+        const focusable = [...ui.overlay.querySelectorAll("button:not([hidden])")];
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+        if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      }
+    });
+
+    render();
+    requestAnimationFrame(() => ui.skip.focus());
+  </script>
+</body>
+</html>

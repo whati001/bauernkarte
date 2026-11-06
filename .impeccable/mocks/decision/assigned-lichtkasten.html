@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><style>
+  :root{--bed:#d9a733;--bed-lit:#e6b94e;--bed-dark:#c08c22;--slide:#f6f2e6;--slate:#2e3440;--ink:#26292f;--verm:#c73a2e;--green:#1f5c3d;--hair:rgba(38,41,47,.22)}
+  *{box-sizing:border-box;margin:0}
+  body{width:1440px;height:900px;overflow:hidden;background:linear-gradient(135deg,var(--bed-lit) 0%,var(--bed) 55%,var(--bed-dark) 100%);color:var(--ink);font-family:"Segoe UI",system-ui,sans-serif;font-size:15px;display:flex;flex-direction:column}
+  .slide{background:var(--slide);box-shadow:0 2px 8px rgba(46,52,64,.25), 0 1px 3px rgba(46,52,64,.18)}
+  .nav{height:64px;flex:none;display:flex;align-items:center;gap:16px;padding:0 20px;margin:14px 20px 0;border:1px solid var(--hair)}
+  .mark{width:34px;height:34px;background:var(--slate);color:var(--slide);display:flex;align-items:center;justify-content:center;font-weight:800}
+  .brand b{font-weight:800;letter-spacing:.02em}
+  .brand small{display:block;font-size:11px;color:var(--muted,#6d6a5e)}
+  .srch{flex:1;max-width:600px;height:42px;border:1px solid var(--slate);background:#fff;display:flex;align-items:center;padding:0 16px;gap:10px;color:var(--muted,#6d6a5e)}
+  .navr{margin-left:auto;display:flex;align-items:center;gap:10px}
+  .lang{height:42px;border:1px solid var(--slate);display:flex;background:#fff}
+  .lang a{padding:0 14px;display:flex;align-items:center;font-size:13px;font-weight:700;color:var(--muted,#6d6a5e);text-decoration:none}
+  .lang .on{background:var(--slate);color:#fff}
+  .user{height:42px;border:1px solid var(--slate);background:#fff;display:flex;align-items:center;padding:0 16px;font-weight:700}
+  .wrap{flex:1;display:flex;min-height:0;padding:14px 20px 20px;gap:20px}
+  .side{width:460px;flex:none;display:flex;flex-direction:column;gap:14px}
+  .tool{display:flex;gap:10px;align-items:center;padding:12px 16px;border:1px solid var(--hair)}
+  .tool .f{flex:1;height:38px;border:1px solid var(--slate);background:#fff;display:flex;align-items:center;padding:0 14px;color:var(--muted,#6d6a5e);font-size:14px}
+  .sort{height:36px;border:1px solid var(--slate);background:#fff;padding:0 12px;font-size:13px}
+  .cards{flex:1;overflow:auto;display:flex;flex-direction:column;gap:10px;padding:2px}
+  .card{border:1px solid var(--hair);padding:12px 14px;display:flex;gap:12px;position:relative}
+  .card.sel{background:var(--slate);color:var(--slide)}
+  .card.sel .ds,.card.sel .meta,.card.sel .chip{color:#b8bcc4;border-color:rgba(246,242,230,.35)}
+  .card.sel .chip{background:rgba(246,242,230,.12)}
+  .card.sel .dot.g{background:#5fbd82}.card.sel .dot.a{background:var(--verm)}
+  .strip{position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--green)}
+  .card.s2 .strip{background:#b8722c}
+  .card.s3 .strip{background:#4a7fa5}
+  .thumb{flex:none;width:60px;height:60px;background:var(--slide);border:1px solid var(--hair);display:flex;align-items:center;justify-content:center;font-size:24px}
+  .card.sel .thumb{background:rgba(246,242,230,.1);border-color:rgba(246,242,230,.3)}
+  .main{flex:1;min-width:0}
+  .nm{font-weight:700;display:flex;align-items:baseline;gap:8px}
+  .nm small{font-weight:600;font-size:11px;letter-spacing:.06em;color:#6d6a5e}
+  .card.sel .nm small{color:#b8bcc4}
+  .ds{margin-left:auto;font-weight:700}
+  .chips{display:flex;gap:6px;margin-top:7px;flex-wrap:wrap}
+  .chip{font-size:12px;padding:2px 9px;border:1px solid var(--hair);background:#fff;font-weight:600}
+  .meta{margin-top:8px;font-size:12px;color:#6d6a5e;display:flex;gap:12px;font-weight:600}
+  .dot{width:8px;height:8px;border-radius:50%;background:#a5a094;display:inline-block;margin-right:5px}
+  .dot.g{background:var(--green)}.dot.a{background:var(--verm)}
+  .min{margin-left:auto;font-weight:700}
+  .season{margin-top:8px;display:flex;align-items:center;gap:3px}
+  .m{width:13px;height:5px;background:var(--hair)}
+  .m.on{background:var(--green)}
+  .card.sel .m.on{background:#5fbd82}
+  .se{font-size:11px;font-weight:700;margin-left:8px;color:#6d6a5e}
+  .card.sel .se{color:#b8bcc4}
+  .lamp{position:absolute;right:-10px;top:50%;width:70px;height:3px;background:linear-gradient(90deg,transparent,rgba(255,244,214,.95) 30%,rgba(255,244,214,.95) 70%,transparent);box-shadow:0 0 12px 4px rgba(255,220,140,.5);transform:translateY(-50%)}
+  .map{flex:1;position:relative;border:1px solid var(--hair);background:linear-gradient(135deg,#e2b94a 0%,#d9a733 50%,#c9962c 100%);min-width:0}
+  .tiles{position:absolute;inset:0;background:
+    radial-gradient(circle at 20% 30%, #8b6b1e18 0 150px, transparent 151px),
+    radial-gradient(circle at 60% 24%, #8b6b1e14 0 120px, transparent 121px),
+    radial-gradient(circle at 42% 66%, #8b6b1e16 0 180px, transparent 181px)}
+  .pin{position:absolute;width:36px;height:36px;border:2px solid var(--slide);display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;z-index:2;box-shadow:0 2px 5px rgba(46,52,64,.35)}
+  .p1{left:38%;top:40%;background:var(--green);width:44px;height:44px;box-shadow:0 0 0 6px rgba(255,240,200,.45),0 4px 12px rgba(46,52,64,.3)}
+  .p2{left:53%;top:26%;background:#b8722c}
+  .p3{left:63%;top:52%;background:#4a7fa5}
+  .p4{left:45%;top:58%;background:var(--green)}
+  .you{position:absolute;left:31%;top:47%;width:12px;height:12px;border-radius:50%;background:#1a6bd8;border:3px solid var(--slide);z-index:3}
+  .light{position:absolute;left:24%;top:44%;width:120px;height:36px;background:radial-gradient(ellipse at center,rgba(255,244,214,.55),transparent 70%);z-index:1}
+  .fab{position:absolute;left:16px;top:16px;width:44px;height:44px;background:var(--slide);border:1px solid var(--hair);display:flex;align-items:center;justify-content:center;z-index:4}
+  .fab.b{top:68px}
+  .att{position:absolute;right:14px;bottom:14px;font-size:10px;color:rgba(38,41,47,.6);z-index:3}
+</style></head>
+<body>
+  <div class="nav slide">
+    <div class="mark">B</div>
+    <div class="brand"><b>BAUERNKARTE</b><small>Höfe · Automaten · Märkte</small></div>
+    <div class="srch"><span>🔍</span><span style="flex:1">Produkt oder Geschäft suchen</span></div>
+    <div class="navr"><div class="lang"><a>DE</a><a class="on">EN</a></div><div class="user">Anmelden</div></div>
+  </div>
+  <div class="wrap">
+    <div class="side">
+      <div class="tool slide"><div class="f">🔍&nbsp; Suchen</div><div class="sort">Entfernung ▾</div></div>
+      <div class="cards">
+        <div class="card slide sel"><div class="strip"></div><div class="lamp"></div><div class="thumb">🍎</div><div class="main">
+          <div class="nm">Obstgarten Maier<small>HOF</small><span class="ds" style="color:#f6f2e6">6 MIN</span></div>
+          <div class="chips"><span class="chip">ÄPFEL</span><span class="chip">BIRNEN</span><span class="chip">KÜRBIS</span></div>
+          <div class="meta"><span><span class="dot g"></span>OFFEN BIS 18:00</span><span class="min" style="color:#f6f2e6">MAI–DEZ</span></div>
+          <div class="season"><span class="m on"></span><span class="m on"></span><span class="m on"></span><span class="m"></span><span class="m on"></span><span class="m on"></span></div>
+        </div></div>
+        <div class="card slide s2"><div class="strip"></div><div class="thumb">🥛</div><div class="main">
+          <div class="nm">Milchtankstelle Huber<small>AUTOMAT</small><span class="ds">11 MIN</span></div>
+          <div class="chips"><span class="chip">ROHMILCH</span><span class="chip">BUTTER</span></div>
+          <div class="meta"><span><span class="dot g"></span>OFFEN</span><span class="min">GANZJÄHRIG</span></div>
+          <div class="season"><span class="m on"></span><span class="m on"></span><span class="m on"></span><span class="m on"></span><span class="m on"></span><span class="m on"></span></div>
+        </div></div>
+        <div class="card slide s3"><div class="strip"></div><div class="thumb">🧺</div><div class="main">
+          <div class="nm">Wochenmarkt Altstadt<small>MARKT</small><span class="ds">14 MIN</span></div>
+          <div class="chips"><span class="chip">GEMÜSE</span><span class="chip">EIER</span></div>
+          <div class="meta"><span><span class="dot a"></span>ÖFFNET FR 07:00</span><span class="min">FR + SA</span></div>
+          <div class="season"><span class="m"></span><span class="m on"></span><span class="m"></span><span class="m on"></span><span class="m"></span><span class="m on"></span></div>
+        </div></div>
+        <div class="card slide"><div class="strip"></div><div class="thumb">🥔</div><div class="main">
+          <div class="nm">Kartoffelhof Lindner<small>HOF</small><span class="ds">18 MIN</span></div>
+          <div class="chips"><span class="chip">KARTOFFELN</span><span class="chip">ZWIEBELN</span></div>
+          <div class="meta"><span><span class="dot" style="background:#a5a094"></span>GESCHLOSSEN</span><span class="min">JUL–OKT</span></div>
+          <div class="season"><span class="m"></span><span class="m"></span><span class="m on"></span><span class="m on"></span><span class="m on"></span><span class="m on"></span></div>
+        </div></div>
+      </div>
+    </div>
+    <div class="map">
+      <div class="tiles"></div>
+      <div class="light"></div>
+      <div class="pin p1">🧺</div><div class="pin p2">🤖</div><div class="pin p3">🏪</div><div class="pin p4">🧺</div>
+      <div class="you"></div>
+      <div class="fab">☰</div><div class="fab b">◎</div>
+      <div class="att">© OpenStreetMap</div>
+    </div>
+  </div>
+</body></html>

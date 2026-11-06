@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><style>
+  :root{--sheet:#fbfbf8;--ink:#17324d;--muted:#5a6b7c;--wm1:#c8102e;--wm2:#1a6bd8;--wm3:#c25e00;--hair:rgba(23,50,77,.18)}
+  *{box-sizing:border-box;margin:0}
+  body{width:1440px;height:900px;overflow:hidden;background:var(--sheet);color:var(--ink);font-family:"Segoe UI",system-ui,sans-serif;font-size:15px;display:flex;flex-direction:column}
+  .nav{height:64px;flex:none;border-bottom:1px solid var(--hair);display:flex;align-items:center;gap:16px;padding:0 20px;background:#fff}
+  .mark{width:34px;height:34px;border-radius:50%;border:3px solid var(--ink);color:var(--ink);display:flex;align-items:center;justify-content:center;font-weight:800}
+  .brand b{font-size:17px;font-weight:800;display:block;letter-spacing:-.01em}
+  .brand small{font-size:11px;color:var(--muted)}
+  .srch{flex:1;max-width:600px;height:42px;border:1.5px solid var(--ink);border-radius:8px;background:#fff;display:flex;align-items:center;padding:0 16px;gap:10px;color:var(--muted)}
+  .srch span{flex:1}
+  .navr{margin-left:auto;display:flex;align-items:center;gap:10px}
+  .lang{font-weight:700;font-size:13px;color:var(--muted)}
+  .user{height:42px;border:1.5px solid var(--ink);border-radius:8px;background:#fff;display:flex;align-items:center;padding:0 16px;font-size:13px;font-weight:700;color:var(--ink)}
+  .wrap{flex:1;display:flex;min-height:0}
+  .side{width:460px;flex:none;border-right:1px solid var(--hair);background:#fff;display:flex;flex-direction:column}
+  .tool{padding:12px 16px;border-bottom:1px solid var(--hair);display:flex;gap:10px;align-items:center}
+  .tool .f{flex:1;height:38px;border:1.5px solid var(--ink);border-radius:8px;background:#fff;display:flex;align-items:center;padding:0 14px;color:var(--muted);font-size:14px}
+  .sort{height:36px;border:1.5px solid var(--ink);border-radius:8px;background:#fff;padding:0 12px;font-size:13px;color:var(--ink)}
+  .count{padding:10px 16px 0;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--wm1)}
+  .list{flex:1;overflow:auto;padding:10px 16px 16px;display:flex;flex-direction:column;gap:0}
+  .leg{display:flex;gap:14px;padding:14px 2px;border-bottom:1px solid var(--hair)}
+  .leg.hot{background:rgba(200,16,46,.045)}
+  .way{flex:none;width:34px;height:34px;border-radius:50%;border:3px solid var(--wm1);background:#fff;color:var(--wm1);font-weight:800;font-size:15px;display:flex;align-items:center;justify-content:center}
+  .leg:nth-child(2) .way{border-color:var(--wm2);color:var(--wm2)}
+  .leg:nth-child(3) .way{border-color:var(--wm3);color:var(--wm3)}
+  .main{flex:1;min-width:0}
+  .nm{font-weight:700;font-size:16px}
+  .trail{font-size:12px;color:var(--muted);margin-top:2px;display:flex;gap:12px}
+  .trail b{color:var(--ink)}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+  .chip{font-size:12px;padding:2px 10px;border-radius:6px;border:1px solid var(--hair);background:#fff;color:#4a5560;font-weight:500}
+  .chips .p{background:rgba(154,45,134,.09);color:#7a2468;border-color:rgba(154,45,134,.3)}
+  .meta{margin-top:8px;font-size:13px;color:var(--muted);display:flex;gap:14px;align-items:center}
+  .min{font-weight:700;color:var(--ink)}
+  .map{flex:1;position:relative;background:#f2f1ec;min-width:0}
+  .field{position:absolute;inset:0;background:
+    radial-gradient(circle at 20% 25%, #e3e9d8 0 150px, transparent 151px),
+    radial-gradient(circle at 60% 30%, #dfe7d2 0 120px, transparent 121px),
+    radial-gradient(circle at 45% 62%, #e3e9d8 0 190px, transparent 191px),
+    linear-gradient(150deg,#f2f1ec,#e8e7df)}
+  .contour{position:absolute;border:1.5px solid rgba(139,111,71,.35);border-radius:50%}
+  .c1{width:260px;height:180px;left:14%;top:38%;transform:rotate(-14deg)}
+  .c2{width:340px;height:220px;left:40%;top:52%;transform:rotate(8deg)}
+  .c3{width:200px;height:140px;left:62%;top:18%;transform:rotate(22deg)}
+  .course{position:absolute;left:26%;top:33%;width:46%;height:36%;z-index:2}
+  .course svg{width:100%;height:100%}
+  .pin{position:absolute;width:34px;height:34px;border-radius:50%;border:3px solid #9b2d86;background:#fff;color:#9b2d86;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;z-index:3}
+  .p1{left:34%;top:36%}.p2{left:50%;top:24%}.p3{left:62%;top:52%}.p4{left:44%;top:60%}
+  .you{position:absolute;left:28%;top:44%;width:12px;height:12px;border-radius:50%;background:#1a6bd8;border:3px solid #fff;box-shadow:0 0 0 4px rgba(26,107,216,.25);z-index:4}
+  .legend{position:absolute;left:16px;bottom:16px;background:#fff;border:1px solid var(--hair);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--muted);z-index:3}
+  .att{position:absolute;right:14px;bottom:14px;font-size:10px;color:var(--muted);z-index:3}
+</style></head>
+<body>
+  <div class="nav">
+    <div class="mark">B</div>
+    <div class="brand"><b>BauernKarte</b><small>Höfe, Automaten & Märkte</small></div>
+    <div class="srch"><span>🔍</span><span>Produkt oder Geschäft suchen</span></div>
+    <div class="navr"><span class="lang">DE / <b>EN</b></span><div class="user">Anmelden</div></div>
+  </div>
+  <div class="wrap">
+    <div class="side">
+      <div class="tool"><div class="f">🔍&nbsp; Ziel suchen</div><div class="sort">Entfernung ▾</div></div>
+      <div class="count">Route — 5 Wegpunkte</div>
+      <div class="list">
+        <div class="leg hot"><div class="way">1</div><div class="main">
+          <div class="nm">Obstgarten Maier</div>
+          <div class="trail"><span><b>6 min</b> · Hofladen</span><span>Offen bis 18:00</span></div>
+          <div class="chips"><span class="chip p">Äpfel</span><span class="chip p">Birnen</span><span class="chip">Kürbis</span></div>
+        </div></div>
+        <div class="leg"><div class="way">2</div><div class="main">
+          <div class="nm">Milchtankstelle Huber</div>
+          <div class="trail"><span><b>11 min</b> · Automat</span><span>Ganzjährig offen</span></div>
+          <div class="chips"><span class="chip p">Rohmilch</span><span class="chip p">Butter</span></div>
+        </div></div>
+        <div class="leg"><div class="way">3</div><div class="main">
+          <div class="nm">Wochenmarkt Altstadt</div>
+          <div class="trail"><span><b>14 min</b> · Markt</span><span>Öffnet Fr 07:00</span></div>
+          <div class="chips"><span class="chip p">Gemüse</span><span class="chip">Fleisch</span><span class="chip">Eier</span></div>
+        </div></div>
+        <div class="leg"><div class="way">4</div><div class="main">
+          <div class="nm">Kartoffelhof Lindner</div>
+          <div class="trail"><span><b>18 min</b> · Hofladen</span><span>Geschlossen</span></div>
+          <div class="chips"><span class="chip p">Kartoffeln</span><span class="chip p">Zwiebeln</span></div>
+        </div></div>
+      </div>
+    </div>
+    <div class="map">
+      <div class="field"></div>
+      <div class="contour c1"></div><div class="contour c2"></div><div class="contour c3"></div>
+      <div class="course"><svg viewBox="0 0 400 300">
+        <path d="M20,120 C80,80 140,60 168,44 M168,44 C230,60 260,140 210,168 M210,168 C200,220 160,250 130,240" fill="none" stroke="#9b2d86" stroke-width="3" stroke-dasharray="1 6" stroke-linecap="round"/>
+      </svg></div>
+      <div class="pin p1">1</div><div class="pin p2">2</div><div class="pin p3">3</div><div class="pin p4">4</div>
+      <div class="you"></div>
+      <div class="fab" style="position:absolute;left:16px;top:16px;width:44px;height:44px;background:#fff;border-radius:8px;border:1.5px solid var(--ink);display:flex;align-items:center;justify-content:center;z-index:5">☰</div>
+      <div class="legend">Route in Violett · Wegpunkte nummeriert</div>
+      <div class="att">© OpenStreetMap</div>
+    </div>
+  </div>
+</body></html>

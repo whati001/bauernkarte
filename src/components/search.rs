@@ -32,7 +32,7 @@ enum Sort {
 #[component]
 pub fn SearchPanel() -> Element {
     let locale = use_locale();
-    let map = use_map();
+    let mut map = use_map();
     let sort = use_signal(|| Sort::Distance);
 
     // The visitor's weekday and time, for "open today". Browser-only: the
@@ -63,22 +63,45 @@ pub fn SearchPanel() -> Element {
             }
             match (map.results)() {
                 None => rsx! {
-                    for _ in 0..5 {
-                        Skeleton { style: "height: 96px; margin-bottom: 8px; border-radius: 10px;" }
+                    div { class: "results",
+                        for _ in 0..5 {
+                            Skeleton { style: "height: 108px; border-radius: var(--radius-lg) var(--radius-md) var(--radius-md) var(--radius-md);" }
+                        }
                     }
                 },
                 Some(mut results) => {
                     if sort() == Sort::Name {
                         results.sort_by_key(|s| s.name.to_lowercase());
                     }
+                    let count = results.len();
                     rsx! {
-                        p { class: "result-count", {locale.t_count("search-results-count", results.len() as i64)} }
                         if results.is_empty() {
-                            p { class: "muted", {locale.t("search-no-results")} }
-                        }
-                        ul { class: "results",
-                            for store in results {
-                                ResultCard { key: "{store.id}", store, now: now() }
+                            div { class: "empty-state",
+                                div { class: "empty-art", "aria-hidden": "true",
+                                    lucide::Carrot { size: 30 }
+                                }
+                                p { class: "empty-title", {locale.t("search-empty-title")} }
+                                p { class: "empty-body", {locale.t("search-empty-body")} }
+                                button {
+                                    class: "button-link small",
+                                    r#type: "button",
+                                    onclick: move |_| {
+                                        map.name.set(String::new());
+                                        map.kind.set(None);
+                                        map.product.set(None);
+                                    },
+                                    lucide::RotateCcw { size: 14 }
+                                    {locale.t("search-empty-reset")}
+                                }
+                            }
+                        } else {
+                            p { class: "result-count",
+                                {locale.t_count("search-results-count", count as i64)}
+                            }
+                            ul { class: "results",
+                                for store in results {
+                                    ResultCard { key: "{store.id}", store, now: now() }
+                                }
                             }
                         }
                     }
@@ -220,12 +243,14 @@ fn ResultCard(store: StoreSearchResult, now: Option<(i16, String)>) -> Element {
         .first()
         .and_then(|p| p.icon.clone())
         .unwrap_or_else(|| "🌾".into());
+    let kind_label = locale.t(store.kind.label_key());
 
     rsx! {
         li {
             class: "result-card",
             role: "button",
             tabindex: 0,
+            "aria-label": format!("{} — {}", store.name, kind_label.clone()),
             onclick: move |_| {
                 nav.push(Route::StorePanel { id });
             },
@@ -242,11 +267,12 @@ fn ResultCard(store: StoreSearchResult, now: Option<(i16, String)>) -> Element {
             }
             div { class: "result-main",
                 div { class: "result-head",
-                    h3 { class: "result-name", "{store.name}" }
+                    span { class: "result-kind", "data-kind": store.kind.as_str(), {kind_label.clone()} }
                     if let Some(m) = store.distance_m {
                         span { class: "result-distance", {format!("{:.1} km", m / 1000.0)} }
                     }
                 }
+                h3 { class: "result-name", "{store.name}" }
                 div { class: "result-chips",
                     for p in store.products.iter().take(CHIP_LIMIT) {
                         Badge { class: "result-chip", variant: BadgeVariant::Secondary,

@@ -11,6 +11,7 @@ use crate::{
         common::{PanelSkeleton, use_panel_data},
         map::{MapCtx, MapView, Picker},
         navbar::Navbar,
+        onboarding::Onboarding,
     },
     fuzzy,
     i18n::use_locale,
@@ -228,6 +229,7 @@ pub fn MapShell() -> Element {
                 }
                 MapView {}
             }
+            Onboarding {}
         }
     }
 }

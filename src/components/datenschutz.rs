@@ -89,6 +89,7 @@ pub fn Datenschutz() -> dioxus::prelude::Element {
                     li { {locale.t("datenschutz-storage-session")} }
                     li { {locale.t("datenschutz-storage-locale")} }
                     li { {locale.t("datenschutz-storage-sidebar")} }
+                    li { {locale.t("datenschutz-storage-onboarding")} }
                     li { {locale.t("datenschutz-storage-pwa")} }
                     li { {locale.t("datenschutz-storage-osm-cache")} }
                 }

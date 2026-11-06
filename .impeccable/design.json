@@ -1,0 +1,322 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-06T11:41:41.178407+00:00",
+  "title": "Design System: BauernKarte",
+  "extensions": {
+    "colorMeta": {
+      "land": {
+        "role": "primary",
+        "canonical": "#5a9e3d (light) / #6fb84e (dark)",
+        "tonalRamp": [
+          "#21321a",
+          "#375629",
+          "#4b7c36",
+          "#5fa442",
+          "#79bb5d",
+          "#9ac488",
+          "#c7d8c0",
+          "#f2f4f1"
+        ]
+      },
+      "land-deep": {
+        "role": "primary",
+        "canonical": "#2f6b2b (light) / #8ecb70 (dark)",
+        "tonalRamp": [
+          "#1c321a",
+          "#2d562a",
+          "#3c7b38",
+          "#4aa244",
+          "#65b95f",
+          "#8cc389",
+          "#c2d7c1",
+          "#f1f4f1"
+        ]
+      },
+      "sun": {
+        "role": "capsule-identity",
+        "canonical": "#f5d23f / #e9bb2e, ink #4c3d00 / #241c00",
+        "tonalRamp": [
+          "#3f360d",
+          "#6e5c12",
+          "#a08512",
+          "#d6b00f",
+          "#ebc72d",
+          "#e3cb69",
+          "#e4dbb4",
+          "#f5f4ef"
+        ]
+      },
+      "pond": {
+        "role": "capsule-identity",
+        "canonical": "#4fa6e3 / #5eb1ea, ink #10374f / #0c2838",
+        "tonalRamp": [
+          "#122a3a",
+          "#1b4665",
+          "#206392",
+          "#2381c3",
+          "#409ad9",
+          "#75aed7",
+          "#b9cfdf",
+          "#f0f3f5"
+        ]
+      },
+      "coral": {
+        "role": "capsule-identity",
+        "canonical": "#ff6b5a / #ff7f70, ink #5c130c / #3f0b06",
+        "tonalRamp": [
+          "#42100b",
+          "#73170d",
+          "#a81b0b",
+          "#e11b05",
+          "#f63823",
+          "#ea7062",
+          "#e7b7b1",
+          "#f6efef"
+        ]
+      },
+      "lilac": {
+        "role": "capsule-identity",
+        "canonical": "#ebc1ff / #cf9ff0, ink #4b1a5c / #2b0e38",
+        "tonalRamp": [
+          "#300b42",
+          "#520d73",
+          "#750ba8",
+          "#9a05e1",
+          "#b223f6",
+          "#be62ea",
+          "#d5b1e7",
+          "#f4eff6"
+        ]
+      },
+      "water": {
+        "role": "neutral",
+        "canonical": "#f5f1e4 / #1b1d17",
+        "tonalRamp": [
+          "#332d1a",
+          "#574c28",
+          "#7d6c35",
+          "#a58e40",
+          "#bda65c",
+          "#c5b687",
+          "#d8d2c0",
+          "#f4f3f1"
+        ]
+      },
+      "water-deep": {
+        "role": "neutral",
+        "canonical": "#ebe5d2 / #141610",
+        "tonalRamp": [
+          "#312c1c",
+          "#534a2c",
+          "#77693b",
+          "#9d8948",
+          "#b5a164",
+          "#c0b38c",
+          "#d6d1c2",
+          "#f4f3f1"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "canonical": "#ffffff / #23291f",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#8c8c8c",
+          "#a6a6a6",
+          "#cccccc",
+          "#f2f2f2"
+        ]
+      },
+      "critical": {
+        "role": "state",
+        "canonical": "#d0432e / #e66767",
+        "tonalRamp": [
+          "#381915",
+          "#60281f",
+          "#8b3427",
+          "#b93f2c",
+          "#d05a49",
+          "#d1867a",
+          "#ddbfbb",
+          "#f5f1f0"
+        ]
+      }
+    },
+    "shadows": [
+      {
+        "name": "ambient-rest",
+        "value": "0 2px 6px rgba(44,46,42,0.08), 0 1px 2px rgba(44,46,42,0.08)",
+        "purpose": "Resting lobes, inputs, pins"
+      },
+      {
+        "name": "ambient-float",
+        "value": "0 10px 24px rgba(44,46,42,0.16), 0 3px 8px rgba(44,46,42,0.1)",
+        "purpose": "Dropdowns, tooltips, dialogs, selected pins"
+      }
+    ],
+    "motion": [
+      {
+        "name": "overshoot-settle",
+        "value": "cubic-bezier(0.34, 1.3, 0.48, 1), 0.3–0.4s",
+        "purpose": "State changes: card lift, pin selection, sidebar resize, dot fills."
+      },
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "Pure entrances; never bounced."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "stack",
+        "value": "900px — map above panel"
+      },
+      {
+        "name": "compact",
+        "value": "700px — one-row navbar"
+      },
+      {
+        "name": "icon-only",
+        "value": "440px"
+      },
+      {
+        "name": "admin-collapse",
+        "value": "800px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Land capsule; the one action colour.",
+      "html": "<button class=\"ds-btn-primary\">Route berechnen</button>",
+      "css": ".ds-btn-primary { display:inline-flex; align-items:center; gap:0.4rem; min-height:44px; padding:0 1rem; border:none; border-radius:999px; background:var(--accent,#5a9e3d); color:var(--accent-contrast,#fff); font:inherit; font-weight:600; transition:filter .15s var(--ease-out,cubic-bezier(.22,1,.36,1)), transform .15s var(--ease-out,cubic-bezier(.22,1,.36,1)); } .ds-btn-primary:hover { filter:brightness(1.08); } .ds-btn-primary:active { transform:scale(.98); }"
+    },
+    {
+      "name": "Product Chip",
+      "kind": "chip",
+      "refersTo": "chip-product",
+      "description": "Land-wash pill with Land-deep text.",
+      "html": "<span class=\"ds-chip\">🍎 Boskoop-Apfel</span>",
+      "css": ".ds-chip { display:inline-flex; align-items:center; gap:0.35rem; padding:3px 12px; border-radius:999px; background:var(--land-wash-strong,#cbe2c2); color:var(--land-deep,#2f6b2b); font-size:0.8125rem; font-weight:600; }"
+    },
+    {
+      "name": "Result Card",
+      "kind": "card",
+      "refersTo": "card-result",
+      "description": "White lobe with petal corner; Land border + lift on hover.",
+      "html": "<div class=\"ds-result-card\"><div class=\"ds-thumb\">🍎</div><div><strong>Obstgarten Maier</strong><div style=\"font-size:12px;color:#6b6d63\">Offen bis 18:00 · 6 min zu Fuß</div></div></div>",
+      "css": ".ds-result-card { display:flex; align-items:center; gap:0.875rem; padding:0.75rem; background:var(--surface,#fff); border:1.5px solid rgba(44,46,42,.16); border-radius:22px 14px 14px 14px; box-shadow:0 2px 6px rgba(44,46,42,.08); transition:border-color .3s var(--ease,cubic-bezier(.34,1.3,.48,1)), transform .3s var(--ease,cubic-bezier(.34,1.3,.48,1)); } .ds-result-card:hover { border-color:var(--accent,#5a9e3d); transform:translateY(-2px); box-shadow:0 10px 24px rgba(44,46,42,.16); } .ds-thumb { width:72px; height:72px; border-radius:14px; background:var(--land-wash,#e2eddb); display:flex; align-items:center; justify-content:center; font-size:2rem; flex:none; }"
+    },
+    {
+      "name": "Map Pin",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "Petal-silhouette pin in kind colours; selected rotates and halos.",
+      "html": "<div class=\"ds-pin\" style=\"--pin: var(--sun,#f5d23f); --pin-ink: #4c3d00\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M4 10 L20 10 M6 10 L6 20 M18 10 L18 20 M4 10 L4 20 M4 8 L12 3 L20 8\"/></svg></div>",
+      "css": ".ds-pin { width:40px; height:40px; border-radius:50% 50% 50% 30%; background:var(--pin,#5a9e3d); color:var(--pin-ink,#fff); border:3px solid var(--water,#f5f1e4); box-shadow:0 2px 6px rgba(44,46,42,.08); display:flex; align-items:center; justify-content:center; } .ds-pin.sel { width:52px; height:52px; transform:rotate(-4deg) translateY(-2px); box-shadow:0 0 0 6px color-mix(in srgb, var(--pin,#5a9e3d) 22%, transparent), 0 10px 24px rgba(44,46,42,.16); }"
+    },
+    {
+      "name": "Directions Bar",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "Full-width Land capsule closing the store panel.",
+      "html": "<a class=\"ds-directions\" href=\"#\">🧭 Route berechnen</a>",
+      "css": ".ds-directions { display:flex; align-items:center; justify-content:center; gap:8px; min-height:44px; border-radius:999px; background:var(--accent,#5a9e3d); color:var(--accent-contrast,#fff); font-weight:700; text-decoration:none; } .ds-directions:hover { filter:brightness(1.08); }"
+    },
+    {
+      "name": "Section Card",
+      "kind": "card",
+      "refersTo": "card-result",
+      "description": "Content lobe with quiet uppercase label.",
+      "html": "<div class=\"ds-section\"><h3 class=\"ds-label\">Öffnungszeiten</h3><div>Mo–Fr 9:00–17:00</div></div>",
+      "css": ".ds-section { padding:1rem; border:1px solid rgba(44,46,42,.16); border-radius:22px; background:var(--surface,#fff); box-shadow:0 2px 6px rgba(44,46,42,.08); } .ds-label { margin:0 0 .75rem; font-size:.75rem; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--text-secondary,#4b5346); }"
+    },
+    {
+      "name": "Language Switch",
+      "kind": "nav",
+      "refersTo": null,
+      "description": "Segmented pill; active segment is a Land capsule.",
+      "html": "<nav class=\"ds-lang\"><a class=\"on\" href=\"#\">DE</a><a href=\"#\">EN</a></nav>",
+      "css": ".ds-lang { display:inline-flex; align-items:stretch; height:44px; padding:3px; border:1px solid rgba(44,46,42,.3); border-radius:999px; background:var(--surface,#fff); } .ds-lang a { display:inline-flex; align-items:center; justify-content:center; min-width:2.75rem; padding:0 .75rem; border-radius:999px; font-size:.875rem; font-weight:600; color:var(--text-secondary,#4b5346); text-decoration:none; } .ds-lang a.on { background:var(--accent,#5a9e3d); color:var(--accent-contrast,#fff); }"
+    },
+    {
+      "name": "Store Hero",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "180px cover photo under a green-ending scrim, white 800 name bottom-left.",
+      "html": "<div class=\"ds-hero\"><h2>Obstgarten Maier</h2></div>",
+      "css": ".ds-hero { position:relative; height:180px; border-radius:22px 22px 0 0; background:linear-gradient(to bottom, rgba(0,0,0,.18) 0%, transparent 35%, rgba(24,34,20,.72) 100%), linear-gradient(#7bb25c,#4c7d33); display:flex; align-items:flex-end; padding:16px; } .ds-hero h2 { margin:0; color:#fff; font-weight:800; letter-spacing:-.04em; font-size:1.75rem; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Der Gartenplan — the zoo & gardens guide map",
+    "overview": "The 2026 facelift replaced the Farm Shop Counter world with a guide-map world: the app reads like the folded map you get at a garden's entrance. Cream is the water the interface floats on; every panel, card, and chip is a lobe of land rising from it — white or green, flat, unmodulated, with one petal corner that marks it as part of the guide rather than a box. One grotesque (the system sans, never a web font) carries everything in two voices: 800-weight short-lead display for headings, regular for body. Colour does real jobs only: the land greens mean brand and action, and the four capsule colours are identities — sun (farm shop), pond (vending machine), coral (market), lilac (season-off) — never decoration. Motion is the guide's overshoot settle: everything that moves takes 0.4s, overshoots, and settles.",
+    "keyCharacteristics": [
+      "Cream water ground; white lobe cards with one petal corner",
+      "Guide green (land) for brand, pins, primary actions; darker land-deep for text accents",
+      "Four capsule colour identities: sun/pond/coral/lilac, each with its own ink",
+      "One grotesque, 800/-0.03em display, 750 card titles; label voice is spaced uppercase",
+      "Petal-silhouette pins and clusters; petal brand mark",
+      "Overshoot settle easing on everything that moves; reduced-motion flattens it"
+    ],
+    "rules": [
+      {
+        "name": "The Capsule Rule",
+        "body": "The four capsule colours are identities, not decoration: sun = farm shop, pond = vending machine, coral = market, lilac = season-off. A colour leaves its capsule only to carry its own meaning.",
+        "section": "colors"
+      },
+      {
+        "name": "The Water Rule",
+        "body": "Nothing floats without being a lobe: content sits on white (or green) cards with at least one petal corner, never directly on the water.",
+        "section": "colors"
+      },
+      {
+        "name": "The Two-Green Rule",
+        "body": "Land decorates; Land Deep speaks. Text on light grounds is always Land Deep, never Land.",
+        "section": "colors"
+      },
+      {
+        "name": "The Zero-Download Rule",
+        "body": "Web fonts are never loaded; any font file or font CDN proposal is rejected — it would also leak every visitor's IP.",
+        "section": "typography"
+      },
+      {
+        "name": "The Quiet Label Rule",
+        "body": "Region names are 12px uppercase spaced labels; the heavy display voice is reserved for what a visitor reads aloud.",
+        "section": "typography"
+      },
+      {
+        "name": "The Lifted-Leaf Rule",
+        "body": "Shadows lift something off the water: dropdowns, tooltips, dialogs, the selected pin. Content at rest never earns one; hover may raise a card as the state's response.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Night-Ground Rule",
+        "body": "Dark mode re-derives the world (deep green-black water, warmed capsules) rather than dimming the light palette.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use app tokens for every colour — any literal breaks dark mode silently.",
+      "Do keep the petal corner on lobes: cards, sections, admin rows, pins, clusters, brand mark share the one silhouette.",
+      "Do ride the overshoot curve (--ease 0.3–0.4s) for state changes.",
+      "Do preserve 44px touch targets (40px on phones).",
+      "Do keep the map itself in guide-map colours: pins and clusters carry the palette; the basemap stays real-world.",
+      "Do keep German and English visually identical."
+    ],
+    "donts": [
+      "Don't add web fonts, font CDNs, or external asset hosts.",
+      "Don't paint literal hex/rgba in components; tokens are the single source of truth.",
+      "Don't decorate with the capsule colours: each of sun/pond/coral/lilac means exactly one thing; Critical stays reserved for state.",
+      "Don't use grey-on-colour for secondary text on tinted grounds — tint it from the surface hue.",
+      "Don't introduce a second accent or a serif display.",
+      "Don't ship flat-color without the lobes: grey+accent is the category default, not this world."
+    ]
+  }
+}

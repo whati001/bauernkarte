@@ -1,0 +1,80 @@
+{
+  "title": "Choose the visual world — re-roll 1",
+  "question": "New hand after your re-roll. Keep the rolled direction, take an alternate, or re-roll again.",
+  "options": [
+    {
+      "id": "assigned",
+      "kind": "assigned",
+      "label": "Der Lichtkasten",
+      "kicker": "THE ROLL",
+      "lineage": "1971 pocket airline timetable on a light table",
+      "thesis": "The whole app is a lit timetable bed under tinted slides: one type size everywhere, rank carried by weight, case, reversal and rule — and the selected store is the one light travelling the bed.",
+      "palette": ["#d9a733", "#2e3440", "#f6f2e6", "#c73a2e", "#1f5c3d"],
+      "materials": ["goldenrod light-table", "slate-tinted ivory slides"],
+      "viewport": "Map home as the lit bed: goldenrod shell, ivory slides (navbar, sidebar, cards) raked 0 in layout but lit from one corner, one type size at four weights; the selected store's slide goes opaque reversed and the pin halo pulses with the travelling-light easing.",
+      "risk": "One-size type can flatten hierarchy into monotony if weight steps stay timid.",
+      "raised": [
+        { "from": "challenger-zoo", "raise": "Travelling-light motion adopts the overshoot settle (0.4s, overshoot-then-settle curve) from the zoo guide-map world." },
+        { "from": "challenger-feed", "raise": "The store photo viewer keeps the feed's full-bleed snap: one photo per viewport, snap paging, no partial state." }
+      ],
+      "comp": ".impeccable/mocks/decision/assigned-lichtkasten.html"
+    },
+    {
+      "id": "challenger-zoo",
+      "kind": "challenger",
+      "catalogId": "aww2-zoo-gardens-guide-map",
+      "label": "Der Gartenplan",
+      "verdict": "competitive",
+      "lineage": "zoo & gardens guide maps",
+      "thesis": "Every area is a swelling flat-colour lobe on cream water; the coastline does the dividing and a live capsule rides the coast.",
+      "palette": ["#f5f1e4", "#8ED462", "#2C2E2A", "#F5E211", "#FF705D", "#2BA0FF"],
+      "materials": ["flat unmodulated colour", "cream water ground"],
+      "viewport": "Cream ground, green guide lobes for store kinds, capsule chips in yellow/coral/blue, one grotesk at 0.95 leading; the map reads as a friendly guide map.",
+      "case": "Holds audience (day-tripper warmth, family-friendliness); loses product clarity: the lobe topology fights a real OSM basemap instead of decorating it.",
+      "risk": "Flat colour lobes can read as a children's map when density rises.",
+      "comp": ".impeccable/mocks/decision/challenger-zoo.html",
+      "hero": "https://impeccable.style/worlds/cards/aww2-zoo-gardens-guide-map-hero.webp"
+    },
+    {
+      "id": "challenger-timetable",
+      "kind": "grounded",
+      "label": "Der Fahrplan-Atlas",
+      "verdict": "competitive",
+      "lineage": "regional transit pocket timetable books",
+      "thesis": "Results as timetable rows in a ruled atlas grid — distances as minutes, kinds as small code strips.",
+      "palette": ["#f8f5ec", "#1c1c1c", "#c46a1b"],
+      "materials": ["newsprint timetable", "ruled columns"],
+      "viewport": "Ivory ground, ruled row grid, condensed caps for destinations, amber accent for the active leg.",
+      "case": "Holds clarity (timetable rows fit stores well); loses audience: it is the transit rider's world, not the shopper's.",
+      "risk": "Reads as a transit app for shopping data.",
+      "comp": ".impeccable/mocks/decision/challenger-timetable.html"
+    },
+    {
+      "id": "challenger-ikeda",
+      "kind": "challenger",
+      "catalogId": "ikeda-datamatics",
+      "label": "Datamatics",
+      "verdict": "declined",
+      "lineage": "Ryoji Ikeda data art",
+      "palette": ["#000000", "#ffffff"],
+      "materials": ["barcode fields", "sine lattices"],
+      "viewport": "Pure B/W barber-pole field with monospace numerics.",
+      "case": "Fuses poorly: strobing data-sublime is spectacle a shopping finder cannot carry; kills kind-color semantics.",
+      "kept": "Tabular-numerics discipline (all figures in monospace tabular cells).",
+      "hero": "https://impeccable.style/worlds/cards/ikeda-datamatics-hero.webp"
+    }
+  ],
+  "reroll": { "registers": ["safer", "bolder"] },
+  "buildPath": { "value": "code", "toggle": false },
+  "canon": true,
+  "canonCard": {
+    "kind": "canon",
+    "label": "The category standard",
+    "thesis": "The modern map-app UI played straight at full craft.",
+    "palette": ["#ffffff", "#111827", "#2563eb"],
+    "materials": ["clean grid", "neutral map chrome"],
+    "viewport": "Floating search, white cards, gray map chrome — the arrangement visitors expect.",
+    "risk": "Indistinguishable from Google Maps by design."
+  },
+  "steer": true
+}

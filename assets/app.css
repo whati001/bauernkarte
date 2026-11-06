@@ -8,54 +8,81 @@
    ============================================================ */
 
 :root {
-  --page-bg: #f9f9f7;
-  --surface: #fcfcfb;
-  --surface-2: #f2f1ee;
-  /* Warm tan chrome (navbar, sidebar) that the neutral cards lift off. */
-  --shell: #f5efe4;
-  --shell-2: #eae0cd;
-  --text-primary: #0b0b0b;
-  --text-secondary: #52514e;
-  --text-muted: #898781;
-  --border: rgba(11, 11, 11, 0.12);
-  --border-strong: rgba(11, 11, 11, 0.22);
+  /* Zoo & gardens guide-map world (2026-11 facelift, visitor surfaces):
+     cream water ground, flat unmodulated colour lobes, one grotesque.
+     Ink and cream carry text; the four capsule colours are the only
+     accents and carry kind/state meaning — never ornament. */
+  --page-bg: var(--water);
+  --surface: #ffffff;
+  --surface-2: var(--water);
 
-  /* Brand green: buttons, pins, links. */
-  --accent: #008300;
+  /* The water: cream ground that lobes and cards sit on. */
+  --water: #f5f1e4;
+  --water-deep: #ebe5d2;
+  /* The chrome tint: content cards read as lobes rising from the water. */
+  --shell: var(--water);
+  --shell-2: #e4dec9;
+
+  --text-primary: #2c2e2a;
+  --text-secondary: #4b5346;
+  --text-muted: #6b6d63;
+  --border: rgba(44, 46, 42, 0.16);
+  --border-strong: rgba(44, 46, 42, 0.3);
+
+  /* Land: the guide-map green. Brand, pins, links, primary actions. */
+  --accent: #5a9e3d;
   --accent-contrast: #ffffff;
-  --accent-wash: rgba(0, 131, 0, 0.1);
+  --accent-wash: rgba(90, 158, 61, 0.13);
+  /* The darker green that carries text on light grounds. */
+  --land-deep: #2f6b2b;
+  --land-deep-contrast: #ffffff;
+  --land-wash: #e2eddb;
+  --land-wash-strong: #cbe2c2;
 
-  /* The store info panel's quieter forest palette (the redesign). */
-  --forest: #2f6b4f;
-  --forest-text: #2a6247;
-  --forest-contrast: #ffffff;
-  --mint: #eff8f1;
-  --mint-strong: #d9efdf;
+  /* Capsule colours, one meaning each (Kind Color Rule):
+     sun = farm shop, pond = vending machine, coral = market,
+     lilac = season/off. */
+  --sun: #f5d23f;
+  --sun-ink: #4c3d00;
+  --pond: #4fa6e3;
+  --pond-ink: #10374f;
+  --coral: #ff6b5a;
+  --coral-ink: #5c130c;
+  --lilac: #ebc1ff;
+  --lilac-ink: #4b1a5c;
 
-  --user-dot: #1a6bd8;
-  /* Map pin per store kind — see .map-pin-dot below. */
-  --pin-market: #c25e00;
-  /* Light, so its icon is dark (--pin-vending-machine-ink), not white. */
-  --pin-vending-machine: #8fd3f4;
-  --pin-vending-machine-ink: #0b4a6b;
-  --pin-shop: var(--accent);
-  --critical: #d03b3b;
-  --critical-wash: rgba(208, 59, 59, 0.08);
+  /* Store-kind aliases (map pins, panel badges) — the same identities. */
+  --pin-shop: var(--sun);
+  --pin-shop-ink: var(--sun-ink);
+  --pin-vending-machine: var(--pond);
+  --pin-vending-machine-ink: var(--pond-ink);
+  --pin-market: var(--coral);
+  --pin-market-ink: var(--coral-ink);
 
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --shadow-sm: 0 1px 2px rgba(11, 11, 11, 0.06), 0 1px 1px rgba(11, 11, 11, 0.04);
-  --shadow-md: 0 4px 16px rgba(11, 11, 11, 0.1), 0 2px 6px rgba(11, 11, 11, 0.06);
+  --user-dot: #2b6cb8;
+  --critical: #d0432e;
+  --critical-wash: rgba(208, 67, 46, 0.09);
 
-  /* System serif for display type — no web-font download (and no
-     third-party font CDN seeing every visitor's IP). */
-  --font-display: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
-  --font-body: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --shadow-sm: 0 2px 6px rgba(44, 46, 42, 0.08), 0 1px 2px rgba(44, 46, 42, 0.08);
+  --shadow-md: 0 10px 24px rgba(44, 46, 42, 0.16), 0 3px 8px rgba(44, 46, 42, 0.1);
+
+  /* One grotesque for everything, in two voices: heavy short-lead
+     display for headings, regular for body. No web-font download
+     (and no third-party font CDN seeing every visitor's IP). */
+  --font-display: system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-body: var(--font-display);
 
   --sidebar-width: 420px;
   --touch-target: 44px;
   --map-fab-step: calc(var(--touch-target) + 0.5rem);
-  --ease: cubic-bezier(0.2, 0, 0, 1);
+  /* The guide's overshoot settle: state changes overshoot by ~8% and
+     settle. Committed world move (DESIGN.md motion); 0.3–0.4s. Pure
+     entrances use --ease-out instead; reduced-motion flattens both. */
+  --ease: cubic-bezier(0.34, 1.3, 0.48, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* The component library's theme (assets/dx-components-theme.css), onto
      the palette: "primary" is its surface scale, "secondary" its ink. */
@@ -80,32 +107,52 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --page-bg: #0d0d0d;
-    --surface: #1a1a19;
-    --surface-2: #232322;
-    --shell: #15120e;
-    --shell-2: #241f16;
-    --text-primary: #ffffff;
-    --text-secondary: #c3c2b7;
-    --text-muted: #898781;
-    --border: rgba(255, 255, 255, 0.12);
-    --border-strong: rgba(255, 255, 255, 0.22);
-    --accent: #1fae1f;
-    --accent-contrast: #05170a;
-    --accent-wash: rgba(31, 174, 31, 0.16);
-    --forest: #3f8f68;
-    --forest-text: #7fd0a6;
-    --forest-contrast: #06140d;
-    --mint: #17231b;
-    --mint-strong: #20382a;
-    --user-dot: #5b9bff;
-    --pin-market: #e07a1f;
-    --pin-vending-machine: #7cc8ee;
-    --pin-vending-machine-ink: #062f45;
+    /* Dark re-derives the world rather than dimming it: night grounds
+       with the same lobes, warmed and saturated. */
+    --page-bg: var(--water);
+    --surface: #23291f;
+    --surface-2: var(--water);
+
+    --water: #1b1d17;
+    --water-deep: #141610;
+    --shell: var(--water);
+    --shell-2: #292c22;
+
+    --text-primary: #f2f2ea;
+    --text-secondary: #c0c4b2;
+    --text-muted: #8a8d80;
+    --border: rgba(242, 242, 234, 0.14);
+    --border-strong: rgba(242, 242, 234, 0.26);
+
+    --accent: #6fb84e;
+    --accent-contrast: #0c1907;
+    --accent-wash: rgba(111, 184, 78, 0.18);
+    --land-deep: #8ecb70;
+    --land-deep-contrast: #12260c;
+    --land-wash: #2a3524;
+    --land-wash-strong: #35452e;
+
+    --sun: #e9bb2e;
+    --sun-ink: #241c00;
+    --pond: #5eb1ea;
+    --pond-ink: #0c2838;
+    --coral: #ff7f70;
+    --coral-ink: #3f0b06;
+    --lilac: #cf9ff0;
+    --lilac-ink: #2b0e38;
+
+    --pin-shop: var(--sun);
+    --pin-shop-ink: var(--sun-ink);
+    --pin-vending-machine: var(--pond);
+    --pin-vending-machine-ink: var(--pond-ink);
+    --pin-market: var(--coral);
+    --pin-market-ink: var(--coral-ink);
+
+    --user-dot: #6fa8e8;
     --critical: #e66767;
-    --critical-wash: rgba(230, 103, 103, 0.12);
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-    --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.5);
+    --critical-wash: rgba(230, 103, 103, 0.14);
+    --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 10px 28px rgba(0, 0, 0, 0.55), 0 3px 10px rgba(0, 0, 0, 0.45);
   }
 }
 
@@ -141,6 +188,36 @@ body {
   color: var(--text-primary);
   background: var(--page-bg);
 }
+
+/* The browser surfaces the app doesn't draw — selection, focus, carets,
+   scrollbars — carry the world too. */
+::selection {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+:focus-visible {
+  outline: 2.5px solid var(--accent);
+  outline-offset: 2px;
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--text-muted) 55%, transparent) transparent;
+}
+@media (pointer: fine) {
+  *::-webkit-scrollbar { width: 12px; height: 12px; }
+  *::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--text-muted) 45%, transparent);
+    border: 4px solid transparent;
+    border-radius: 999px;
+    background-clip: content-box;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--text-muted) 70%, transparent);
+    background-clip: content-box;
+  }
+}
+input, textarea { caret-color: var(--accent); }
+input::placeholder, textarea::placeholder { color: var(--text-muted); }
 
 #main {
   height: 100%;
@@ -214,19 +291,25 @@ a:hover { text-decoration: underline; }
   flex: none;
 }
 .brand:hover { text-decoration: none; }
+/* A lobe petal: one leaf-shaped corner, the guide-map's own silhouette. */
 .brand-mark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50% 50% 50% 12%;
   background: var(--accent);
   color: var(--accent-contrast);
 }
 .brand-text { display: flex; flex-direction: column; line-height: 1.15; }
-.brand-name { font-weight: 700; font-size: 1.0625rem; }
-.brand-tagline { font-size: 0.75rem; color: var(--text-secondary); }
+.brand-name {
+  font-weight: 800;
+  font-size: 1.125rem;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.brand-tagline { font-size: 0.75rem; color: var(--text-secondary); font-weight: 500; }
 
 /* The product picker: a large pill right after the brand. The library
    combobox's own classes are hashed (CSS module), so it's reached by
@@ -247,7 +330,7 @@ a:hover { text-decoration: underline; }
   background: var(--surface) !important;
   box-shadow: inset 0 0 0 1px var(--border-strong), var(--shadow-sm) !important;
   font-size: 0.9375rem !important;
-  transition: box-shadow 120ms var(--ease);
+  transition: box-shadow 0.15s var(--ease-out);
 }
 .nav-search input:hover { box-shadow: inset 0 0 0 1px var(--text-muted), var(--shadow-sm) !important; }
 .nav-search input:focus {
@@ -361,7 +444,7 @@ a:hover { text-decoration: underline; }
 .nav-products {
   overflow-x: auto;
   scrollbar-width: none;
-  padding: 0 1rem 0.5rem;
+  padding: 0 1rem 0.6rem;
 }
 .nav-products::-webkit-scrollbar { display: none; }
 .nav-products > div {
@@ -383,8 +466,12 @@ a:hover { text-decoration: underline; }
   background: var(--surface) !important;
   color: var(--text-primary) !important;
   font-size: 0.8125rem;
+  font-weight: 500;
   white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s var(--ease-out), border-color 0.15s var(--ease-out), color 0.15s var(--ease-out);
 }
+.product-pick:hover { background: var(--shell-2) !important; border-color: var(--border-strong) !important; }
 .product-pick[data-state="on"] {
   background: var(--accent) !important;
   border-color: var(--accent) !important;
@@ -452,7 +539,7 @@ a:hover { text-decoration: underline; }
   flex: none;
   border-right: 1px solid var(--border);
   background: var(--shell);
-  transition: width 0.15s var(--ease);
+  transition: width 0.3s var(--ease);
 }
 
 #sidebar {
@@ -555,30 +642,33 @@ a:hover { text-decoration: underline; }
   --pin-ink: #fff;
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: 50% 50% 50% 30%;
   background: var(--pin);
   color: var(--pin-ink);
-  border: 3px solid #fff;
+  border: 3px solid var(--water);
   box-shadow: var(--shadow-sm);
   display: flex;
   align-items: center;
   justify-content: center;
   line-height: 1;
+  transition: transform 0.4s var(--ease), box-shadow 0.4s var(--ease);
 }
 .map-pin-dot svg {
   width: 20px;
   height: 20px;
 }
-.map-pin-dot.kind-market { --pin: var(--pin-market); }
+.map-pin-dot.kind-market { --pin: var(--pin-market); --pin-ink: var(--pin-market-ink); }
 .map-pin-dot.kind-vending_machine {
   --pin: var(--pin-vending-machine);
   --pin-ink: var(--pin-vending-machine-ink);
 }
-.map-pin-dot.kind-shop { --pin: var(--pin-shop); }
+.map-pin-dot.kind-shop { --pin: var(--pin-shop); --pin-ink: var(--pin-shop-ink); }
 .map-pin-dot.selected {
   width: 52px;
   height: 52px;
-  box-shadow: 0 0 0 5px color-mix(in srgb, var(--pin) 18%, transparent), var(--shadow-md);
+  border-radius: 50% 50% 50% 26%;
+  transform: rotate(-4deg) translateY(-2px);
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--pin) 22%, transparent), var(--shadow-md);
 }
 .map-pin-dot.selected svg {
   width: 26px;
@@ -589,19 +679,19 @@ a:hover { text-decoration: underline; }
   height: 18px;
   border-radius: 50%;
   background: var(--user-dot);
-  border: 3px solid #fff;
+  border: 3px solid var(--water);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--user-dot) 25%, transparent), var(--shadow-sm);
 }
 .map-cluster {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
+  border-radius: 50% 50% 50% 30%;
   background: var(--accent);
   color: var(--accent-contrast);
-  border: 3px solid #fff;
+  border: 3px solid var(--water);
   box-shadow: var(--shadow-md);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 16px;
   line-height: 1;
 }
@@ -655,22 +745,24 @@ a:hover { text-decoration: underline; }
   margin: 0.25rem 0 1rem;
   font-family: var(--font-display);
   font-size: 1.5rem;
-  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
 }
 
 .section {
   padding: 1rem;
   margin-bottom: 1rem;
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   background: var(--surface);
   box-shadow: var(--shadow-sm);
 }
 .section-title {
   margin: 0 0 0.75rem;
   font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  font-weight: 700;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--text-secondary);
 }
@@ -703,7 +795,7 @@ a:hover { text-decoration: underline; }
 .toolbar-search svg { position: absolute; left: 0.75rem; z-index: 1; pointer-events: none; }
 .toolbar-search input {
   width: 100%;
-  min-height: 40px;
+  min-height: 42px;
   padding-left: 2.25rem;
   border-radius: 999px;
   background: var(--surface);
@@ -731,67 +823,101 @@ a:hover { text-decoration: underline; }
   max-height: min(20rem, 50dvh);
   overflow-y: auto;
   overscroll-behavior: contain;
+  border-radius: var(--radius-md);
 }
 
-.result-count { margin: 0 0 0.5rem; font-size: 0.875rem; color: var(--text-secondary); }
+.result-count { margin: 0.75rem 0; font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.02em; color: var(--text-secondary); }
 .results {
   display: flex;
   flex-direction: column;
-  gap: 0.625rem;
+  gap: 0.75rem;
   margin: 0;
   padding: 0;
   list-style: none;
 }
+/* The result card: a lobe rising from the water. One petal corner
+   (top-left) marks it as part of the guide's land, not a box. The kind
+   ribbon at the card's left edge carries the store type the way the map
+   pins do — one capsule colour per kind, quiet at rest, full at hover. */
 .result-card {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.875rem;
-  padding: 0.75rem;
+  padding: 0.85rem 0.9rem;
   background: var(--surface);
   border: 1.5px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg) var(--radius-md) var(--radius-md) var(--radius-md);
   box-shadow: var(--shadow-sm);
   cursor: pointer;
-  transition: border-color 0.12s var(--ease), background 0.12s var(--ease);
+  overflow: hidden;
+  transition: border-color 0.3s var(--ease), background 0.3s var(--ease), transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
 }
 .result-card:hover,
 .result-card:focus-visible {
   border-color: var(--accent);
   outline: none;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 .result-thumb {
   flex: none;
-  width: 72px;
-  height: 72px;
+  width: 76px;
+  height: 76px;
   border-radius: var(--radius-md);
   overflow: hidden;
-  background: var(--mint);
+  background: var(--land-wash);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 2rem;
 }
 .result-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.result-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.4rem; }
-.result-head { display: flex; align-items: baseline; gap: 0.5rem; }
+.result-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.38rem; }
+.result-head { display: flex; align-items: center; gap: 0.5rem; }
+/* The kind label: a capsule beside the distance, tinted per kind. */
+.result-kind {
+  flex: none;
+  padding: 1px 9px;
+  border-radius: 999px;
+  background: var(--kind-wash, var(--land-wash));
+  color: var(--kind-ink, var(--land-deep));
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.result-kind[data-kind="shop"] { --kind-wash: color-mix(in srgb, var(--sun) 22%, var(--surface)); --kind-ink: var(--sun-ink); }
+.result-kind[data-kind="vending_machine"] { --kind-wash: color-mix(in srgb, var(--pond) 20%, var(--surface)); --kind-ink: var(--pond-ink); }
+.result-kind[data-kind="market"] { --kind-wash: color-mix(in srgb, var(--coral) 20%, var(--surface)); --kind-ink: var(--coral-ink); }
 .result-name {
   flex: 1;
   min-width: 0;
   margin: 0;
-  font-size: 1rem;
-  font-weight: 650;
+  font-size: 1.0938rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
 }
-.result-distance { flex: none; color: var(--text-secondary); font-size: 0.875rem; }
+.result-distance {
+  flex: none;
+  align-self: flex-end;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
 .result-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
-.result-chip { font-weight: 500; }
+.result-chip { font-weight: 600; }
 .result-meta {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.25rem 1rem;
+  gap: 0.25rem 0.9rem;
   color: var(--text-secondary);
   font-size: 0.8125rem;
 }
@@ -803,10 +929,54 @@ a:hover { text-decoration: underline; }
   height: 8px;
   border-radius: 50%;
   background: var(--text-muted);
+  transition: background 0.3s var(--ease);
 }
+.result-status.open { color: var(--text-primary); font-weight: 600; }
 .result-status.open::before { background: var(--accent); }
 .result-status.later::before { background: var(--pin-market); }
-.result-chevron { flex: none; color: var(--text-muted); display: inline-flex; }
+.result-status.closed { color: var(--text-muted); }
+.result-chevron { flex: none; align-self: center; color: var(--text-muted); display: inline-flex; transition: transform 0.3s var(--ease); }
+
+/* The empty state: a quiet clearing in the guide, with the way out. */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 2.5rem 1rem;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--land-wash);
+}
+.empty-art {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 0.4rem;
+  border-radius: 50% 50% 50% 20%;
+  background: var(--surface);
+  color: var(--land-deep);
+  box-shadow: var(--shadow-sm);
+}
+.empty-title {
+  margin: 0;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-size: 1.0938rem;
+  color: var(--text-primary);
+}
+.empty-body {
+  margin: 0 0 0.75rem;
+  max-width: 34ch;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.result-card:hover .result-chevron { transform: translateX(3px); color: var(--text-primary); }
 
 .form { display: flex; flex-direction: column; gap: 0.25rem; }
 .field { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 0.75rem; }
@@ -844,9 +1014,11 @@ a:hover { text-decoration: underline; }
 .picker-status { margin: 0 0 0.75rem; color: var(--text-secondary); }
 
 .offer-block {
-  padding-left: 0.75rem;
+  padding: 0.6rem 0.75rem;
   margin-bottom: 1rem;
-  border-left: 3px solid var(--accent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--land-wash);
 }
 .offer-block h4 { margin: 0 0 0.5rem; }
 
@@ -860,7 +1032,7 @@ a:hover { text-decoration: underline; }
 }
 .month-chip {
   border: 1px solid var(--border) !important;
-  border-radius: var(--radius-sm) !important;
+  border-radius: 999px !important;
   font-size: 0.8125rem;
 }
 .month-chip[data-state="on"] {
@@ -888,12 +1060,14 @@ a:hover { text-decoration: underline; }
   gap: 0.4rem;
   height: 2.25rem;
   padding: 0 1rem;
-  border-radius: 0.5rem;
+  border-radius: 999px;
   background: var(--accent);
   color: var(--accent-contrast);
-  font-weight: 500;
+  font-weight: 600;
+  transition: filter 0.15s var(--ease-out), transform 0.15s var(--ease-out);
 }
 .button-link:hover { text-decoration: none; filter: brightness(1.08); }
+.button-link:active { transform: scale(0.98); }
 .button-link.small {
   height: 2rem;
   padding: 0 0.75rem;
@@ -909,6 +1083,199 @@ a:hover { text-decoration: underline; }
 .facts-list dd { margin: 0; }
 
 .not-found { margin: auto; text-align: center; padding: 2rem; }
+
+/* ============================================================
+   First-visit onboarding — Canvas layout
+   ============================================================ */
+.onboarding-backdrop {
+  position: fixed;
+  z-index: 4000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding:
+    max(1rem, env(safe-area-inset-top))
+    max(1rem, env(safe-area-inset-right))
+    max(1rem, env(safe-area-inset-bottom))
+    max(1rem, env(safe-area-inset-left));
+  background: rgba(20, 20, 17, 0.62);
+  backdrop-filter: blur(3px) saturate(0.82);
+  animation: onboarding-backdrop-in 180ms var(--ease) both;
+}
+.onboarding-backdrop[data-state="closed"] {
+  animation-name: onboarding-backdrop-out;
+}
+.onboarding-card {
+  width: min(56rem, 100%);
+  max-height: calc(100dvh - max(2rem, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  border: 1px solid color-mix(in srgb, var(--surface) 70%, transparent);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  animation: onboarding-card-in 0.4s var(--ease) both;
+}
+.onboarding-backdrop[data-state="closed"] .onboarding-card {
+  animation-name: onboarding-card-out;
+}
+.onboarding-image {
+  min-height: 0;
+  aspect-ratio: 8 / 5;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border);
+  background: var(--land-wash);
+}
+.onboarding-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.onboarding-copy {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1.1rem 2rem;
+  padding: 1.35rem 1.5rem 1.45rem;
+}
+.onboarding-copy-main { max-width: 660px; }
+.onboarding-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.65rem, 3vw, 2.25rem);
+  font-weight: 800;
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+.onboarding-body {
+  max-width: 60ch;
+  margin: 0.72rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.58;
+}
+.onboarding-progress {
+  align-self: start;
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding-top: 0.25rem;
+}
+.onboarding-count {
+  min-width: 2.8rem;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.onboarding-dots {
+  display: flex;
+  align-items: center;
+  gap: 0.38rem;
+}
+.onboarding-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--text-muted) 45%, var(--surface));
+  transition: width 180ms var(--ease), background 180ms var(--ease);
+}
+.onboarding-dot.active {
+  width: 22px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+.onboarding-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+.onboarding-skip { margin-right: auto; color: var(--text-secondary) !important; }
+.onboarding-next { min-width: 92px; }
+
+@keyframes onboarding-backdrop-in {
+  from { opacity: 0; }
+}
+@keyframes onboarding-backdrop-out {
+  to { opacity: 0; }
+}
+@keyframes onboarding-card-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+}
+@keyframes onboarding-card-out {
+  to { opacity: 0; transform: translateY(8px) scale(0.985); }
+}
+
+@media (max-width: 700px) {
+  .onboarding-backdrop {
+    align-items: end;
+    padding:
+      max(0.6rem, env(safe-area-inset-top))
+      max(0.6rem, env(safe-area-inset-right))
+      max(0.6rem, env(safe-area-inset-bottom))
+      max(0.6rem, env(safe-area-inset-left));
+  }
+  .onboarding-card {
+    width: 100%;
+    max-height: calc(100dvh - max(1.2rem, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+    border-radius: var(--radius-lg) var(--radius-lg) var(--radius-md) var(--radius-md);
+  }
+  .onboarding-image {
+    height: min(calc((100vw - 1.2rem) * 0.625), 34dvh);
+    max-height: 20rem;
+    aspect-ratio: auto;
+  }
+  .onboarding-copy {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding: 1rem;
+  }
+  .onboarding-title { font-size: 1.55rem; }
+  .onboarding-body {
+    margin-top: 0.45rem;
+    font-size: 0.86rem;
+    line-height: 1.48;
+  }
+  .onboarding-progress {
+    justify-self: start;
+    margin: 0.85rem 0;
+    padding: 0;
+  }
+  .onboarding-actions {
+    flex-wrap: wrap;
+    margin: 0;
+    padding-top: 0.8rem;
+  }
+  .onboarding-actions button {
+    min-height: 40px;
+    padding-inline: 0.7rem;
+    font-size: 0.86rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-backdrop,
+  .onboarding-card {
+    animation-duration: 0.01ms;
+  }
+  .onboarding-dot { transition-duration: 0.01ms; }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
 
 /* ============================================================
    Admin
@@ -938,16 +1305,22 @@ a:hover { text-decoration: underline; }
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem;
-  border-radius: var(--radius-sm);
+  border-radius: 999px;
   color: var(--text-primary);
 }
 .admin-rail-item:hover { background: var(--shell-2); text-decoration: none; }
-.admin-rail-item.active { background: var(--surface); box-shadow: var(--shadow-sm); font-weight: 600; }
+.admin-rail-item.active { background: var(--surface); box-shadow: var(--shadow-sm); font-weight: 700; }
 .admin-count { margin-left: auto; }
 .admin-rail-sep { height: 1px; margin: 0.5rem 0; background: var(--border); }
 
 .admin-content { flex: 1; min-width: 0; overflow-y: auto; padding: 1.5rem 2rem 3rem; }
-.admin-head h2 { margin: 0; font-family: var(--font-display); font-size: 1.6rem; }
+.admin-head h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
 .admin-head p { margin: 0.25rem 0 1.25rem; color: var(--text-secondary); max-width: 60ch; }
 .admin-empty { color: var(--text-muted); padding: 1rem 0; }
 
@@ -958,7 +1331,7 @@ a:hover { text-decoration: underline; }
   gap: 1rem;
   padding: 0.75rem 1rem;
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg) var(--radius-md) var(--radius-md) var(--radius-md);
   background: var(--surface);
 }
 .admin-row-main { flex: 1; min-width: 0; }

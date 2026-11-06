@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><style>
+  :root{--water:#f5f1e4;--land:#8ED462;--ink:#2C2E2A;--yel:#F5E211;--coral:#FF705D;--blue:#2BA0FF;--lilac:#EBC1FF}
+  *{box-sizing:border-box;margin:0}
+  body{width:1440px;height:900px;overflow:hidden;background:var(--water);color:var(--ink);font-family:"Verdana","Segoe UI",sans-serif;font-size:15px;display:flex;flex-direction:column}
+  .nav{height:64px;flex:none;display:flex;align-items:center;gap:16px;padding:0 20px;border-bottom:2px solid var(--land)}
+  .mark{width:36px;height:36px;border-radius:50% 50% 50% 4px;background:var(--land)}
+  .brand b{font-weight:700;font-size:18px;letter-spacing:-.05em}
+  .brand small{display:block;font-size:11px}
+  .srch{flex:1;max-width:600px;height:44px;border:2px solid var(--ink);border-radius:22px;background:#fff;display:flex;align-items:center;padding:0 18px;gap:10px;color:#6a6a62}
+  .navr{margin-left:auto;display:flex;align-items:center;gap:10px}
+  .user{height:44px;border:2px solid var(--ink);border-radius:22px;background:#fff;display:flex;align-items:center;padding:0 16px;font-weight:700}
+  .wrap{flex:1;display:flex;min-height:0}
+  .side{width:460px;flex:none;background:#fff;display:flex;flex-direction:column}
+  .tool{padding:12px 16px;border-bottom:2px solid var(--water);display:flex;gap:10px}
+  .tool .f{flex:1;height:40px;border:2px solid var(--ink);border-radius:20px;display:flex;align-items:center;padding:0 16px;color:#6a6a62}
+  .list{flex:1;overflow:auto;padding:12px}
+  .card{border-radius:16px 16px 16px 4px;background:var(--water);padding:14px;margin-bottom:12px}
+  .card.sel{background:var(--land)}
+  .nm{font-weight:700;font-size:17px;letter-spacing:-.04em;line-height:.95}
+  .sub{margin-top:4px;font-size:13px;display:flex;gap:10px}
+  .chips{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap}
+  .cap{font-size:12px;font-weight:700;padding:3px 12px;border-radius:999px;border:2px solid var(--ink);background:#fff}
+  .cap.y{background:var(--yel)} .cap.c{background:var(--coral)} .cap.b{background:var(--blue)} .cap.l{background:var(--lilac)}
+  .meta{margin-top:9px;font-size:12.5px;display:flex;align-items:center;gap:8px}
+  .chipride{width:10px;height:10px;border-radius:50%;border:2px solid var(--ink);display:inline-block}
+  .map{flex:1;position:relative;background:var(--water);min-width:0;overflow:hidden}
+  .lobe{position:absolute;border-radius:52% 48% 55% 45%/58% 52% 48% 42%;border:none}
+  .l1{left:6%;top:10%;width:420px;height:300px;background:var(--land)}
+  .l2{left:44%;top:4%;width:360px;height:240px;background:#a5de7e}
+  .l3{left:20%;top:44%;width:480px;height:330px;background:var(--land)}
+  .l4{left:64%;top:44%;width:300px;height:280px;background:#a5de7e}
+  .open{position:absolute;left:33%;top:31%;width:130px;height:90px;background:var(--water);border-radius:50%}
+  .pin{position:absolute;width:40px;height:40px;border-radius:20px 20px 20px 6px;border:2.5px solid var(--ink);display:flex;align-items:center;justify-content:center;font-size:15px;z-index:3}
+  .p1{left:38%;top:38%;background:var(--yel);width:48px;height:48px}
+  .p2{left:54%;top:22%;background:var(--coral)}
+  .p3{left:66%;top:50%;background:var(--blue)}
+  .p4{left:46%;top:56%;background:var(--lilac)}
+  .gate{position:absolute;left:56%;top:36%;background:var(--yel);border:2px solid var(--ink);border-radius:999px;padding:4px 14px;font-weight:700;font-size:13px;z-index:4}
+  .gate.sel{left:40%;top:33%}
+  .legend{position:absolute;left:16px;bottom:16px;background:#fff;border:2px solid var(--ink);border-radius:14px;padding:8px 14px;font-size:11px;font-weight:700;z-index:4}
+</style></head>
+<body>
+  <div class="nav">
+    <div class="mark"></div>
+    <div class="brand"><b>BauernKarte</b><small>Höfe, Automaten & Märkte</small></div>
+    <div class="srch"><span>🔍</span><span style="flex:1">Produkt oder Geschäft suchen</span></div>
+    <div class="navr"><span style="font-weight:700;border:2px solid var(--ink);border-radius:999px;padding:6px 12px;background:#fff">DE / EN</span><div class="user">Anmelden</div></div>
+  </div>
+  <div class="wrap">
+    <div class="side">
+      <div class="tool"><div class="f">🔍&nbsp; Suche</div></div>
+      <div class="list">
+        <div class="card" style="border:2px solid var(--coral)">
+          <div class="nm">Obstgarten Maier</div>
+          <div class="sub"><span><b>6 min</b> zu Fuß</span><span>Offen bis 18:00</span><span class="chipride" style="background:var(--coral)"></span></div>
+          <div class="chips"><span class="cap y">ÄPFEL</span><span class="cap y">BIRNEN</span><span class="cap c">KÜRBIS</span></div>
+        </div>
+        <div class="card">
+          <div class="nm">Milchtankstelle Huber</div>
+          <div class="sub"><span><b>11 min</b></span><span>Ganzjährig</span><span class="chipride" style="background:var(--lilac)"></span></div>
+          <div class="chips"><span class="cap l">ROHMILCH</span><span class="cap l">BUTTER</span></div>
+        </div>
+        <div class="card">
+          <div class="nm">Wochenmarkt Altstadt</div>
+          <div class="sub"><span><b>14 min</b></span><span>Öffnet Fr 07:00</span><span class="chipride" style="background:var(--blue)"></span></div>
+          <div class="chips"><span class="cap b">GEMÜSE</span><span class="cap b">EIER</span></div>
+        </div>
+        <div class="card">
+          <div class="nm">Kartoffelhof Lindner</div>
+          <div class="sub"><span><b>18 min</b></span><span>Geschlossen</span><span class="chipride"></span></div>
+          <div class="chips"><span class="cap" style="background:#fff">KARTOFFELN</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="map">
+      <div class="lobe l1"></div><div class="lobe l2"></div><div class="lobe l3"></div><div class="lobe l4"></div>
+      <div class="open"></div>
+      <div class="pin p1">🧺</div><div class="pin p2">🤖</div><div class="pin p3">🏪</div><div class="pin p4">🥔</div>
+      <div class="gate sel">ZIEL</div>
+      <div class="legend">🧺 Hof • 🤖 Automat • 🏪 Markt</div>
+    </div>
+  </div>
+</body></html>

@@ -16,10 +16,11 @@ Needs `docker` with the compose plugin (or `podman compose`) and
 [`uv`](https://docs.astral.sh/uv/):
 
 ```sh
-./service.py env       # .env with generated DB + admin passwords (printed once)
-./service.py up        # build the image, start db + app, wait until healthy
-./service.py stores    # optional: seed farm shops from OpenStreetMap (--demo: + one demo shop)
-./service.py down      # stop the containers (data is kept)
+./service.py env          # .env with generated DB + admin passwords (printed once)
+./service.py up           # build the image, start db + app, wait until healthy
+./service.py stores       # optional: seed farm shops from OpenStreetMap (--demo: + one demo shop)
+./service.py screenshots  # optional: regenerate the bilingual onboarding images
+./service.py down         # stop the containers (data is kept)
 ```
 
 The app is on <http://127.0.0.1:3000>. Sign in as `bauernkarte@rehka.dev`
@@ -80,6 +81,10 @@ checked-in `.sqlx/` cache. After changing a query or migration, run
 `./service.py prepare` and commit `.sqlx/`, or the image build fails.
 
 Tests: `cargo test --no-default-features --features server`.
+
+Onboarding screenshots are generated from the running application with
+`./service.py screenshots`. The command requires the public demo store and a
+separately installed Playwright Chromium; see [`service.md`](service.md).
 
 ### Loading
 
