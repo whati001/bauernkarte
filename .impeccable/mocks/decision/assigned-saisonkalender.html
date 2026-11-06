@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><style>
+  :root{--paper:#f4f1e8;--ink:#1c1c1a;--muted:#6b6a63;--harvest:#3f7d3a;--amber:#c25e00;--sky:#4a7fa5;--paper2:#ebe7da;--hair:rgba(28,28,26,.16)}
+  *{box-sizing:border-box;margin:0}
+  body{width:1440px;height:900px;overflow:hidden;background:var(--paper);color:var(--ink);font-family:"Segoe UI",system-ui,sans-serif;font-size:15px;display:flex;flex-direction:column}
+  .nav{height:64px;flex:none;border-bottom:1px solid var(--hair);display:flex;align-items:center;gap:16px;padding:0 20px;background:var(--paper2)}
+  .mark{width:34px;height:34px;border-radius:8px;background:var(--harvest);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px}
+  .brand b{font-size:17px;font-weight:800;letter-spacing:-.01em;display:block}
+  .brand small{font-size:11px;color:var(--muted)}
+  .srch{flex:1;max-width:600px;height:42px;border:1px solid var(--hair);border-radius:21px;background:#fff;display:flex;align-items:center;padding:0 16px;gap:10px;color:var(--muted)}
+  .srch span{flex:1}
+  .kbd{font-size:11px;border:1px solid var(--hair);border-radius:4px;padding:1px 6px}
+  .navr{margin-left:auto;display:flex;align-items:center;gap:10px}
+  .lang{border:1px solid var(--hair);border-radius:21px;height:42px;display:flex;padding:3px;background:#fff}
+  .lang a{padding:0 14px;border-radius:18px;display:flex;align-items:center;font-size:13px;font-weight:600;color:var(--muted);text-decoration:none}
+  .lang .on{background:var(--harvest);color:#fff}
+  .user{height:42px;border:1px solid var(--hair);border-radius:21px;background:#fff;display:flex;align-items:center;padding:0 16px;font-size:13px;font-weight:600}
+  .wrap{flex:1;display:flex;min-height:0}
+  .side{width:460px;flex:none;border-right:1px solid var(--hair);background:var(--paper2);display:flex;flex-direction:column}
+  .tool{padding:12px 16px;border-bottom:1px solid var(--hair);display:flex;gap:10px;align-items:center}
+  .tool .f{flex:1;height:38px;border:1px solid var(--hair);border-radius:19px;background:#fff;display:flex;align-items:center;padding:0 14px;color:var(--muted);font-size:14px}
+  .sort{height:36px;border:1px solid var(--hair);border-radius:18px;background:#fff;padding:0 12px;font-size:13px;color:var(--ink)}
+  .count{padding:10px 16px 0;font-size:13px;color:var(--muted)}
+  .list{flex:1;overflow:auto;padding:10px 16px 16px;display:flex;flex-direction:column;gap:10px}
+  .card{background:#fff;border:1px solid var(--hair);border-radius:10px;padding:12px 14px;display:flex;gap:12px}
+  .card.hot{border-color:var(--harvest)}
+  .thumb{flex:none;width:64px;height:64px;border-radius:10px;background:var(--paper2);display:flex;align-items:center;justify-content:center;font-size:26px}
+  .main{flex:1;min-width:0}
+  .head{display:flex;align-items:baseline;gap:8px}
+  .nm{font-weight:700;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ds{margin-left:auto;font-size:12px;color:var(--muted);flex:none}
+  .ds b{color:var(--ink);font-weight:700}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+  .chip{font-size:12px;padding:2px 10px;border-radius:999px;background:var(--paper2);color:#4a4a44;font-weight:500;border:1px solid var(--hair)}
+  .chip.hv{background:rgba(63,125,58,.12);color:var(--harvest);border-color:transparent}
+  .chip.am{background:rgba(194,94,0,.12);color:var(--amber);border-color:transparent}
+  .meta{margin-top:9px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+  .st{display:flex;align-items:center;gap:6px}
+  .dot{width:8px;height:8px;border-radius:50%;background:#a5a49d}
+  .dot.on{background:var(--harvest)}
+  .dot.lat{background:var(--amber)}
+  .min{margin-left:auto;font-weight:600;color:var(--ink)}
+  .season{display:flex;align-items:center;gap:3px;margin-top:9px}
+  .m{width:13px;height:6px;border-radius:3px;background:var(--hair)}
+  .m.on{background:var(--harvest)}
+  .se{font-size:11px;color:var(--harvest);font-weight:600;margin-left:8px}
+  .map{flex:1;position:relative;background:#e9e5d6;min-width:0}
+  .field{position:absolute;inset:0;background:
+    radial-gradient(circle at 18% 30%, #cfe0c2 0 140px, transparent 141px),
+    radial-gradient(circle at 55% 22%, #d8e6cc 0 110px, transparent 111px),
+    radial-gradient(circle at 75% 60%, #cfe0c2 0 170px, transparent 171px),
+    radial-gradient(circle at 30% 72%, #dfe9d4 0 90px, transparent 91px),
+    linear-gradient(160deg,#eee9da 0%,#e4e0cf 100%)}
+  .road{position:absolute;background:rgba(255,255,255,.85)}
+  .r1{left:-5%;top:44%;width:70%;height:14px;transform:rotate(-7deg)}
+  .r2{left:38%;top:-5%;width:12px;height:110%;transform:rotate(12deg)}
+  .pin{position:absolute;width:36px;height:36px;border-radius:50%;border:3px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;z-index:2}
+  .p1{left:37%;top:40%;background:var(--harvest);width:46px;height:46px;box-shadow:0 0 0 6px rgba(63,125,58,.22),0 4px 10px rgba(0,0,0,.18)}
+  .p2{left:52%;top:28%;background:var(--amber)}
+  .p3{left:62%;top:54%;background:var(--sky)}
+  .p4{left:44%;top:60%;background:var(--harvest)}
+  .p5{left:57%;top:41%;background:var(--amber)}
+  .fab{position:absolute;left:16px;top:16px;width:44px;height:44px;background:#fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;z-index:3}
+  .fab.b{top:68px}
+  .att{position:absolute;right:14px;bottom:14px;font-size:10px;color:var(--muted);background:rgba(244,241,232,.9);padding:2px 8px;border-radius:4px;z-index:3}
+</style></head>
+<body>
+  <div class="nav">
+    <div class="mark">B</div>
+    <div class="brand"><b>BauernKarte</b><small>Höfe, Automaten & Märkte</small></div>
+    <div class="srch"><span style="font-size:15px">🔍</span><span>Produkt oder Geschäft suchen</span><span style="flex:none"></span><span class="kbd">/</span></div>
+    <div class="navr">
+      <div class="lang"><a>DE</a><a class="on">EN</a></div>
+      <div class="user">Anmelden</div>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="side">
+      <div class="tool"><div class="f">🔍&nbsp; In der Nähe suchen</div><div class="sort">Entfernung ▾</div></div>
+      <div class="count">9 Geschäfte gefunden</div>
+      <div class="list">
+        <div class="card hot"><div class="thumb">🍎</div><div class="main">
+          <div class="head"><span class="nm">Obstgarten Maier</span><span class="ds"><b>6 min</b> zu Fuß</span></div>
+          <div class="chips"><span class="chip hv">Äpfel</span><span class="chip hv">Birnen</span><span class="chip am">Kürbis</span></div>
+          <div class="meta"><span class="st"><span class="dot on"></span>Offen bis 18:00</span><span class="min">Hofladen</span></div>
+          <div class="season"><span class="m on"></span><span class="m on"></span><span class="m on"></span><span class="m"></span><span class="m on"></span><span class="m on"></span><span class="se">Saison: Mai–Dez</span></div>
+        </div></div>
+        <div class="card"><div class="thumb">🥛</div><div class="main">
+          <div class="head"><span class="nm">Milchtankstelle Huber</span><span class="ds"><b>11 min</b> zu Fuß</span></div>
+          <div class="chips"><span class="chip hv">Rohmilch</span><span class="chip hv">Butter</span></div>
+          <div class="meta"><span class="st"><span class="dot on"></span>Offen, Automat</span><span class="min">Automat</span></div>
+          <div class="season"><span class="m on"></span><span class="m on"></span><span class="m on"></span><span class="m on"></span><span class="m on"></span><span class="m on"></span><span class="se">ganzjährig</span></div>
+        </div></div>
+        <div class="card"><div class="thumb">🧺</div><div class="main">
+          <div class="head"><span class="nm">Wochenmarkt Altstadt</span><span class="ds"><b>14 min</b> zu Fuß</span></div>
+          <div class="chips"><span class="chip am">Fleisch</span><span class="chip hv">Gemüse</span><span class="chip hv">Eier</span></div>
+          <div class="meta"><span class="st"><span class="dot lat"></span>Öffnet Fr 07:00</span><span class="min">Markt</span></div>
+          <div class="season"><span class="m"></span><span class="m on"></span><span class="m"></span><span class="m on"></span><span class="m"></span><span class="m on"></span><span class="se">Fr + Sa</span></div>
+        </div></div>
+        <div class="card"><div class="thumb">🥔</div><div class="main">
+          <div class="head"><span class="nm">Kartoffelhof Lindner</span><span class="ds"><b>18 min</b> zu Fuß</span></div>
+          <div class="chips"><span class="chip hv">Kartoffeln</span><span class="chip hv">Zwiebeln</span></div>
+          <div class="meta"><span class="st"><span class="dot"></span>Geschlossen</span><span class="min">Hofladen</span></div>
+          <div class="season"><span class="m"></span><span class="m"></span><span class="m on"></span><span class="m on"></span><span class="m on"></span><span class="m on"></span><span class="se">Saison: Jul–Okt</span></div>
+        </div></div>
+        <div class="card"><div class="thumb">🍯</div><div class="main">
+          <div class="head"><span class="nm">Imkerei Berger</span><span class="ds"><b>22 min</b> zu Fuß</span></div>
+          <div class="chips"><span class="chip hv">Honig</span></div>
+          <div class="meta"><span class="st"><span class="dot on"></span>Offen bis 17:00</span><span class="min">Hofladen</span></div>
+          <div class="season"><span class="m on"></span><span class="m"></span><span class="m on"></span><span class="m on"></span><span class="m on"></span><span class="m"></span><span class="se">Saison: Jun–Sep</span></div>
+        </div></div>
+      </div>
+    </div>
+    <div class="map">
+      <div class="field"></div>
+      <div class="road r1"></div><div class="road r2"></div>
+      <div class="pin p1">🧺</div><div class="pin p2">🤖</div><div class="pin p3">🏪</div><div class="pin p4">🧺</div><div class="pin p5">🤖</div>
+      <div class="fab">☰</div><div class="fab b">◎</div>
+      <div class="att">© OpenStreetMap</div>
+    </div>
+  </div>
+</body></html>

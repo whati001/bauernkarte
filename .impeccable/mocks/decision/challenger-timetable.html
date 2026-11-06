@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><style>
+  :root{--ivory:#f8f5ec;--ink:#1c1c1c;--amber:#c46a1b;--rule:rgba(28,28,28,.28);--muted:#6f6c64}
+  *{box-sizing:border-box;margin:0}
+  body{width:1440px;height:900px;overflow:hidden;background:var(--ivory);color:var(--ink);font-family:"Palatino Linotype","Book Antiqua",serif;font-size:15px;display:flex;flex-direction:column}
+  .nav{height:60px;flex:none;border-bottom:2px solid var(--ink);display:flex;align-items:baseline;gap:18px;padding:0 22px}
+  .brand b{font-size:20px;font-weight:700;letter-spacing:.04em;font-variant:small-caps}
+  .brand small{font-size:11px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase}
+  .srch{flex:1;max-width:560px;height:38px;align-self:center;border:1px solid var(--ink);background:#fff;display:flex;align-items:center;padding:0 14px;color:var(--muted);font-family:"Segoe UI",sans-serif;font-size:14px}
+  .navr{margin-left:auto;align-self:center;display:flex;gap:12px;align-items:center;font-family:"Segoe UI",sans-serif;font-size:13px}
+  .user{border:1px solid var(--ink);height:36px;display:flex;align-items:center;padding:0 14px;font-weight:600}
+  .subhead{padding:8px 22px;border-bottom:1px solid var(--rule);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);display:flex;gap:24px}
+  .wrap{flex:1;display:flex;min-height:0}
+  .side{width:480px;flex:none;border-right:1px solid var(--rule);display:flex;flex-direction:column}
+  .tt-head{display:grid;grid-template-columns:28px 1fr auto auto;padding:8px 16px;border-bottom:1px solid var(--ink);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .rows{flex:1;overflow:auto}
+  .row{display:grid;grid-template-columns:28px 1fr auto auto;gap:8px;align-items:baseline;padding:10px 16px;border-bottom:1px solid var(--rule)}
+  .row.hot{background:rgba(196,106,27,.09)}
+  .no{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .nm{font-weight:700;font-size:16px;letter-spacing:.01em}
+  .kind{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .time{font-variant-numeric:tabular-nums;font-weight:700;color:var(--amber)}
+  .prod{grid-column:2/5;font-family:"Segoe UI",sans-serif;font-size:12.5px;color:var(--muted);padding-top:2px}
+  .prod b{color:var(--ink);font-weight:600}
+  .map{flex:1;position:relative;background:#efe9da;min-width:0}
+  .graticule{position:absolute;inset:0;background:
+    repeating-linear-gradient(0deg,transparent 0 79px,rgba(28,28,28,.12) 79px 80px),
+    repeating-linear-gradient(90deg,transparent 0 79px,rgba(28,28,28,.12) 79px 80px)}
+  .pin{position:absolute;width:32px;height:32px;border:1.5px solid var(--ink);border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;z-index:2}
+  .p1{left:38%;top:38%;background:var(--amber);border-color:var(--ink);color:#fff;width:40px;height:40px}
+  .p2{left:53%;top:26%}.p3{left:63%;top:52%}.p4{left:45%;top:58%}
+  .you{position:absolute;left:31%;top:46%;width:11px;height:11px;border-radius:50%;background:#1a6bd8;border:2px solid #fff;z-index:3}
+  .scalebar{position:absolute;right:24px;bottom:24px;border:1px solid var(--ink);background:rgba(248,245,236,.9);padding:6px 12px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;z-index:3}
+  .att{position:absolute;left:14px;bottom:14px;font-size:10px;color:var(--muted);z-index:3}
+</style></head>
+<body>
+  <div class="nav">
+    <div class="brand"><b>BauernKarte</b> <small>Fahrplan der Höfe</small></div>
+    <div class="srch"><span>🔍</span><span style="flex:1">Suchen</span></div>
+    <div class="navr"><span>DE · EN</span><div class="user">Anmelden</div></div>
+  </div>
+  <div class="subhead"><span>Verbindungen von Ihrem Standort</span><span style="margin-left:auto">Entfernung aufsteigend</span></div>
+  <div class="wrap">
+    <div class="side">
+      <div class="tt-head"><span></span><span>Abholstelle</span><span>Art</span><span>Zeit</span></div>
+      <div class="rows">
+        <div class="row hot"><span class="no">1</span><span class="nm">Obstgarten Maier</span><span class="kind">Hof</span><span class="time">6′</span>
+          <span class="prod"><b>Äpfel, Birnen</b> · offen bis 18:00 · Mai–Dez</span></div>
+        <div class="row"><span class="no">2</span><span class="nm">Milchtankstelle Huber</span><span class="kind">Automat</span><span class="time">11′</span>
+          <span class="prod"><b>Rohmilch, Butter</b> · offen · ganzjährig</span></div>
+        <div class="row"><span class="no">3</span><span class="nm">Wochenmarkt Altstadt</span><span class="kind">Markt</span><span class="time">14′</span>
+          <span class="prod"><b>Gemüse, Eier</b> · öffnet Fr 07:00 · Fr+Sa</span></div>
+        <div class="row"><span class="no">4</span><span class="nm">Kartoffelhof Lindner</span><span class="kind">Hof</span><span class="time">18′</span>
+          <span class="prod"><b>Kartoffeln, Zwiebeln</b> · geschlossen · Jul–Okt</span></div>
+      </div>
+    </div>
+    <div class="map">
+      <div class="graticule"></div>
+      <div class="pin p1">1</div><div class="pin p2">2</div><div class="pin p3">3</div><div class="pin p4">4</div>
+      <div class="you"></div>
+      <div class="scalebar">1 km ⎯⎯⎯</div>
+      <div class="att">© OpenStreetMap · Fahrplan-Atlas</div>
+    </div>
+  </div>
+</body></html>

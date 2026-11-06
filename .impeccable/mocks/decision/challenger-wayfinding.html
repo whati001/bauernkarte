@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><style>
+  :root{--yellow:#f5c400;--ink:#101010;--paper:#f7f7f4;--muted:#55554f;--hair:rgba(16,16,16,.18)}
+  *{box-sizing:border-box;margin:0}
+  body{width:1440px;height:900px;overflow:hidden;background:var(--paper);color:var(--ink);font-family:"Segoe UI",system-ui,sans-serif;font-size:15px;display:flex;flex-direction:column}
+  .nav{height:64px;flex:none;border-bottom:1px solid var(--hair);display:flex;align-items:center;gap:16px;padding:0 20px;background:var(--yellow)}
+  .mark{width:38px;height:38px;background:var(--ink);color:var(--yellow);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px}
+  .brand b{font-size:17px;font-weight:800;display:block}
+  .brand small{font-size:11px;color:rgba(16,16,16,.7)}
+  .srch{flex:1;max-width:600px;height:44px;border:2px solid var(--ink);border-radius:2px;background:#fff;display:flex;align-items:center;padding:0 16px;gap:10px;color:var(--muted)}
+  .navr{margin-left:auto;display:flex;align-items:center;gap:12px}
+  .user{height:44px;border:2px solid var(--ink);border-radius:2px;background:#fff;display:flex;align-items:center;padding:0 16px;font-size:13px;font-weight:700}
+  .band{background:var(--yellow);border-bottom:2px solid var(--ink);padding:14px 24px;display:flex;align-items:center;gap:16px}
+  .band .pict{width:52px;height:52px;background:var(--ink);border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:26px}
+  .band b{font-size:24px;font-weight:800;letter-spacing:-.01em}
+  .band .arrow{margin-left:auto;font-size:34px;font-weight:800}
+  .band .num{font-size:24px;font-weight:800;background:var(--ink);color:var(--yellow);padding:2px 14px;border-radius:2px}
+  .wrap{flex:1;display:flex;min-height:0}
+  .side{width:460px;flex:none;border-right:1px solid var(--hair);background:#fff;display:flex;flex-direction:column}
+  .tool{padding:12px 16px;border-bottom:1px solid var(--hair);display:flex;gap:10px}
+  .tool .f{flex:1;height:38px;border:1.5px solid var(--ink);border-radius:2px;background:#fff;display:flex;align-items:center;padding:0 14px;color:var(--muted);font-size:14px}
+  .list{flex:1;overflow:auto}
+  .row{display:flex;align-items:center;gap:14px;padding:13px 16px;border-bottom:1px solid var(--hair)}
+  .row.hot{background:rgba(245,196,0,.16)}
+  .pict{flex:none;width:44px;height:44px;border-radius:2px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px}
+  .main{flex:1;min-width:0}
+  .nm{font-weight:700;font-size:16px}
+  .meta{margin-top:3px;font-size:13px;color:var(--muted);display:flex;gap:10px;align-items:center}
+  .open{color:#1c7d35;font-weight:700}
+  .min{margin-left:auto;font-weight:800;font-size:15px;flex:none}
+  .min small{display:block;font-size:11px;font-weight:600;color:var(--muted);text-align:right}
+  .chip{display:inline-block;font-size:12px;padding:2px 9px;margin-right:5px;background:#f0f0ec;border:1px solid var(--hair);border-radius:2px;font-weight:600}
+  .map{flex:1;position:relative;background:#e9e7de;min-width:0}
+  .field{position:absolute;inset:0;background:linear-gradient(150deg,#eceade,#e2e0d2)}
+  .sign{position:absolute;left:18px;top:18px;background:var(--yellow);border:2px solid var(--ink);border-radius:2px;padding:10px 16px;display:flex;align-items:center;gap:12px;z-index:4;box-shadow:2px 2px 0 rgba(16,16,16,.35)}
+  .sign b{font-size:16px;font-weight:800}
+  .pin{position:absolute;width:38px;height:38px;background:#fff;border:2.5px solid var(--ink);border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:17px;z-index:2;box-shadow:2px 2px 0 rgba(16,16,16,.3)}
+  .p1{left:38%;top:38%;background:var(--yellow)}
+  .p2{left:53%;top:26%}.p3{left:63%;top:52%}.p4{left:45%;top:58%}
+  .att{position:absolute;right:14px;bottom:14px;font-size:10px;color:var(--muted);z-index:3}
+</style></head>
+<body>
+  <div class="nav">
+    <div class="mark">B</div>
+    <div class="brand"><b>BauernKarte</b><small>Höfe, Automaten & Märkte</small></div>
+    <div class="srch"><span>🔍</span><span style="flex:1">Produkt oder Geschäft suchen</span></div>
+    <div class="navr"><span style="font-weight:700">DE · EN</span><div class="user">Anmelden</div></div>
+  </div>
+  <div class="band">
+    <div class="pict">🍎</div>
+    <b>Äpfel</b>
+    <span style="font-size:16px;font-weight:600;color:rgba(16,16,16,.8)">4 Fundorte · Richtung Norden</span>
+    <span class="num">6 min</span>
+    <span class="arrow">↑</span>
+  </div>
+  <div class="wrap">
+    <div class="side">
+      <div class="tool"><div class="f">🔍&nbsp; Suchen</div></div>
+      <div class="list">
+        <div class="row hot"><div class="pict">🧺</div><div class="main">
+          <div class="nm">Obstgarten Maier</div>
+          <div class="meta"><span>Offen bis 18:00 · Hofladen</span></div>
+          <div style="margin-top:5px"><span class="chip">Äpfel</span><span class="chip">Birnen</span><span class="chip">Kürbis</span></div>
+        </div><div class="min">6 min<small>zu Fuß</small></div>
+      </div>
+        <div class="row"><div class="pict">🤖</div><div class="main">
+          <div class="nm">Milchtankstelle Huber</div>
+          <div class="meta"><span>Ganzjährig · Automat</span></div>
+          <div style="margin-top:5px"><span class="chip">Rohmilch</span><span class="chip">Butter</span></div>
+        </div><div class="min">11 min<small>zu Fuß</small></div>
+      </div>
+        <div class="row"><div class="pict">🏪</div><div class="main">
+          <div class="nm">Wochenmarkt Altstadt</div>
+          <div class="meta"><span>Öffnet Fr 07:00 · Markt</span></div>
+          <div style="margin-top:5px"><span class="chip">Gemüse</span><span class="chip">Eier</span></div>
+        </div><div class="min">14 min<small>zu Fuß</small></div>
+      </div>
+        <div class="row"><div class="pict">🧺</div><div class="main">
+          <div class="nm">Kartoffelhof Lindner</div>
+          <div class="meta"><span>Geschlossen · Hofladen</span></div>
+          <div style="margin-top:5px"><span class="chip">Kartoffeln</span><span class="chip">Zwiebeln</span></div>
+        </div><div class="min">18 min<small>zu Fuß</small></div>
+      </div>
+      </div>
+    </div>
+    <div class="map">
+      <div class="field"></div>
+      <div class="sign">🧭 <b>Obstgarten Maier — geradeaus, 6 min</b></div>
+      <div class="pin p1">🧺</div><div class="pin p2">🤖</div><div class="pin p3">🏪</div><div class="pin p4">🧺</div>
+      <div class="att">© OpenStreetMap</div>
+    </div>
+  </div>
+</body></html>

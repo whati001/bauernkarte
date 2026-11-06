@@ -91,8 +91,8 @@ fn FarmScene(hue: i64, icons: Vec<String>) -> Element {
                         stop { offset: "100%", stop_color: "hsl(186 62% 93%)" }
                     }
                     linearGradient { id: "hero-field", x1: "0", y1: "0", x2: "0", y2: "1",
-                        stop { offset: "0%", stop_color: land(40, 52) }
-                        stop { offset: "100%", stop_color: land(44, 38) }
+                        stop { offset: "0%", stop_color: land(46, 58) }
+                        stop { offset: "100%", stop_color: land(48, 42) }
                     }
                 }
                 rect { width: "400", height: "170", fill: "url(#hero-sky)" }

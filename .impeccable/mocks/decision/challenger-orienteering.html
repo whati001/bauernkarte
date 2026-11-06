@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><style>
+  :root{--iso-white:#fdfdfb;--open:#b8c84a;--closed:#7d9a6b;--contour:#8b6f47;--mar:#9b2d86;--ink:#2a2a26;--muted:#6d6d64}
+  *{box-sizing:border-box;margin:0}
+  body{width:1440px;height:900px;overflow:hidden;background:var(--iso-white);color:var(--ink);font-family:"Segoe UI",system-ui,sans-serif;font-size:15px;display:flex;flex-direction:column}
+  .nav{height:64px;flex:none;border-bottom:1.5px solid var(--ink);display:flex;align-items:center;gap:16px;padding:0 20px;background:var(--iso-white)}
+  .mark{width:34px;height:34px;background:var(--ink);color:var(--iso-white);display:flex;align-items:center;justify-content:center;font-weight:800}
+  .brand b{font-size:17px;font-weight:800;display:block}
+  .brand small{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+  .srch{flex:1;max-width:600px;height:42px;border:1.5px solid var(--ink);background:#fff;display:flex;align-items:center;padding:0 16px;color:var(--muted)}
+  .srch span{flex:1}
+  .navr{margin-left:auto;display:flex;align-items:center;gap:14px}
+  .user{height:42px;border:1.5px solid var(--ink);background:#fff;display:flex;align-items:center;padding:0 16px;font-size:13px;font-weight:700}
+  .wrap{flex:1;display:flex;min-height:0}
+  .side{width:440px;flex:none;border-right:1.5px solid var(--ink);display:flex;flex-direction:column}
+  .tool{padding:12px 16px;border-bottom:1.5px solid var(--ink);display:flex;gap:10px;align-items:center}
+  .tool .f{flex:1;height:38px;border:1.5px solid var(--ink);background:#fff;display:flex;align-items:center;padding:0 14px;color:var(--muted);font-size:14px}
+  .sort{height:36px;border:1.5px solid var(--ink);background:#fff;padding:0 12px;font-size:13px}
+  .list{flex:1;overflow:auto;padding:0}
+  .ctrl{display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid rgba(42,42,38,.25)}
+  .ctrl.hot{background:rgba(185,200,74,.16)}
+  .cnum{flex:none;width:30px;height:30px;border:2.5px solid var(--mar);border-radius:50%;color:var(--mar);font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;background:#fff}
+  .kind{flex:none;width:8px;border-radius:4px}
+  .k1{background:var(--open)} .k2{background:var(--contour)} .k3{background:#c25e00}
+  .main{flex:1;min-width:0}
+  .nm{font-weight:700;font-size:15px;text-transform:uppercase;letter-spacing:.02em}
+  .desc{font-size:12px;color:var(--muted);font-family:ui-monospace,monospace;margin-top:2px}
+  .desc b{color:var(--ink)}
+  .chip{display:inline-block;font-size:11px;padding:1px 8px;margin:4px 4px 0 0;border:1px solid rgba(42,42,38,.3);background:#fff;font-weight:600}
+  .chip.on{background:rgba(185,200,74,.3);border-color:rgba(139,154,107,.6)}
+  .map{flex:1;position:relative;min-width:0;background:var(--iso-white)}
+  .patch{position:absolute;border-radius:50% 50% 50% 50%/60% 60% 40% 40%}
+  .f1{left:8%;top:18%;width:300px;height:220px;background:var(--open);border:1.5px solid rgba(42,42,38,.5)}
+  .f2{left:48%;top:8%;width:380px;height:260px;background:var(--open)}
+  .f3{left:20%;top:52%;width:420px;height:300px;background:var(--open)}
+  .f4{left:60%;top:45%;width:300px;height:260px;background:#dfe3c2}
+  .f5{left:0%;top:0%;width:200px;height:180px;background:#f0e69a;border:1.5px solid rgba(42,42,38,.5)}
+  .f6{left:76%;top:66%;width:240px;height:200px;background:var(--open)}
+  .marsh{position:absolute;left:34%;top:30%;width:190px;height:130px;background:
+    repeating-linear-gradient(180deg,#9ecbe0 0 3px,#c9e2ee 3px 9px);border:1.5px solid rgba(42,42,38,.5)}
+  .cont{position:absolute;border:1.5px solid rgba(139,111,71,.5);border-radius:50%}
+  .c1{width:220px;height:150px;left:24%;top:34%;transform:rotate(-10deg)}
+  .c2{width:300px;height:200px;left:48%;top:38%;transform:rotate(6deg)}
+  .c3{width:180px;height:120px;left:70%;top:55%;transform:rotate(-16deg)}
+  .route{position:absolute;inset:0;z-index:3}
+  .route svg{width:100%;height:100%}
+  .pin{position:absolute;width:30px;height:30px;border:3px solid var(--mar);border-radius:50%;background:#fff;color:var(--mar);font-weight:800;display:flex;align-items:center;justify-content:center;z-index:4}
+  .p1{left:30%;top:36%}.p2{left:47%;top:22%}.p3{left:61%;top:50%}.p4{left:42%;top:58%}
+  .you{position:absolute;left:27%;top:45%;width:11px;height:11px;border-radius:50%;background:#1a6bd8;border:2.5px solid #fff;z-index:5}
+  .north{position:absolute;right:20px;top:20px;z-index:5;text-align:center;font-weight:800;color:var(--ink)}
+  .legend{position:absolute;left:16px;bottom:16px;border:1.5px solid var(--ink);background:var(--iso-white);padding:9px 12px;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink);z-index:5}
+  .legend i{display:inline-block;width:10px;height:10px;margin-right:6px;vertical-align:-1px;border:1px solid rgba(42,42,38,.4)}
+</style></head>
+<body>
+  <div class="nav">
+    <div class="mark">B</div>
+    <div class="brand"><b>BauernKarte</b><small>Höfe · Automaten · Märkte</small></div>
+    <div class="srch"><span>🔍</span><span>Produkt oder Geschäft suchen</span></div>
+    <div class="navr"><span style="font-weight:700;font-size:13px">DE · EN</span><div class="user">Anmelden</div></div>
+  </div>
+  <div class="wrap">
+    <div class="side">
+      <div class="tool"><div class="f">🔍&nbsp; Bahnhof suchen</div><div class="sort">Entfernung ▾</div></div>
+      <div class="list">
+        <div class="ctrl hot"><div class="cnum">1</div><div class="kind k1"></div><div class="main">
+          <div class="nm">Obstgarten Maier</div>
+          <div class="desc"><b>6 min</b> · OFFEN BIS 18:00 · HOF</div>
+          <span class="chip on">Äpfel</span><span class="chip on">Birnen</span><span class="chip">Kürbis</span>
+        </div></div>
+        <div class="ctrl"><div class="cnum">2</div><div class="kind k2"></div><div class="main">
+          <div class="nm">Milchtankstelle Huber</div>
+          <div class="desc"><b>11 min</b> · OFFEN · AUTOMAT</div>
+          <span class="chip on">Rohmilch</span><span class="chip on">Butter</span>
+        </div></div>
+        <div class="ctrl"><div class="cnum">3</div><div class="kind k3"></div><div class="main">
+          <div class="nm">Wochenmarkt Altstadt</div>
+          <div class="desc"><b>14 min</b> · ÖFFNET FR 07:00 · MARKT</div>
+          <span class="chip on">Gemüse</span><span class="chip">Fleisch</span><span class="chip">Eier</span>
+        </div></div>
+        <div class="ctrl"><div class="cnum">4</div><div class="kind k1"></div><div class="main">
+          <div class="nm">Kartoffelhof Lindner</div>
+          <div class="desc"><b>18 min</b> · GESCHLOSSEN · HOF</div>
+          <span class="chip on">Kartoffeln</span><span class="chip on">Zwiebeln</span>
+        </div></div>
+      </div>
+    </div>
+    <div class="map">
+      <div class="patch f1"></div><div class="patch f2"></div><div class="patch f3"></div><div class="patch f4"></div><div class="patch f5"></div><div class="patch f6"></div>
+      <div class="marsh"></div>
+      <div class="cont c1"></div><div class="cont c2"></div><div class="cont c3"></div>
+      <div class="route"><svg viewBox="0 0 800 700" preserveAspectRatio="none">
+        <path d="M216,316 C300,260 360,180 380,148 M380,148 C470,190 500,300 428,360 M428,360 C430,430 350,470 336,406" fill="none" stroke="#9b2d86" stroke-width="3" stroke-dasharray="1 7" stroke-linecap="round"/>
+      </svg></div>
+      <div class="pin p1">1</div><div class="pin p2">2</div><div class="pin p3">3</div><div class="pin p4">4</div>
+      <div class="you"></div>
+      <div class="north">N<br>▲</div>
+      <div class="legend"><i style="background:var(--open)"></i>Offenland &nbsp;<i style="background:#dfe3c2"></i>Verdichtet &nbsp;<i style="background:repeating-linear-gradient(180deg,#9ecbe0 0 3px,#c9e2ee 3px 9px)"></i>Wiese</div>
+    </div>
+  </div>
+</body></html>

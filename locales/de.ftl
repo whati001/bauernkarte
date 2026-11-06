@@ -27,7 +27,9 @@ search-results-count = { $count ->
     [one] { $count } Ort in deiner Umgebung
    *[other] { $count } Orte in deiner Umgebung
 }
-search-no-results = Keine Geschäfte für diese Auswahl.
+search-empty-title = Hier wächst gerade nichts.
+search-empty-body = Pass die Suche an oder setz sie zurück, um alle Höfe, Automaten und Märkte zu sehen.
+search-empty-reset = Suche zurücksetzen
 search-name = Nach Namen suchen
 search-name-placeholder = Hofladen, Automat oder Markt suchen…
 search-sort = Sortierung
@@ -48,6 +50,21 @@ action-cancel = Abbrechen
 action-edit = Bearbeiten
 action-back = Zurück
 action-back-to-search = Zurück zur Suche
+
+## Einführung
+onboarding-search-product-title = Produkt suchen
+onboarding-search-product-body = Gib oben ein Produkt ein oder wähle einen Vorschlag. Karte und Liste zeigen dir passende Geschäfte.
+onboarding-search-store-title = Geschäft suchen
+onboarding-search-store-body = Öffne die Seitenleiste und suche nach dem Namen eines Hofladens, Automaten oder Markts.
+onboarding-navbar-login-title = Navigation und Login
+onboarding-navbar-login-body = In der oberen Leiste wechselst du die Sprache und meldest dich an. Mit einem Konto kannst du Geschäfte hinzufügen und ändern.
+onboarding-add-store-title = Neues Geschäft hinzufügen
+onboarding-add-store-body = Melde dich an, öffne dein Kontomenü und wähle „Neues Geschäft“. Trage die Daten ein und setze den Standort auf der Karte.
+onboarding-change-store-title = Geschäft ändern
+onboarding-change-store-body = Öffne ein Geschäft, scrolle zu den Aktionen und wähle „Bearbeiten“. Passe die Daten an und speichere.
+onboarding-skip = Überspringen
+onboarding-next = Weiter
+onboarding-finish = Los geht's
 
 ## Auth
 auth-login-heading = Login
@@ -333,13 +350,14 @@ datenschutz-storage-heading = Cookies, lokaler Speicher und Offline-Cache
 datenschutz-storage-session = Notwendiges Server-Sitzungscookie: Ablauf nach 14 Tagen Inaktivität, SameSite=Lax und, wenn konfiguriert, Secure.
 datenschutz-storage-locale = Cookie locale für die Sprachauswahl: höchstens ein Jahr, SameSite=Lax.
 datenschutz-storage-sidebar = localStorage-Schlüssel bk-sidebar-width für die gewählte Seitenleistenbreite: bis die Website-Daten gelöscht werden.
+datenschutz-storage-onboarding = localStorage-Schlüssel bk-onboarding-complete-v1 für die einmalige Einführung: bis die Website-Daten gelöscht werden.
 datenschutz-storage-pwa = PWA-Cache für statische Dateien und die Offline-Seite: bis zur Ersetzung durch eine neue Version, zur Abmeldung des Service Workers oder zum Löschen der Website-Daten.
 datenschutz-storage-osm-cache = Browser-Cache für OpenStreetMap-Kacheln: nach den Cache-Regeln des Browsers und des Kacheldienstes.
 datenschutz-storage-legal = Diese Speicherungen sind funktional beziehungsweise technisch erforderlich und beruhen auf § 165 Abs. 3 TKG 2021. BauernKarte setzt keine Werbe-, Marketing- oder Analyse-Cookies ein.
 datenschutz-recipients-heading = Empfänger und Übermittlungen
 datenschutz-recipients-body = Empfänger können autorisierte Administratoren, die Kategorien der Hosting- und Datenbankbetreiber des Verantwortlichen, öffentliche Besucher bei freigegebenen öffentlichen Inhalten, die OpenStreetMap Foundation beim Kartenabruf sowie Behörden bei gesetzlicher Verpflichtung sein. OSMF hat ihren Sitz im Vereinigten Königreich und nutzt für Kartenkacheln ein weltweites Cache-Netz.
 datenschutz-retention-heading = Speicherdauer
-datenschutz-retention-body = Sitzungen verfallen nach 14 Tagen Inaktivität; abgelaufene Sitzungen werden stündlich bereinigt. Die Sprachauswahl bleibt höchstens ein Jahr gespeichert, die Seitenleistenbreite bis zum Löschen der Website-Daten und der Service-Worker-Cache bis zu Ersetzung, Abmeldung oder Löschung. Konten bleiben bis zur endgültigen Löschung durch einen Administrator auf Anfrage bestehen; erhaltene Beiträge verlieren danach ihre Kontozuordnung. Eigene Bewertungen können sofort entfernt werden. Beitrags- und Prüfdaten haben keine automatische Ablauffrist und bleiben erhalten, solange sie für Verzeichnisbetrieb, Moderation, Wiederherstellung, Rechtsansprüche oder eine begründete Löschentscheidung benötigt werden. Anfrage- und Sicherheitsprotokolle sowie Sicherungen folgen dem für Sicherheit und Wiederherstellung erforderlichen Zeitplan des Verantwortlichen beziehungsweise seines Hosting-Betreibers.
+datenschutz-retention-body = Sitzungen verfallen nach 14 Tagen Inaktivität; abgelaufene Sitzungen werden stündlich bereinigt. Die Sprachauswahl bleibt höchstens ein Jahr gespeichert, die Seitenleistenbreite und der Abschluss der Einführung bis zum Löschen der Website-Daten und der Service-Worker-Cache bis zu Ersetzung, Abmeldung oder Löschung. Konten bleiben bis zur endgültigen Löschung durch einen Administrator auf Anfrage bestehen; erhaltene Beiträge verlieren danach ihre Kontozuordnung. Eigene Bewertungen können sofort entfernt werden. Beitrags- und Prüfdaten haben keine automatische Ablauffrist und bleiben erhalten, solange sie für Verzeichnisbetrieb, Moderation, Wiederherstellung, Rechtsansprüche oder eine begründete Löschentscheidung benötigt werden. Anfrage- und Sicherheitsprotokolle sowie Sicherungen folgen dem für Sicherheit und Wiederherstellung erforderlichen Zeitplan des Verantwortlichen beziehungsweise seines Hosting-Betreibers.
 datenschutz-rights-heading = Ihre Rechte
 datenschutz-right-information = Recht auf Information über die Verarbeitung.
 datenschutz-right-access = Recht auf Auskunft über Ihre personenbezogenen Daten.

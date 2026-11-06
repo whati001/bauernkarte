@@ -1,14 +1,14 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["click>=8"]
+# dependencies = ["click>=8", "playwright==1.55.0"]
 # ///
 """Bootstrap and deploy the containerized BauernKarte stack.
 
 See service.md for details and prerequisites. The shebang above runs
-this under `uv run --script`, which installs `click` into an ephemeral
-venv on the fly — no manual venv needed, as long as `uv` is on PATH.
-`python3 service.py ...` also works if `click` is already installed.
+this under `uv run --script`, which installs the Python dependencies into
+an ephemeral environment — no manual venv needed, as long as `uv` is on
+PATH. `python3 service.py ...` also works when those dependencies are installed.
 
 Everything is driven by `.env`: `env` creates it once (with random
 secrets) and nothing ever rewrites it afterwards. docker-compose.yml
@@ -16,31 +16,36 @@ interpolates the same keys, and every other subcommand only reads it.
 Change a value there and every subcommand follows.
 
 Subcommands:
-    env      create `.env` with random secrets (never overwrites it)
-    db       start the compose `db` service and wait for it
-    up       build and start the whole stack, wait until the app is healthy
-    down     stop and remove the containers (data and image are kept)
-    prepare  refresh the `.sqlx/` offline query cache (developers only)
-    stores   seed OSM farm-shop/vending-machine data into the running db
-    backup   dump the database to a file
-    cleanup  tear the stack down: containers, images, volumes
+    env          create `.env` with random secrets (never overwrites it)
+    db           start the compose `db` service and wait for it
+    up           build and start the whole stack, wait until the app is healthy
+    down         stop and remove the containers (data and image are kept)
+    prepare      refresh the `.sqlx/` offline query cache (developers only)
+    stores       seed OSM farm-shop/vending-machine data into the running db
+    screenshots  capture the bilingual onboarding images from the running app
+    backup       dump the database to a file
+    cleanup      tear the stack down: containers, images, volumes
 
 Usage:
     ./service.py env
     ./service.py up
-    ./service.py stores
+    ./service.py screenshots
     ./service.py down
 """
 
 import os
+import re
 import secrets
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from datetime import datetime
 from pathlib import Path
-from urllib.parse import quote
+from urllib.error import HTTPError, URLError
+from urllib.parse import quote, urlsplit
+from urllib.request import urlopen
 
 import click
 
@@ -48,6 +53,18 @@ REPO_ROOT = Path(__file__).resolve().parent
 ENV_FILE = REPO_ROOT / ".env"
 SEED_SCRIPT = REPO_ROOT / "scripts" / "seed_osm_farm_shops.py"
 DEMO_STORE = REPO_ROOT / "scripts" / "demo_store.sql"
+
+SCREENSHOT_STORE = "Obstgarten Maier"
+ONBOARDING_STORAGE_KEY = "bk-onboarding-complete-v1"
+SCREENSHOT_VIEWPORT = {"width": 1280, "height": 800}
+ONBOARDING_OUTPUT = REPO_ROOT / "public" / "static" / "onboarding"
+ONBOARDING_PAGES = (
+    "search-product",
+    "search-store",
+    "navbar-login",
+    "add-store",
+    "change-store",
+)
 
 CARGO_BIN = Path.home() / ".cargo" / "bin"
 
@@ -349,6 +366,292 @@ def do_stores(demo):
         psql_in_db(compose, cfg, DEMO_STORE.read_text())
     click.echo("stores seeded.")
 
+def _missing_store_message(store_name):
+    if store_name == SCREENSHOT_STORE:
+        return (
+            f"store '{SCREENSHOT_STORE}' is missing or not public — "
+            "run ./service.py stores --demo first"
+        )
+    return f"store '{store_name}' is missing or not public — seed it before running screenshots"
+
+
+def _wait_for_capture(page, anchor):
+    """Settle one app state before writing its full-viewport PNG."""
+    page.wait_for_selector(anchor, state="visible")
+    page.evaluate("() => document.fonts.ready")
+    page.wait_for_function(
+        """() => Array.from(document.images)
+            .filter((image) => {
+                const rect = image.getBoundingClientRect();
+                return rect.width > 0 && rect.height > 0;
+            })
+            .every((image) => image.complete && image.naturalWidth > 0)"""
+    )
+    page.wait_for_selector(".leaflet-tile-loaded", state="visible")
+    page.evaluate(
+        "() => new Promise((resolve) => "
+        "requestAnimationFrame(() => requestAnimationFrame(resolve)))"
+    )
+
+
+def _wait_for_hydration(page):
+    # The bridge draws pins only after MapView's browser-side effect has
+    # handed it the server-rendered search results.
+    page.wait_for_function(
+        "() => document.querySelector('.map-pin-dot, .map-cluster') !== null"
+    )
+
+
+def _open_search_sidebar(page):
+    for _ in range(40):
+        collapsed = page.locator("#layout").evaluate(
+            "(layout) => layout.classList.contains('sidebar-collapsed')"
+        )
+        if not collapsed:
+            return
+        try:
+            page.locator("#sidebar-open").click(timeout=500)
+        except Exception:
+            pass
+        page.wait_for_timeout(250)
+    raise RuntimeError("search sidebar did not open after hydration")
+
+
+def _exact_store_card(page, store_name):
+    cards = page.locator(".result-card")
+    try:
+        page.wait_for_function(
+            """(name) => {
+                const cards = Array.from(document.querySelectorAll('.result-card'));
+                return cards.filter((card) =>
+                    card.querySelector('.result-name')?.textContent.trim() === name
+                ).length === 1;
+            }""",
+            arg=store_name,
+            timeout=10_000,
+        )
+    except Exception:
+        raise click.ClickException(_missing_store_message(store_name))
+
+    index = cards.evaluate_all(
+        """(nodes, name) => nodes.findIndex((card) =>
+            card.querySelector('.result-name')?.textContent.trim() === name
+        )""",
+        store_name,
+    )
+    if index < 0:
+        raise click.ClickException(_missing_store_message(store_name))
+    return cards.nth(index)
+
+
+def _discover_store(page, base_url, store_name):
+    page.goto(f"{base_url}/", wait_until="domcontentloaded")
+    page.wait_for_selector("#sidebar-open")
+    _wait_for_hydration(page)
+    _open_search_sidebar(page)
+    page.locator(".toolbar-search input").fill(store_name)
+    card = _exact_store_card(page, store_name)
+    chip = card.locator(".result-chip").first
+    try:
+        text = chip.inner_text().strip()
+        product_name = text.split(maxsplit=1)[1].strip()
+    except (IndexError, AttributeError):
+        raise click.ClickException(_missing_store_message(store_name))
+    if not product_name:
+        raise click.ClickException(_missing_store_message(store_name))
+
+    card.click()
+    try:
+        page.wait_for_url(re.compile(r".*/store/\d+/?$"))
+    except Exception:
+        raise click.ClickException(_missing_store_message(store_name))
+    match = re.fullmatch(r"/store/(\d+)/?", urlsplit(page.url).path)
+    if match is None:
+        raise click.ClickException(_missing_store_message(store_name))
+    return product_name, int(match.group(1))
+
+
+def _capture_locale(context, base_url, locale, store_name, output_dir, admin_password):
+    page = context.new_page()
+    try:
+        product_name, store_id = _discover_store(page, base_url, store_name)
+
+        page.goto(f"{base_url}/", wait_until="domcontentloaded")
+        _wait_for_hydration(page)
+        product_input = page.locator(".nav-search input")
+        product_input.fill(product_name)
+        matching_option = page.locator("[role=option]").filter(has_text=product_name).first
+        matching_option.wait_for(state="visible")
+        _wait_for_capture(page, "[role=listbox]")
+        page.screenshot(path=output_dir / "search-product.png", full_page=False)
+
+        page.goto(f"{base_url}/", wait_until="domcontentloaded")
+        _wait_for_hydration(page)
+        _open_search_sidebar(page)
+        page.locator(".toolbar-search input").fill(store_name)
+        _exact_store_card(page, store_name).wait_for(state="visible")
+        page.locator(".map-pin-dot").first.wait_for(state="visible")
+        _wait_for_capture(page, ".result-card")
+        page.screenshot(path=output_dir / "search-store.png", full_page=False)
+
+        page.goto(f"{base_url}/login", wait_until="domcontentloaded")
+        _wait_for_hydration(page)
+        page.wait_for_selector("#login-email", state="visible")
+        page.wait_for_selector("#login-password", state="visible")
+        _wait_for_capture(page, "#login-email")
+        page.screenshot(path=output_dir / "navbar-login.png", full_page=False)
+
+        page.locator("#login-email").fill("bauernkarte@rehka.dev")
+        page.locator("#login-password").fill(admin_password)
+        page.locator("#login-password").press("Enter")
+        try:
+            page.wait_for_function(
+                "() => location.pathname !== '/login' && "
+                "document.querySelector('.nav-user') !== null"
+            )
+        except Exception:
+            raise click.ClickException(
+                "admin login failed; verify ADMIN_PASSWORD and restart the app"
+            )
+
+        page.goto(f"{base_url}/new-store", wait_until="domcontentloaded")
+        page.wait_for_selector("#store-name", state="visible")
+        if page.locator("#store-name").input_value() != "":
+            raise RuntimeError("new-store form did not start with an empty name")
+        _wait_for_capture(page, "#store-name")
+        page.screenshot(path=output_dir / "add-store.png", full_page=False)
+
+        page.goto(f"{base_url}/store/{store_id}/edit", wait_until="domcontentloaded")
+        page.wait_for_function(
+            "(name) => document.querySelector('#store-name')?.value === name",
+            arg=store_name,
+        )
+        _wait_for_capture(page, "#store-name")
+        page.screenshot(path=output_dir / "change-store.png", full_page=False)
+    finally:
+        page.close()
+
+
+def do_screenshots(base_url, store_name):
+    cfg = load_env()
+    store_name = store_name.strip()
+    if not store_name:
+        raise click.ClickException("--store-name must not be empty")
+
+    base_url = (base_url or f"http://127.0.0.1:{cfg['APP_PORT']}").strip().rstrip("/")
+    parsed = urlsplit(base_url)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise click.ClickException("--base-url must be an http or https URL")
+
+    try:
+        with urlopen(f"{base_url}/healthz", timeout=5) as response:
+            healthy = response.status == 200 and response.read() == b"ok"
+    except (HTTPError, URLError, OSError):
+        healthy = False
+    if not healthy:
+        raise click.ClickException(
+            "app health check failed — run ./service.py up or pass --base-url"
+        )
+
+    from playwright.sync_api import Error as PlaywrightError
+    from playwright.sync_api import sync_playwright
+
+    ONBOARDING_OUTPUT.parent.mkdir(parents=True, exist_ok=True)
+    temporary = Path(tempfile.mkdtemp(prefix=".onboarding-", dir=ONBOARDING_OUTPUT.parent))
+    browser = None
+    try:
+        with sync_playwright() as playwright:
+            try:
+                browser = playwright.chromium.launch(headless=True)
+            except PlaywrightError:
+                raise click.ClickException(
+                    "Chromium is missing — "
+                    "uvx --from playwright==1.55.0 playwright install chromium"
+                )
+
+            for locale in ("de", "en"):
+                locale_dir = temporary / locale
+                locale_dir.mkdir()
+                context = browser.new_context(
+                    viewport=SCREENSHOT_VIEWPORT,
+                    device_scale_factor=1,
+                    color_scheme="light",
+                    reduced_motion="reduce",
+                    service_workers="block",
+                    timezone_id="Europe/Vienna",
+                    geolocation={"latitude": 47.1043, "longitude": 15.7086},
+                    permissions=["geolocation"],
+                )
+                try:
+                    context.add_cookies(
+                        [{"name": "locale", "value": locale, "url": f"{base_url}/"}]
+                    )
+                    context.add_init_script(
+                        f"""(() => {{
+                            try {{
+                                localStorage.setItem('{ONBOARDING_STORAGE_KEY}', 'true');
+                            }} catch {{}}
+                            const NativeDate = Date;
+                            const fixed = new NativeDate('2026-10-24T10:00:00+02:00').valueOf();
+                            const started = performance.now();
+                            const now = () => fixed + (performance.now() - started);
+                            class FixedDate extends NativeDate {{
+                                constructor(...args) {{
+                                    super(...(args.length ? args : [fixed]));
+                                }}
+                                static now() {{ return now(); }}
+                            }}
+                            globalThis.Date = FixedDate;
+                            document.addEventListener('DOMContentLoaded', () => {{
+                                const style = document.createElement('style');
+                                style.textContent = '*,' +
+                                    '*::before,*::after{{animation:none!important;' +
+                                    'transition:none!important;caret-color:transparent!important}}' +
+                                    '.leaflet-tile{{opacity:1!important}}';
+                                document.head.append(style);
+                            }});
+                        }})()"""
+                    )
+                    _capture_locale(
+                        context,
+                        base_url,
+                        locale,
+                        store_name,
+                        locale_dir,
+                        cfg["ADMIN_PASSWORD"],
+                    )
+                finally:
+                    context.close()
+
+        expected = [
+            temporary / locale / f"{name}.png"
+            for locale in ("de", "en")
+            for name in ONBOARDING_PAGES
+        ]
+        for image in expected:
+            if not image.is_file() or image.stat().st_size <= 24:
+                raise click.ClickException(f"screenshot was not written as PNG: {image.name}")
+            with image.open("rb") as source:
+                if source.read(8) != b"\x89PNG\r\n\x1a\n":
+                    raise click.ClickException(f"screenshot was not written as PNG: {image.name}")
+
+        for locale in ("de", "en"):
+            target_dir = ONBOARDING_OUTPUT / locale
+            target_dir.mkdir(parents=True, exist_ok=True)
+            for name in ONBOARDING_PAGES:
+                os.replace(temporary / locale / f"{name}.png", target_dir / f"{name}.png")
+        click.echo(f"wrote 10 onboarding screenshots to {ONBOARDING_OUTPUT}")
+    except click.ClickException:
+        raise
+    except PlaywrightError as exc:
+        detail = str(exc).replace(cfg["ADMIN_PASSWORD"], "<redacted>")
+        raise click.ClickException(f"screenshot capture failed: {detail}")
+    except Exception as exc:
+        detail = str(exc).replace(cfg["ADMIN_PASSWORD"], "<redacted>")
+        raise click.ClickException(f"screenshot capture failed: {detail}")
+    finally:
+        shutil.rmtree(temporary, ignore_errors=True)
+
 
 def do_backup(out):
     cfg = load_env()
@@ -422,6 +725,21 @@ def prepare():
 def stores(demo):
     """Seed OSM farm-shop/vending-machine data into the running db."""
     do_stores(demo)
+
+@cli.command()
+@click.option(
+    "--base-url",
+    help="Running app URL (default: http://127.0.0.1:<APP_PORT> from .env).",
+)
+@click.option(
+    "--store-name",
+    default=SCREENSHOT_STORE,
+    show_default=True,
+    help="Exact public store to use in the tutorial.",
+)
+def screenshots(base_url, store_name):
+    """Capture the ten bilingual onboarding screenshots from the running app."""
+    do_screenshots(base_url, store_name)
 
 
 @cli.command()

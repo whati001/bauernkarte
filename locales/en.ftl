@@ -27,7 +27,9 @@ search-results-count = { $count ->
     [one] { $count } place near you
    *[other] { $count } places near you
 }
-search-no-results = No stores match this selection.
+search-empty-title = Nothing grows here yet.
+search-empty-body = Adjust the search or reset it to see all farms, vending machines, and markets.
+search-empty-reset = Reset search
 search-name = Search by name
 search-name-placeholder = Search farm shops, machines or markets…
 search-sort = Sort order
@@ -48,6 +50,21 @@ action-cancel = Cancel
 action-edit = Edit
 action-back = Back
 action-back-to-search = Back to search
+
+## Onboarding
+onboarding-search-product-title = Search for a product
+onboarding-search-product-body = Type a product at the top or choose a suggestion. The map and list show matching stores.
+onboarding-search-store-title = Search for a store
+onboarding-search-store-body = Open the sidebar and search for the name of a farm shop, vending machine, or market.
+onboarding-navbar-login-title = Navigation and login
+onboarding-navbar-login-body = Use the top bar to change language and log in. With an account, you can add and change stores.
+onboarding-add-store-title = Add a new store
+onboarding-add-store-body = Log in, open your account menu, and choose “New Store”. Enter the details and set the location on the map.
+onboarding-change-store-title = Change a store
+onboarding-change-store-body = Open a store, scroll to its actions, and choose “Edit”. Update the details and save.
+onboarding-skip = Skip
+onboarding-next = Next
+onboarding-finish = Get started
 
 ## Auth
 auth-login-heading = Login
@@ -333,13 +350,14 @@ datenschutz-storage-heading = Cookies, local storage, and offline cache
 datenschutz-storage-session = Necessary server session cookie: expires after 14 days of inactivity, SameSite=Lax, and Secure when configured.
 datenschutz-storage-locale = locale cookie for the language choice: at most one year, SameSite=Lax.
 datenschutz-storage-sidebar = localStorage key bk-sidebar-width for the selected sidebar width: until site data is cleared.
+datenschutz-storage-onboarding = localStorage key bk-onboarding-complete-v1 for the one-time introduction: until site data is cleared.
 datenschutz-storage-pwa = PWA cache for static files and the offline page: until replacement by a new version, service-worker unregister, or clearing site data.
 datenschutz-storage-osm-cache = Browser cache for OpenStreetMap tiles: according to the browser's and tile service's cache rules.
 datenschutz-storage-legal = These storage operations are functional or technically necessary and rely on section 165(3) TKG 2021. BauernKarte uses no advertising, marketing, or analytics cookies.
 datenschutz-recipients-heading = Recipients and transfers
 datenschutz-recipients-body = Recipients may include authorized administrators, the controller's categories of hosting and database operators, public visitors for approved public content, the OpenStreetMap Foundation for tile requests, and authorities only where legally required. OSMF is based in the United Kingdom and uses a global cache network for map tiles.
 datenschutz-retention-heading = Retention
-datenschutz-retention-body = Sessions expire after 14 days of inactivity; expired sessions are swept hourly. The language choice remains stored for at most one year, the sidebar width until site data is cleared, and the service-worker cache until replacement, unregister, or clearing. Accounts remain until hard deletion by an administrator on request; retained contributions then lose their account association. A user's own ratings can be removed immediately. Contribution and audit data have no automatic expiry and remain while needed for catalog operation, moderation, restoration, legal claims, or a justified erasure decision. Request and security logs and backups follow the controller's or hosting operator's necessary security and recovery schedule.
+datenschutz-retention-body = Sessions expire after 14 days of inactivity; expired sessions are swept hourly. The language choice remains stored for at most one year, the sidebar width and introduction completion until site data is cleared, and the service-worker cache until replacement, unregister, or clearing. Accounts remain until hard deletion by an administrator on request; retained contributions then lose their account association. A user's own ratings can be removed immediately. Contribution and audit data have no automatic expiry and remain while needed for catalog operation, moderation, restoration, legal claims, or a justified erasure decision. Request and security logs and backups follow the controller's or hosting operator's necessary security and recovery schedule.
 datenschutz-rights-heading = Your rights
 datenschutz-right-information = Right to information about the processing.
 datenschutz-right-access = Right of access to your personal data.

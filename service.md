@@ -17,8 +17,11 @@ host-side one from the same values plus `DB_HOST`/`DB_PORT`.
 
 - `docker` with the compose plugin, or `podman` with `podman compose` /
   `podman-compose`. `service.py` uses whichever it finds.
-- `uv`. The script's shebang runs it under `uv run --script`, which
-  installs its one dependency (`click`) on the fly.
+- `uv`. The script's shebang installs its pinned Python dependencies into
+  an ephemeral environment.
+- Chromium for `screenshots`, installed explicitly with
+  `uvx --from playwright==1.55.0 playwright install chromium`. The command
+  never installs browsers or OS packages itself.
 - An x86_64 host with a few GB of RAM for the first image build. The
   build compiles the server and the WASM client.
 
@@ -27,14 +30,15 @@ A Rust toolchain is **not** needed to deploy. Only `prepare` uses one.
 ## Usage
 
 ```sh
-./service.py env       # create .env once (random secrets)
-./service.py up        # build + start the stack, wait until healthy
-./service.py down      # stop + remove the containers (keeps data and image)
-./service.py stores    # seed OSM farm-shop/vending data (--demo: + one demo shop)
-./service.py backup    # pg_dump to bauernkarte-<timestamp>.dump
-./service.py db        # start only the db (for host-side `dx serve`)
-./service.py prepare   # refresh .sqlx/ (developers, after changing a query)
-./service.py cleanup   # remove containers, the app image and the pgdata volume
+./service.py env          # create .env once (random secrets)
+./service.py up           # build + start the stack, wait until healthy
+./service.py down         # stop + remove the containers (keeps data and image)
+./service.py stores       # seed OSM farm-shop/vending data (--demo: + one demo shop)
+./service.py screenshots  # regenerate the ten bilingual onboarding images
+./service.py backup       # pg_dump to bauernkarte-<timestamp>.dump
+./service.py db           # start only the db (for host-side `dx serve`)
+./service.py prepare      # refresh .sqlx/ (developers, after changing a query)
+./service.py cleanup      # remove containers, the app image and the pgdata volume
 ```
 
 A fresh local install is `./service.py env && ./service.py up`, then
@@ -140,6 +144,25 @@ Each location's OSM tags decide its type, and with it its map pin:
 market and `shop=farm` a farm shop. Anything else is a market. Re-running
 `stores` also classifies the shops an earlier run created, as long as
 nobody has edited them in the app.
+
+### `screenshots`
+
+Captures the five onboarding states in German and English from the running
+application into `public/static/onboarding/{de,en}/`. The default fixture is
+the public `Obstgarten Maier` demo store; add it with
+`./service.py stores --demo` if necessary. The command reads the first product
+and store ID from the live search result rather than assuming fixture IDs.
+
+```sh
+./service.py screenshots
+./service.py screenshots --base-url https://example.invalid --store-name "A public store"
+```
+
+The application must already be healthy, the selected store must have at least
+one product, and Chromium must already be installed. Captures use a fixed
+1280×800 browser, location, time zone, and time. All ten PNGs are completed in
+a temporary sibling directory and validated before any checked-in image is
+replaced.
 
 ### `backup`
 

@@ -8,6 +8,7 @@ pub mod forms;
 pub mod impressum;
 pub mod map;
 pub mod navbar;
+pub mod onboarding;
 pub mod search;
 pub mod shell;
 pub mod store;
