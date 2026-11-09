@@ -250,6 +250,7 @@ fn ResultCard(store: StoreSearchResult, now: Option<(i16, String)>) -> Element {
             class: "result-card",
             role: "button",
             tabindex: 0,
+            "data-kind": store.kind.as_str(),
             "aria-label": format!("{} — {}", store.name, kind_label.clone()),
             onclick: move |_| {
                 nav.push(Route::StorePanel { id });

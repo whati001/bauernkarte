@@ -250,13 +250,12 @@ a:hover { text-decoration: underline; }
    Navbar
    ============================================================ */
 #navbar {
-  /* The header as a hanging lobe: paper over the water with a gutter, so
-     the map reads around it instead of stopping at a stripe. */
   position: relative;
   z-index: 1100;
   flex: none;
-  padding: 0.6rem 0.75rem 0;
-  padding-top: max(0.6rem, env(safe-area-inset-top));
+  background: var(--shell);
+  border-bottom: 1px solid var(--border);
+  padding-top: env(safe-area-inset-top);
   touch-action: pan-x;
 }
 .nav-tap-shield {
@@ -279,13 +278,8 @@ a:hover { text-decoration: underline; }
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  min-height: 68px;
-  padding: 0.5rem 0.875rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  /* The guide's lobe silhouette: three soft corners, one petal. */
-  border-radius: var(--radius-md) var(--radius-md) var(--radius-lg) var(--radius-md);
-  box-shadow: var(--shadow-sm);
+  min-height: 56px;
+  padding: 0.45rem 1rem;
 }
 
 .brand {
@@ -329,35 +323,29 @@ a:hover { text-decoration: underline; }
 }
 .nav-search > div { flex: 1; width: 100%; }
 .nav-search > div > div:first-child { width: 100%; }
-
-/* Two-pane field: the leading tile carries the picked product's emoji
-   (the magnifier when none), so the field *shows* the selection, not
-   just its name; the placeholder pane asks the question. */
+/* The picker stays the row's loudest control: 46px tall, heavier label
+   voice, so "what am I looking for" outweighs brand and account. */
 .nav-search input {
   height: 46px !important;
-  padding: 0 2.75rem 0 2.6rem !important;
-  border-radius: var(--radius-md) var(--radius-md) var(--radius-md) var(--radius-lg) !important;
-  background: var(--water) !important;
-  box-shadow: inset 0 0 0 1px var(--border-strong) !important;
+  padding: 0 2.88rem 0 2.88rem !important;
+  border-radius: 999px !important;
+  background: var(--surface) !important;
+  box-shadow: inset 0 0 0 1px var(--border-strong), var(--shadow-sm) !important;
   font-size: 0.9375rem !important;
   font-weight: 500;
   transition: box-shadow 0.3s var(--ease-out), background-color 0.3s var(--ease-out);
 }
-/* With a product picked, its 32px tile leads the field; keep the text clear of it. */
+/* With a product picked, its emoji leads the field; keep the text clear of it. */
 .nav-search:has(.nav-search-icon.picked) input { padding-left: 3.1rem !important; }
-.nav-search input:hover {
-  box-shadow: inset 0 0 0 1px var(--text-muted), var(--shadow-sm) !important;
-}
+.nav-search input:hover { box-shadow: inset 0 0 0 1px var(--text-muted), var(--shadow-sm) !important; }
 .nav-search input:focus {
   background: var(--surface) !important;
   box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 4px var(--accent-wash) !important;
 }
 .nav-search input::placeholder { color: var(--text-muted); font-weight: 400; }
 
-/* The leading icon slot: while idle it is just a magnifier glyph — no
-   tile, no block — so nothing in the field outweighs the text. The tile
-   appears only when a product is picked: the emoji then sits on land
-   wash as a small lobe, echoing the chip its name came from. */
+/* The leading icon slot: a bare glyph, no tile, no box — the magnifier
+   while idle, the picked product's emoji once a product is chosen. */
 .nav-search-icon {
   position: absolute;
   z-index: 1;
@@ -373,14 +361,9 @@ a:hover { text-decoration: underline; }
   pointer-events: none;
 }
 .nav-search-icon.picked {
-  left: 0.4rem;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-sm) var(--radius-sm) var(--radius-sm) 4px;
-  background: var(--land-wash);
-  transition: background-color 0.3s var(--ease-out);
+  left: 0.95rem;
+  font-size: 1.25rem;
 }
-.nav-search:focus-within .nav-search-icon.picked { background: var(--land-wash-strong); }
 
 /* The up/down chevron says "select"; this box reads as a search. */
 .nav-search > div > div:first-child > svg { display: none; }
@@ -391,16 +374,16 @@ a:hover { text-decoration: underline; }
   box-shadow: inset 0 0 0 1px var(--border), var(--shadow-md) !important;
 }
 
-/* The dropdown as a paper lobe: a clear field of rows, each with the
-   product's icon in a tile on land wash, and the picked row carrying
-   the land check disc the map's own selection would show. */
+/* The dropdown as a paper lobe: calm rows of icon and label. The emoji
+   rides bare — no tile, no box — the produce itself stands in as the
+   icon, the way it does on the map's pins. */
 .nav-search div[class*="dx-combobox-option"] {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
+  gap: 0.6rem;
   min-height: 44px;
   margin: 0.25rem;
-  padding: 0.35rem 0.65rem 0.35rem 0.35rem !important;
+  padding: 0.35rem 0.65rem 0.35rem 0.65rem !important;
   border-radius: var(--radius-sm) !important;
   font-size: 0.9375rem;
   font-weight: 500;
@@ -408,18 +391,15 @@ a:hover { text-decoration: underline; }
   transition: background-color 0.15s var(--ease-out), box-shadow 0.15s var(--ease-out);
 }
 
-/* The emoji tile in front of the label, on land wash. */
 .picker-opt-icon {
   display: inline-flex;
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   box-sizing: border-box;
-  border-radius: 8px;
-  background: var(--land-wash);
-  font-size: 0.9375rem;
+  font-size: 1.125rem;
   line-height: 1;
 }
 
@@ -453,12 +433,12 @@ a:hover { text-decoration: underline; }
   border-radius: 50%;
 }
 
-/* The empty state: not one quiet line, but the guide saying "not on my
-   patch" — an emoji shrug in a tile, the answer, the recovery hint. */
+/* The empty state: a bare emoji shrug, the answer, left-aligned with the
+   rows above it. */
 .nav-search div[class*="dx-combobox-empty"] {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.6rem;
   padding: 0.85rem 0.9rem;
   text-align: left;
   font-size: 0.875rem;
@@ -471,11 +451,9 @@ a:hover { text-decoration: underline; }
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius-sm);
-  background: var(--land-wash);
-  font-size: 1rem;
+  width: 26px;
+  height: 26px;
+  font-size: 1.125rem;
 }
 
 .nav-actions {
@@ -555,13 +533,11 @@ a:hover { text-decoration: underline; }
 .lang-link.active { background: var(--accent); color: var(--accent-contrast); }
 .lang-link.active:hover { background: var(--accent); color: var(--accent-contrast); }
 
-/* The quick-pick row scrolls sideways rather than wrapping. It hangs
-   from the header lobe as its second row, not as a separate card. */
+/* The quick-pick row scrolls sideways rather than wrapping. */
 .nav-products {
   overflow-x: auto;
   scrollbar-width: none;
-  margin: 0.5rem 0.75rem 0;
-  padding: 0.5rem 0.25rem 0.55rem;
+  padding: 0.6rem 1rem 0.8rem;
 }
 .nav-products::-webkit-scrollbar { display: none; }
 .nav-products > div {
@@ -575,20 +551,20 @@ a:hover { text-decoration: underline; }
 .product-pick {
   display: inline-flex !important;
   align-items: center;
-  gap: 0.4rem;
-  height: 36px !important;
-  padding: 0 0.85rem 0 0.35rem !important;
+  gap: 0.35rem;
+  height: 34px !important;
+  padding: 0 0.8rem !important;
   border: 1px solid var(--border) !important;
   border-radius: 999px !important;
   background: var(--surface) !important;
   color: var(--text-primary) !important;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
-  transition: background 0.3s var(--ease-out), border-color 0.3s var(--ease-out), color 0.3s var(--ease-out), transform 0.3s var(--ease);
+  transition: background 0.15s var(--ease-out), border-color 0.15s var(--ease-out), color 0.15s var(--ease-out), transform 0.3s var(--ease);
 }
-.product-pick:hover { background: var(--land-wash) !important; border-color: var(--border-strong) !important; }
+.product-pick:hover { background: var(--shell-2) !important; border-color: var(--border-strong) !important; }
 /* The pressed chip: solid land, like a filled pin. */
 .product-pick[data-state="on"] {
   background: var(--accent) !important;
@@ -596,25 +572,6 @@ a:hover { text-decoration: underline; }
   color: var(--accent-contrast) !important;
 }
 .product-pick:active { transform: scale(0.96); }
-
-/* Product emoji rides in its own small tile so rows read as one rhythm. */
-.product-pick .product-pick-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 8px;
-  background: var(--land-wash);
-  font-size: 0.8125rem;
-}
-.product-pick[data-state="on"] .product-pick-icon { background: rgba(255, 255, 255, 0.28); }
-
-/* The "Alle Produkte" chip leads without a tile: same height, normal padding. */
-.product-pick:not(:has(.product-pick-icon)) {
-  padding: 0 0.85rem !important;
-}
-.product-pick:not(:has(.product-pick-icon)) svg { flex: none; }
 
 /* Phone-only search controls: the magnifier that opens the picker and
    the back arrow that closes it again. */
@@ -628,21 +585,17 @@ a:hover { text-decoration: underline; }
   cursor: pointer;
 }
 
-/* Narrow screens: one row. The lobe stays but hugs the edges — the
-   picker hides behind a magnifier; opened, it replaces the brand and
-   actions. The brand name gives way (ellipsis) so actions never wrap. */
+/* Narrow screens: one row. The picker hides behind a magnifier; opened,
+   it replaces the brand and actions. The brand name gives way
+   (ellipsis) so the actions never wrap. */
 @media (max-width: 700px) {
-  #navbar { padding: max(0.4rem, env(safe-area-inset-top)) 0.4rem 0; }
   .brand-tagline { display: none; }
-  .nav-main { gap: 0.5rem; min-height: 58px; padding: 0.375rem 0.5rem; border-radius: var(--radius-md); }
+  .nav-main { gap: 0.5rem; padding: 0.25rem 0.75rem; }
   .brand { flex: 0 1 auto; margin-right: 0; min-width: 0; }
   .brand-text { min-width: 0; }
   .brand-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .brand-mark { width: 32px; height: 32px; }
   .nav-search { display: none; max-width: none; }
-  .nav-search input { height: 42px !important; padding: 0 2.4rem 0 2.8rem !important; }
-  .nav-search-icon { font-size: 1.05rem; }
-  .nav-search-icon.picked { left: 0.3rem; width: 30px; height: 30px; }
+  .nav-search input { height: 42px !important; }
   .nav-search-toggle { display: inline-flex; margin-left: auto; }
   .nav-search-toggle + .nav-actions { margin-left: 0; }
   .nav-main.search-open > .brand,
@@ -652,8 +605,8 @@ a:hover { text-decoration: underline; }
   .nav-main.search-open > .nav-search-close { display: inline-flex; flex: none; }
   .lang-switch, .nav-cta, .nav-user, .nav-icon-link { height: 40px; }
   .nav-icon-link, .nav-cta { width: 40px; }
-  /* The quick-pick row rides inside the lobe's lower padding on phones. */
-  .nav-products { margin: 0.4rem 0.15rem 0; padding: 0.35rem 0.15rem 0.15rem; }
+  .nav-search-icon { font-size: 1.05rem; }
+  .nav-search-icon.picked { left: 0.9rem; font-size: 1.15rem; }
 }
 
 /* Phones: text labels give way to icons (names stay in title/aria). */
@@ -662,9 +615,6 @@ a:hover { text-decoration: underline; }
   .nav-user { padding: 0 0.6rem; }
   .nav-user-name { display: none; }
   .lang-link { min-width: 2.25rem; padding: 0 0.5rem; }
-  /* Chips get breathing room back: tighter tile, tighter gap. */
-  .product-pick { height: 32px !important; gap: 0.3rem; }
-  .product-pick .product-pick-icon { width: 22px; height: 22px; }
 }
 
 /* ============================================================
@@ -915,20 +865,23 @@ a:hover { text-decoration: underline; }
 }
 
 /* ---- Search panel: toolbar and result cards --------------------- */
-/* Stays put while the list scrolls under it (#sidebar is the scroller).
-   The negative margins take it across the panel's padding, so cards
-   disappear cleanly beneath it instead of peeking out at the sides. */
+/* The toolbar is a paper shelf floating over the water (a lobe with its
+   own bottom radius), not a full-bleed tint glued to the edge: cards
+   scroll beneath its soft bottom shadow, and it keeps the guide's
+   silhouette while it does. */
 .search-toolbar {
   position: sticky;
-  top: 0;
+  top: 0.75rem;
   z-index: 2;
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
-  margin: -1rem -1rem 0.75rem;
-  padding: 1rem 1rem 0.75rem;
-  background: var(--shell);
-  border-bottom: 1px solid var(--border);
+  margin: 0 -1rem 0.9rem;
+  padding: 0.6rem 0.75rem 0.7rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md) var(--radius-md) var(--radius-md) var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 .toolbar-sort { margin-left: auto; }
 /* Full width, above the pills; the icon sits inside the field. */
@@ -945,7 +898,7 @@ a:hover { text-decoration: underline; }
   min-height: 42px;
   padding-left: 2.25rem;
   border-radius: 999px;
-  background: var(--surface);
+  background: var(--water);
 }
 /* The select's trigger, reshaped into a pill like the navbar chips. */
 .toolbar-select > button {
@@ -984,14 +937,14 @@ a:hover { text-decoration: underline; }
 }
 /* The result card: a lobe rising from the water. One petal corner
    (top-left) marks it as part of the guide's land, not a box. The kind
-   ribbon at the card's left edge carries the store type the way the map
-   pins do — one capsule colour per kind, quiet at rest, full at hover. */
+   label is a bare capsule beside the name — same tint language as the
+   map pins, without an extra plate behind the thumb. */
 .result-card {
   position: relative;
   display: flex;
   align-items: center;
   gap: 0.875rem;
-  padding: 0.85rem 0.9rem;
+  padding: 0.9rem 0.95rem;
   background: var(--surface);
   border: 1.5px solid var(--border);
   border-radius: var(--radius-lg) var(--radius-md) var(--radius-md) var(--radius-md);
@@ -1009,8 +962,8 @@ a:hover { text-decoration: underline; }
 }
 .result-thumb {
   flex: none;
-  width: 76px;
-  height: 76px;
+  width: 78px;
+  height: 78px;
   border-radius: var(--radius-md);
   overflow: hidden;
   background: var(--land-wash);
@@ -1020,12 +973,20 @@ a:hover { text-decoration: underline; }
   font-size: 2rem;
 }
 .result-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.result-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.38rem; }
+.result-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.4rem; }
 .result-head { display: flex; align-items: center; gap: 0.5rem; }
+/* The distance rides at the head's right, tabular and quiet. */
+.result-distance {
+  flex: none;
+  margin-left: auto;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
 /* The kind label: a capsule beside the distance, tinted per kind. */
 .result-kind {
   flex: none;
-  padding: 1px 9px;
+  padding: 2px 9px;
   border-radius: 999px;
   background: var(--kind-wash, var(--land-wash));
   color: var(--kind-ink, var(--land-deep));
@@ -1051,13 +1012,6 @@ a:hover { text-decoration: underline; }
   -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
 }
-.result-distance {
-  flex: none;
-  align-self: flex-end;
-  color: var(--text-secondary);
-  font-size: 0.8125rem;
-  font-variant-numeric: tabular-nums;
-}
 .result-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
 .result-chip { font-weight: 600; }
 .result-meta {
@@ -1069,7 +1023,18 @@ a:hover { text-decoration: underline; }
   font-size: 0.8125rem;
 }
 .result-place { display: inline-flex; align-items: center; gap: 0.25rem; }
-.result-status { display: inline-flex; align-items: center; gap: 0.4rem; }
+/* The status capsule: a dot in a wash pill — the day's verdict, glanceable
+   and never mistaken for a place name. */
+.result-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 2px 10px 2px 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
 .result-status::before {
   content: "";
   width: 8px;
@@ -1078,8 +1043,9 @@ a:hover { text-decoration: underline; }
   background: var(--text-muted);
   transition: background 0.3s var(--ease);
 }
-.result-status.open { color: var(--text-primary); font-weight: 600; }
+.result-status.open { color: var(--land-deep); background: var(--land-wash); }
 .result-status.open::before { background: var(--accent); }
+.result-status.later { color: var(--coral-ink); background: color-mix(in srgb, var(--coral) 22%, var(--surface)); }
 .result-status.later::before { background: var(--pin-market); }
 .result-status.closed { color: var(--text-muted); }
 .result-chevron { flex: none; align-self: center; color: var(--text-muted); display: inline-flex; transition: transform 0.3s var(--ease); }

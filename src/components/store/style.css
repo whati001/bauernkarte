@@ -12,7 +12,7 @@
 
 .hero {
   position: relative;
-  height: 180px;
+  height: 200px;
   flex: none;
   overflow: hidden;
   background: var(--accent);
@@ -54,7 +54,7 @@
 .hero-produce {
   position: absolute;
   right: 18px;
-  bottom: 46px;
+  bottom: 52px;
   display: flex;
   gap: 2px;
   font-size: 22px;
@@ -96,7 +96,7 @@
   z-index: 1;
   left: 16px;
   right: 16px;
-  bottom: 12px;
+  bottom: 14px;
   margin: 0;
   font-family: var(--font-display);
   font-size: 1.75rem;
@@ -108,20 +108,51 @@
   text-wrap: balance;
 }
 
+/* The kind capsule above the store name: the same identity the map pin
+   carries, now legible over any photo or scene. */
+.hero-caption {
+  position: absolute;
+  z-index: 1;
+  left: 16px;
+  right: 16px;
+  bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  pointer-events: none;
+}
+.hero-kind {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--kind-wash, var(--land-wash));
+  color: var(--kind-ink, var(--land-deep));
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.hero-kind[data-kind="shop"] { --kind-wash: var(--sun); --kind-ink: var(--sun-ink); }
+.hero-kind[data-kind="vending_machine"] { --kind-wash: var(--pond); --kind-ink: var(--pond-ink); }
+.hero-kind[data-kind="market"] { --kind-wash: var(--coral); --kind-ink: var(--coral-ink); }
+.hero-caption .hero-title {
+  position: static;
+}
+
 /* ---- Body --------------------------------------------------------- */
 
 .store-body {
-  padding: 16px 18px 24px;
+  padding: 18px 20px 26px;
 }
 
 .rule {
-  margin: 20px 0;
+  margin: 22px 0;
 }
 
 .facts {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 9px;
 }
 
 .chips {
@@ -141,6 +172,7 @@
   font-weight: 600;
 }
 
+/* The rating row keeps its baseline; the stars carry the voice. */
 .rating {
   display: flex;
   align-items: center;
@@ -209,9 +241,13 @@ a.fact:hover { color: var(--text-primary); text-decoration: none; }
 
 .fact-icon {
   flex: none;
-  width: 18px;
-  text-align: center;
-  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  margin: -2px 0 0 -5px;
+  font-size: 1rem;
+  line-height: 1.45;
 }
 
 .hours { display: flex; flex-direction: column; }
@@ -314,6 +350,7 @@ a.fact:hover { color: var(--text-primary); text-decoration: none; }
   gap: 8px;
   margin-top: 12px;
   font-size: 0.9375rem;
+  font-weight: 600;
   color: var(--land-deep);
   text-decoration: none;
 }
@@ -327,9 +364,11 @@ a.fact:hover { color: var(--text-primary); text-decoration: none; }
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 7px;
 }
 
+/* Each offer is a plain row on land wash; out of season drops to a
+   quiet neutral wash. The emoji rides bare — the produce is the icon. */
 .offer {
   border-radius: var(--radius-sm);
   background: var(--land-wash);
@@ -341,7 +380,7 @@ a.fact:hover { color: var(--text-primary); text-decoration: none; }
 .offer-row {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   width: 100%;
   padding: 12px 14px;
   border: none;
@@ -407,7 +446,7 @@ a.fact:hover { color: var(--text-primary); text-decoration: none; }
 }
 
 .offer-details {
-  padding: 0 14px 12px 56px;
+  padding: 0 14px 12px 54px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -432,11 +471,12 @@ a.fact:hover { color: var(--text-primary); text-decoration: none; }
   max-width: 220px;
 }
 .season-dot {
-  height: 6px;
-  border-radius: 999px;
-  background: var(--border-strong);
-  transition: background 0.3s var(--ease);
+  height: 7px;
+  border-radius: 3px;
+  background: var(--border);
+  transition: background 0.3s var(--ease), transform 0.3s var(--ease);
 }
+.season-dot:hover { transform: scaleY(1.35); }
 .season-dot-on { background: var(--accent); }
 
 .offer-actions {
@@ -489,20 +529,23 @@ a.fact:hover { color: var(--text-primary); text-decoration: none; }
 
 .photos {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
-  padding-bottom: 4px;
+  padding: 2px 2px 6px;
 }
 .photo {
   position: relative;
   flex: none;
   width: 160px;
   height: 110px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg) var(--radius-md) var(--radius-md) var(--radius-md);
   overflow: hidden;
   scroll-snap-align: start;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
 }
+button.photo:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
 .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 button.photo { padding: 0; border: none; background: none; cursor: zoom-in; }
 .photo-caption {
@@ -624,4 +667,8 @@ button.photo { padding: 0; border: none; background: none; cursor: zoom-in; }
 @media (max-width: 700px) {
   .viewer-image { max-width: 100vw; max-height: calc(100dvh - 120px); border-radius: 0; }
   .viewer-button { background: rgb(0 0 0 / 0.45); }
+  /* The stacked panel: hero and body keep their rhythm at less width. */
+  .hero { height: 170px; }
+  .store-body { padding: 16px 14px 22px; }
+  .offer-details { padding-left: 48px; }
 }

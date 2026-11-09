@@ -247,7 +247,7 @@ fn PopularProducts() -> Element {
                 }
                 for (i , p) in products.iter().enumerate() {
                     ToggleItem { key: "{p.id}", index: i + 1, class: "product-pick",
-                        span { class: "product-pick-icon", "aria-hidden": "true", "{p.icon_or_default()}" }
+                        span { "aria-hidden": "true", "{p.icon_or_default()}" }
                         span { "{p.name}" }
                     }
                 }
