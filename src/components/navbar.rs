@@ -160,7 +160,7 @@ fn ProductPicker(on_pick: EventHandler<bool>) -> Element {
                     touch_pick_armed.set(true);
                 }
             },
-            span { class: "nav-search-icon", "aria-hidden": "true",
+            span { class: if selected().is_some() { "nav-search-icon picked" } else { "nav-search-icon" }, "aria-hidden": "true",
                 match selected().and_then(|id| catalog().into_iter().find(|p| p.id == id)) {
                     // The picked product's emoji stands in for the magnifier,
                     // so the box shows the same icon + name as its chip.
@@ -190,7 +190,8 @@ fn ProductPicker(on_pick: EventHandler<bool>) -> Element {
                         index,
                         value: product.id,
                         text_value: product.name.clone(),
-                        "{product.icon_or_default()} {product.name}"
+                        span { class: "picker-opt-icon", "aria-hidden": "true", "{product.icon_or_default()}" }
+                        span { class: "picker-opt-name", "{product.name}" }
                     }
                 }
                 ComboboxEmpty { {locale.t("nav-search-no-matches")} }

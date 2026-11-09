@@ -68,7 +68,10 @@ pub fn StoreHero() -> Element {
             } else {
                 FarmScene { hue, icons }
             }
-            h2 { class: Styles::hero_title, "{d.name}" }
+            div { class: Styles::hero_caption,
+                span { class: Styles::hero_kind, "data-kind": d.kind.as_str(), {locale.t(d.kind.label_key())} }
+                h2 { class: Styles::hero_title, "{d.name}" }
+            }
         }
     }
 }
